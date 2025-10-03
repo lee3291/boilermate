@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../database/prisma.service';
+import { PrismaService } from '@core/database/prisma.service';
 import { CreateDogDto } from './dto/create-dog.dto';
-import { UpdateDogDto } from './dto/update-dog.dto';
+import { UpdateDogDto } from './dto/update-dog-dto';
 import { DogDetail } from './interfaces/dog.interface';
 
 @Injectable()

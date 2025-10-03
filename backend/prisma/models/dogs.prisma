@@ -1,5 +1,3 @@
-
-// Dog model represents a dog entity in our system
 model Dog {
   id        String   @id @default(uuid()) // Unique identifier for the dog
   name      String   // Name of the dog
