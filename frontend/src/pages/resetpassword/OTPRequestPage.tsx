@@ -36,8 +36,8 @@ export default function OTPRequestPage() {
       setError("Email must end with @purdue.edu");
       return;
     }
-
-    navigate("/verify-otp");
+    //Send email to verify page so user can later ask for resend OTP
+    navigate("/verify-otp", { state: { email } });
   };
 
   return (
