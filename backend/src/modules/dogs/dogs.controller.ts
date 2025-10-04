@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { DogsService } from './dogs.service';
 import { CreateDogDto } from './dto/create-dog.dto';
-import { UpdateDogDto } from './dto/update-dog.dto';
+import { UpdateDogDto } from './dto/update-dog-dto';
 import { DogDetail } from './interfaces/dog.interface';
 
 @Controller('dogs') // This prefix means all routes will start with /dogs

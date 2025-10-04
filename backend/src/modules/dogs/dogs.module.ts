@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { DogsService } from './dogs.service';
 import { DogsController } from './dogs.controller';
-import { PrismaModule } from '../database/prisma.module';
+import { PrismaModule } from '@core/database/prisma.module';
 
 @Module({
   // Import PrismaModule to make PrismaService available
