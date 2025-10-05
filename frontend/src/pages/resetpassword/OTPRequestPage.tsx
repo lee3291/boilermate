@@ -23,7 +23,7 @@ export default function OTPRequestPage() {
     }
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSendOTP = async (e: FormEvent) => {
     e.preventDefault();
     if (!email) {
       setError("Email cannot be empty");
@@ -37,6 +37,17 @@ export default function OTPRequestPage() {
       return;
     }
     //Send email to verify page so user can later ask for resend OTP
+    try {
+      console.log(email);
+      await fetch("http://localhost:3000/otp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+    } catch (error) {
+      console.error("OTP send failed.");
+      console.error(error);
+    }
     navigate("/verify-otp", { state: { email } });
   };
 
@@ -59,7 +70,7 @@ export default function OTPRequestPage() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSendOTP} className="space-y-6">
               <div className="space-y-2">
                 <label htmlFor="email" className="text-sm font-medium text-gray-900">
                   Email address *
@@ -74,10 +85,12 @@ export default function OTPRequestPage() {
 
               <button
                   type="submit"
-                  className="w-full h-11 text-base font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+                  className="w-full h-11 text-base font-medium bg-blue-500 text-white rounded-lg
+             hover:bg-blue-600 transition-colors duration-200"
               >
                 Send code
               </button>
+
 
               <p className="text-center text-sm text-gray-600">
                 Remember your password?{" "}

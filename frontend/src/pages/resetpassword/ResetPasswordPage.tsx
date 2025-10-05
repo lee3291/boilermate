@@ -1,7 +1,6 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate} from "react-router-dom";
 import PasswordInput from "../../components/PasswordInput";
-import { ArrowLeft } from "lucide-react";
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -54,13 +53,6 @@ export default function ResetPasswordPage() {
   return (
       <main className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="border border-gray-200 rounded-lg p-8 space-y-6">
-          <Link
-              to="/verify-otp"
-              className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-8 transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4"/>
-            Back
-          </Link>
 
           <div className="space-y-6">
             <div className="space-y-4 text-center">
@@ -100,10 +92,16 @@ export default function ResetPasswordPage() {
 
               <button
                   type="submit"
-                  className="w-full h-11 text-base font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+                  className="w-full h-11 text-base font-medium bg-blue-500 text-white rounded-lg
+             hover:bg-blue-600 transition-colors duration-200"
               >
                 Change password
               </button>
+              <div className="text-center mt-4">
+                <a href="/" className="text-blue-500 hover:underline font-bold">
+                  Already have an account? Login
+                </a>
+              </div>
             </form>
           </div>
         </div>
