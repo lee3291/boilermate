@@ -3,4 +3,14 @@ model User {
   email            String      @unique
   hashedPassword   String
   isVerified       Boolean     @default(false)
+
+  // 1. Chat Participant (Role A) - Opposite of Chat.userA
+  chatsA           Chat[]      @relation("ChatUserA") 
+
+  // 2. Chat Participant (Role B) - Opposite of Chat.userB
+  chatsB           Chat[]      @relation("ChatUserB") 
+
+  // 3. Message Sender - Opposite of Message.sender
+  messagesSent     Message[]   @relation("MessageSender") 
+  messageStatuses  UserMessageStatus[] // <-- ADD THIS LINE
 }
