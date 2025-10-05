@@ -7,6 +7,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 // Components used for protected areas
 import App from './App.tsx'
+import Listings from './pages/user/Listings.tsx'
 
 const router = createBrowserRouter([
   {
@@ -38,8 +39,12 @@ const router = createBrowserRouter([
 
   // user role here, page related to user role in here
   {
-
+    path: '/listings/',
+    element: <Listings/>,
+    errorElement: <div>404 Page Not Found</div>,
+    children: [{}]
   },
+
 
   // NOTES: you can just do a similar setup to test the page you created
 ])
