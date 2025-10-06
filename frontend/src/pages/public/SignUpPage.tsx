@@ -12,38 +12,44 @@ const SignUpPage = () => {
   };
 
   return (
-    <div className='flex items-center justify-center min-h screen bg-gray-100'>
-      <div className='p-8 bg-white rounded-lg shadow-md w-full max-w-md'>
-        <h1 className='text-2hl font-bold mb-6 text-center'>Create Your Account</h1>
-        <form onSubmit={handleSubmit}></form>
-        <InputField
-          label='Purdue Email'
-          id='email'
-          type='email'
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder='username@purdue.edu'
-        />
+    <div className='min-h screen flex justify-center bg-gray-100 py-12'>
+      <div className='w-full max-w-md rounded-lg bg-white p-8 shadow-md'>
+        <h1 className='mb-6 text-center text-2xl font-bold'>
+          Create Your Account
+        </h1>
+        <form onSubmit={handleSubmit}>
+          <InputField
+            label='Purdue Email'
+            id='email'
+            type='email'
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder='username@purdue.edu'
+          />
 
-        <InputField 
-          label='Password'
-          id='password'
-          type='password'
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+          <InputField
+            label='Password'
+            id='password'
+            type='password'
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
 
-        <InputField
-          label='Confirm Password'
-          id='confirmPassword'
-          type='password'
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-        />
+          <InputField
+            label='Confirm Password'
+            id='confirmPassword'
+            type='password'
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+          />
 
-        <button type='submit' className='w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 mt-2'>
+          <button
+            type='submit'
+            className='mt-2 w-full rounded-lg bg-blue-500 py-2 text-white hover:bg-blue-600'
+          >
             Sign Up
-        </button>
+          </button>
+        </form>
       </div>
     </div>
   );
