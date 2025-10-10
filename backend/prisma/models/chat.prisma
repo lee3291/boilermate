@@ -37,7 +37,7 @@ model Message {
 }
 
 model UserMessageStatus {
-  id               Int         @id @default(autoincrement())
+  id               String         @id @default(uuid())
   userId           String
   messageId        String
   

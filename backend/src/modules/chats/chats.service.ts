@@ -1,9 +1,16 @@
-import { Injectable, NotFoundException, ConflictException, InternalServerErrorException, BadRequestException  } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, InternalServerErrorException, BadRequestException, Logger } from '@nestjs/common';
+import { 
+  ChatDetails, 
+  deleteMessageDetails, 
+  editMessageDetails, 
+  getMessagesDetails, 
+  getMessagesResults, 
+  MessageDetails, 
+  MessageWithStatusDetails, 
+  sendMessageDetails, 
+  sendMessageResults,
+} from './interfaces/chat.interface';
 import { PrismaService } from '@core/database/prisma.service';
-import { SendMessageDto } from './dtos/send-message.dto';
-import { EditMessageDto } from './dtos/edit-message.dto';
-import { DeleteMessageDto } from './dtos/delete-message.dto';
-import { ChatDetails, getMessagesDetails, getMessagesResults, MessageDetails, sendMessageDetails, sendMessageResults, UserMessageStatusDetails } from './interfaces/chat.interface';
 
 /**
  * ChatsService
@@ -26,9 +33,17 @@ export class ChatsService {
     try {
       if (!chatId) {
         // first time sending text
+        Logger.log("no chat id");
+
         const [userAId, userBId] = [senderId, recipientId].sort();
         const txResult = await client.$transaction(async (tx: any) => {
           // create chat
+          Logger.log("here 1");
+
+          Logger.log("user 1", userAId)
+          Logger.log("user 2", userBId)
+
+
           const chat = await tx.chat.create({
             data: {
               userAId,
@@ -36,6 +51,9 @@ export class ChatsService {
               latestMessageAt: new Date(),
             },
           });
+
+          Logger.log("here 2");
+
 
           // create message
           const message = await tx.message.create({
@@ -46,35 +64,18 @@ export class ChatsService {
             },
           });
 
-          // create per-user status rows
-          const statusSender = await tx.userMessageStatus.create({
-            data: {
-              userId: senderId,
-              messageId: message.id,
-              isDeleted: false,
-            },
-          });
-
-          // determine other participant
-          const otherUserId = chat.userAId === senderId ? chat.userBId : chat.userAId;
-          const statusRecipient = await tx.userMessageStatus.create({
-            data: {
-              userId: otherUserId,
-              messageId: message.id,
-              isDeleted: false,
-            },
-          });
-
-          return { chat, message, statues: [statusSender, statusRecipient] };
+          Logger.log("here 3");
+          return { chat, message };
         });
 
         return {
           message: txResult.message as MessageDetails,
           chatCreated: true,
           chat: txResult.chat as ChatDetails,
-          statues: txResult.statues as UserMessageStatusDetails,
         }
       }
+
+      Logger.log("have chat id");
 
       // not the first message sent -> no need to create chat -> only have to update latestMessage
       const txResult = await client.$transaction(async (tx: any) => {
@@ -90,30 +91,18 @@ export class ChatsService {
           },
         });
 
-        // create users message status
-        const statusSender = await tx.userMessageStatus.create({
-          data: { userId: senderId, messageId: message.id, isDeleted: false },
-        });
-
-        // determine other participant
-        const otherUserId = chat.userAId === senderId ? chat.userBId : chat.userAId;
-        const statusRecipient = await tx.userMessageStatus.create({
-          data: { userId: otherUserId, messageId: message.id, isDeleted: false },
-        });
-
         // update the latestMessage in chat
         await tx.chat.update({
           where: { id: chatId },
           data: { latestMessageAt: new Date() } 
         });
 
-        return { message, statuses: [statusSender, statusRecipient] };
+        return { message };
       });
 
       return {
         message: txResult.message as MessageDetails,
         chatCreated: false,
-        statues: txResult.statuses as UserMessageStatusDetails,
       };
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
@@ -125,37 +114,139 @@ export class ChatsService {
   /**
    * Get chat history for a chatId
    */
-  async getHistory(getMessagesDetails: getMessagesDetails): Promise<getMessagesResults>{
+  async getHistory(chatId: string, getMessagesDetails: getMessagesDetails): Promise<getMessagesResults>{
     const client: any = this.prisma as any;
-    const 
+    const { userId } = getMessagesDetails;
+
+    try {
+      const chat = await client.chat.findUnique({
+        where: { id: chatId },
+      });
+
+      if (!chat) {
+        throw new NotFoundException('Chat not found');
+      }
+
+      // Use Promise.all to run both queries concurrently for efficiency.
+      const messagesWithStatus = await client.message.findMany({
+        where: {
+          chatId: chatId,
+        },
+        orderBy: {
+          createdAt: 'asc',
+        },
+        select: {
+          // Select all standard Message fields
+          id: true,
+          content: true,
+          senderId: true,
+          createdAt: true,
+          isEdited: true,
+
+          // Select the nested UserMessageStatus relation
+          // This is the JOIN operation
+          statuses: {
+            where: {
+              // Filter the statuses relation to only include the record for the current user
+              userId: userId,
+              chatId: chatId
+            },
+            select: {
+              // Select only the status fields we need
+              isDeleted: true,
+            },
+          },
+        },
+      });
+
+      // Return the two separate arrays as requested by the interface.
+      return {
+        messages: messagesWithStatus as MessageWithStatusDetails[]
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Failed to retrieve chat history');
+    }
   }
 
   /**
    * Edit message: only change content and mark isEdited.
    * Only the sender should be allowed to call this in controller layer.
    */
-  async editMessage(messageId: string, senderId: string, dto: EditMessageDto) {
-    // ensure sender owns message
+  async editMessage(messageId: string, editMessageDetails: editMessageDetails): Promise<void> {
     const client: any = this.prisma as any;
-    const message = await client.message.findUnique({ where: { id: messageId } });
-    if (!message) throw new Error('Message not found');
-    if (message.senderId !== senderId) throw new Error('Not authorized');
+    const { content, userId } = editMessageDetails;
 
-    return client.message.update({ where: { id: messageId }, data: { content: dto.content, isEdited: true } });
+    try {
+      // find message
+      const message = await client.message.findUnique({
+        where: { id: messageId },
+      });
+
+      // check if message exists
+      if (!message) {
+        throw new NotFoundException('Message not found');
+      }
+
+      // check authorization
+      if (message.senderId !== userId) {
+        throw new BadRequestException('You are not authorized to edit this message');
+      }
+
+      // update the message
+      await client.message.update({
+        where: { id: messageId },
+        data: {
+          content: content,
+          isEdited: true,
+        },
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
+      throw new InternalServerErrorException('Failed to edit message');
+    }
   }
 
   /**
    * Delete message: either mark global deleted (forEveryone) or create/update UserMessageStatus for user hide.
    */
-  async deleteMessage(messageId: string, userId: string, dto: DeleteMessageDto) {
+  async deleteMessage(messageId: string, deleteMessageDetails: deleteMessageDetails): Promise<void> {
     const client: any = this.prisma as any;
+    const { userId, forEveryone } = deleteMessageDetails;
 
-    if (dto.forEveryone) {
-      // mark message isDeleted for everyone
-      return client.message.update({ where: { id: messageId }, data: { isDeleted: true } });
+    try {
+      // check if message exist
+      const message = await client.message.findUnique({
+        where: { id: messageId },
+      });
+
+      if (!message) {
+        throw new NotFoundException('Message not found');
+      }
+      
+      if (forEveryone) { // Delete for everyone
+        // check authorization
+        if (message.senderId != userId) {
+          throw new BadRequestException('You can only delete your own messages for everyone');
+        }
+
+        // soft delete on Message table
+        await client.message.update({
+          where: { id: messageId },
+          data: { isDeleted: true },
+        });
+      } else { // Delete for you
+        // here we create a new entry in the userMessageStatus table
+        await client.userMessageStatus.create({
+          data: {
+            userId: userId,
+            messageId: messageId
+          }
+        })
+      }
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
+      throw new InternalServerErrorException('Failed to delete message');
     }
-
-    // mark user-specific deleted status (create or update)
-    return client.userMessageStatus.upsert({ where: { userId_messageId: { userId, messageId } }, update: { isDeleted: true }, create: { userId, messageId, isDeleted: true, isRead: true } });
   }
 }

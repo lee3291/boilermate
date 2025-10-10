@@ -1,6 +1,21 @@
 /**
- * Minimal interfaces that match Prisma generated entities used by the chat module
+ * This is the place you create the interface to ensure type matching when working with the SERVICE of the MODULE
+ * There are basically 2 interface you need for every API you created,
  */
+
+//* This section is reserved for basic interface
+export interface MessageWithStatusDetails {
+  id: string; // message id
+  chatId: string // chat box id
+  senderId: string // message owner
+  content: string // message content
+  isEdited: boolean // is this message been edited yet ?
+  isDeleted: boolean // is this message been deleted for everyone yet?
+  createdAt: Date;
+  updatedAt: Date;
+  isDeletedForYou?: boolean // this is a merge between the message with the message status table to form 1 single object for performance boost
+}
+
 export interface ChatDetails {
   id: string;
   userAId: string;
@@ -19,13 +34,7 @@ export interface MessageDetails {
   updatedAt: Date;
 }
 
-export interface UserMessageStatusDetails {
-  id: number;
-  userId: string;
-  messageId: string;
-  isDeleted: boolean;
-  isRead: boolean;
-}
+//* This section is reserved for sending message
 
 export interface sendMessageDetails {
   chatId?: string;
@@ -37,15 +46,28 @@ export interface sendMessageResults {
   message: MessageDetails;
   chatCreated: boolean; // return true for first time chat
   chat?: ChatDetails;
-  statues: UserMessageStatusDetails;
 }
 
+//* This section is reserved for getting the message history
+
 export interface getMessagesDetails {
-  chatId: string,
   userId: string,
 }
 
 export interface getMessagesResults {
-  messages: MessageDetails[],
-  statues: UserMessageStatusDetails[],
+ messages: MessageWithStatusDetails[]
 }
+
+//* This section is reserved for editing a message, it should return MessageDetails
+export interface editMessageDetails {
+  content: string,
+  userId: string
+}
+
+//* This section is reserved for deleteing a message
+
+export interface deleteMessageDetails {
+  userId: string,
+  forEveryone: boolean
+}
+
