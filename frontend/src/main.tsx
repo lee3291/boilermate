@@ -50,6 +50,11 @@ const router = createBrowserRouter([
     path: "/reset-password",
     element: <ResetPasswordPage />,
   },
+  // Dashboard
+  {
+    path: "/otp-request",
+    element: <OTPRequestPage />,
+  },
   // NOTES: you can just do a similar setup to test the page you created
 ])
 
