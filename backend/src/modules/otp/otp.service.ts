@@ -1,11 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import nodemailer from 'nodemailer';
-
-interface OTPRecord {
-    otp: string;
-    expires: number;
-}
-
+import {OTPRecord} from './interfaces/otp.interface';
 @Injectable()
 export class OTPService {
     //Store OPT for each user

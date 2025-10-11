@@ -1,5 +1,6 @@
-import React from "react"
-import { X } from "lucide-react"
+import type React from "react"
+import { useState } from "react"
+import { X, Upload } from "lucide-react"
 
 interface ListingProps {
     isOpen: boolean
@@ -7,6 +8,8 @@ interface ListingProps {
 }
 
 export default function Listing({ isOpen, onClose }: ListingProps) {
+    const [selectedImages, setSelectedImages] = useState<File[]>([])
+    const [imagePreviews, setImagePreviews] = useState<string[]>([])
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
@@ -20,8 +23,32 @@ export default function Listing({ isOpen, onClose }: ListingProps) {
 
     const handlePositiveNumber = (e: React.FormEvent<HTMLInputElement>) => {
         const value = e.currentTarget.value
-        // Remove anything that’s not a digit
+        // Remove anything that's not a digit
         e.currentTarget.value = value.replace(/[^0-9]/g, "")
+    }
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files
+        if (!files) {
+            return
+        }
+
+        const newFiles = Array.from(files)
+        setSelectedImages((prev) => [...prev, ...newFiles])
+
+        // Create preview URLs
+        newFiles.forEach((file) => {
+            const reader = new FileReader()
+            reader.onloadend = () => {
+                setImagePreviews((prev) => [...prev, reader.result as string])
+            }
+            reader.readAsDataURL(file)
+        })
+    }
+
+    const removeImage = (index: number) => {
+        setSelectedImages((prev) => prev.filter((_, i) => i !== index))
+        setImagePreviews((prev) => prev.filter((_, i) => i !== index))
     }
 
     return (
@@ -96,6 +123,47 @@ export default function Listing({ isOpen, onClose }: ListingProps) {
                                 required
                             />
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">Photos</label>
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                            <input
+                                type="file"
+                                id="images"
+                                accept="image/*"
+                                multiple
+                                onChange={handleImageUpload}
+                                className="hidden"
+                            />
+                            <label htmlFor="images" className="cursor-pointer flex flex-col items-center gap-2">
+                                <Upload className="w-8 h-8 text-gray-400" />
+                                <span className="text-sm text-gray-600">Click to upload images</span>
+                                <span className="text-xs text-gray-400">PNG, JPG up to 10MB</span>
+                            </label>
+                        </div>
+
+                        {/* Image Previews */}
+                        {imagePreviews.length > 0 && (
+                            <div className="grid grid-cols-3 gap-4 mt-4">
+                                {imagePreviews.map((preview, index) => (
+                                    <div key={index} className="relative group">
+                                        <img
+                                            src={preview || "/placeholder.svg"}
+                                            alt={`Preview ${index + 1}`}
+                                            className="w-full h-32 object-cover rounded-lg"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => removeImage(index)}
+                                            className="absolute top-2 right-2 bg-black/70 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Description */}
