@@ -1,14 +1,48 @@
 import React, { useState, type FormEvent } from 'react';
 import InputField from '../../components/InputField';
+import api from '../../services/api';
 
 const SignUpPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    console.log('Submitting with:', { email, password }); // This will be replaced with backend code
+
+    // client side password validation
+    if (password !== confirmPassword) {
+      alert('Password do not match.');
+      return;
+    }
+
+    try {
+      const res = await api.post('/auth/register', {
+        email,
+        password,
+      });
+      alert(`Account created for ${res.data.email}`);
+      console.log('Registration Success:', res.data);
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      if (error.response) {
+        console.error('Server error:', error.response.data);
+
+        const backendMessage = error.response.data?.message;
+
+        // Normalize message (string or array)
+        const message = Array.isArray(backendMessage)
+          ? backendMessage.join(', ')
+          : backendMessage || 'Something went wrong.';
+
+        alert(`${message}`);
+      } else {
+        console.error('Network error:', error.message);
+        alert('Network error — check if backend is running.');
+      }
+    }
   };
 
   return (
