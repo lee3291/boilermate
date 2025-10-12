@@ -38,7 +38,6 @@ export default function OTPRequestPage() {
     }
     //Send email to verify page so user can later ask for resend OTP
     try {
-      console.log(email);
       await fetch("http://localhost:3000/otp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

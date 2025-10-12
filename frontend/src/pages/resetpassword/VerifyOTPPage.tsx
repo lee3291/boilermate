@@ -84,8 +84,6 @@ export default function VerifyOTPPage() {
                                 Resend
                             </button>
                         </p>
-
-
                     </form>
                 </div>
             </div>

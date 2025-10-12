@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { X, Upload } from "lucide-react";
+import { createListing } from "../../services/listingService";
 
 interface ListingFormProps {
     isOpen: boolean;
@@ -48,34 +49,31 @@ export default function ListingForm({ isOpen, onClose }: ListingFormProps) {
         e.preventDefault();
 
         try {
-            const response = await fetch("http://localhost:3000/listing/create", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    userID: "user123", // replace with actual logged-in user ID
-                    title,
-                    description,
-                    pricing: Number(rent), // convert str to int
-                    numberBed: Number(bedrooms), // convert str to int
-                    numberBath: Number(bathrooms), // convert str to int
-                    //currently not store photo
-                    //media: selectedImages.map(file => file.name),
-                }),
+            await createListing({
+                userID: "user123",
+                title,
+                description,
+                pricing: Number(rent),
+                numberBed: Number(bedrooms),
+                numberBath: Number(bathrooms),
+                media: [],
             });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                alert("You have just created a listing successfully!");
-            } else {
-                alert(data.message || "Something went wrong");
-            }
+            alert("You have just created a listing successfully!");
+            //Reset
+            setTitle("");
+            setAddress("");
+            setRent("");
+            setBedrooms("");
+            setBathrooms("");
+            setDescription("");
+            setSelectedImages([]);
+            setImagePreviews([]);
+            onClose();
         } catch (err) {
             console.error(err);
             alert("Something went wrong");
         }
 
-        onClose();
     };
 
     return (
