@@ -16,6 +16,13 @@ import {
 export class ChatsController {
   constructor(private readonly chatsService: ChatsService) {}
 
+  @Get()
+  @HttpCode(200)
+  async getChats(@Body() dto: GetChatsDto) {
+    const result = await this.chatsService.getChats(dto as any);
+    return result;
+  }
+
   // Send message - either to existing chat or by recipientId
   @Post('messages')
   @HttpCode(201)

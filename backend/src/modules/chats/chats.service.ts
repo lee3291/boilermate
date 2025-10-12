@@ -20,7 +20,7 @@ import { PrismaService } from '@core/database/prisma.service';
 
 @Injectable()
 export class ChatsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Send a message. If chatId not provided, find or create the chat between sender and recipient.

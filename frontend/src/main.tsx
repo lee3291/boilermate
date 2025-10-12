@@ -4,6 +4,7 @@ import './style.css'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 // Import all top-level views/components
+import ChatPage from './pages/user/chat/ChatPage.tsx';
 
 // Components used for protected areas
 import App from './App.tsx'
@@ -40,6 +41,11 @@ const router = createBrowserRouter([
   {
 
   },
+
+  {
+    path: '/messages',
+    element: <ChatPage />
+  }
 
   // NOTES: you can just do a similar setup to test the page you created
 ])
