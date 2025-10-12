@@ -34,6 +34,15 @@ export interface MessageDetails {
   updatedAt: Date;
 }
 
+//* This section is reserved for getting chatIds
+export interface getChatsDetails {
+  userId: string
+}
+
+export interface getChatsResults {
+  chats: ChatDetails[]
+}
+
 //* This section is reserved for sending message
 
 export interface sendMessageDetails {

@@ -62,9 +62,23 @@ export class ChatDto {
 
 //* This section is used for specific response (get, post, ...)
 
+export class getChatsResponseDto {
+  message: string;
+  chats: ChatDto[];
+
+  static fromChats(rawChats: ChatDetails[]): getChatsResponseDto {
+    const transformedList = rawChats.map(ChatDto.fromInterface);
+
+    return {
+      message: 'All chats of user retrieved sucessfully',
+      chats: transformedList
+    }
+  }
+}
+
 export class sendMessageResponseDto {
-  message: string; // this is basically a tracking message if you want it. technically unncessary
-  data: MessageWithStatusDto;
+  idk: string; // this is basically a tracking message if you want it. technically unncessary
+  message: MessageWithStatusDto;
   chat?: ChatDto;
 
   static fromResult(
@@ -73,8 +87,8 @@ export class sendMessageResponseDto {
     chatCreated: boolean
   ): sendMessageResponseDto {
     const response: sendMessageResponseDto = {
-      message: chatCreated ? 'New chat started and message sent.' : 'Message sent successfully.',
-      data: MessageWithStatusDto.fromInterface(MessageWithStatusDetails),
+      idk: chatCreated ? 'New chat started and message sent.' : 'Message sent successfully.',
+      message: MessageWithStatusDto.fromInterface(MessageWithStatusDetails),
     };
 
     if (chatCreated && chatDetails) {
@@ -87,14 +101,14 @@ export class sendMessageResponseDto {
 
 export class getHistoryResponseDto {
   message: string;
-  data: MessageWithStatusDto[];
+  messages: MessageWithStatusDto[];
 
   static fromHistory(rawHistory: MessageWithStatusDetails[]): getHistoryResponseDto {
     const transformedList = rawHistory.map(MessageWithStatusDto.fromInterface);
 
     return {
       message: 'Chat history retrieved successfully',
-      data: transformedList,
+      messages: transformedList,
     }
   }
 }

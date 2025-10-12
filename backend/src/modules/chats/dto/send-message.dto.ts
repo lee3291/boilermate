@@ -4,8 +4,8 @@
  * Note: validation decorators removed to avoid a hard dependency on class-validator in this patch.
  */
 export class SendMessageDto {
-  chatId?: string;
+  chatId?: string; // doesn't have chatId if this is the first time sending message
   senderId: string;
-  recipientId: string;
+  recipientId?: string; // technically shouldn't need recipient when sending to existing chat
   content: string;
 }

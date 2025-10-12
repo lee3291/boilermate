@@ -1,53 +1,217 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  getChats as apiGetChats,
+  getHistory as apiGetHistory,
+  sendMessage as apiSendMessage,
+  editMessage as apiEditMessage,
+  deleteMessage as apiDeleteMessage,
+} from '@/services/chatService';
+import type {
+  Chat,
+  MessageWithStatus,
+  getChatsRequest,
+  getChatsResponse,
+  getHistoryRequest,
+  getHistoryResponse,
+  sendMessageRequest,
+  sendMessageResponse,
+  editMessageRequest,
+  deleteMessageRequest,
+} from '@/types/chats/chat';
 
-type Message = { id: string; chatId: string; senderId: string; content: string; createdAt: string };
-type Conversation = { id: string; otherUsernameId: string; preview: string };
+export default function useChatLogic(initialUserId: string) {
+  const [currentUserId, setCurrentUserId] = useState<string>(initialUserId); // initialUserId allow pre-set in page
+  const [conversations, setConversations] = useState<Chat[]>([]); // populate the chat sidebar
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null); // enable clicking for the chat sidebar, save state
+  const [messages, setMessages] = useState<MessageWithStatus[]>([]); // set the message display part in the chat window
+  const [messageInput, setMessageInput] = useState<string>(''); // set the message in the input bar
+  const [loadingChats, setLoadingChats] = useState(false); // set loading state when fetching all chatIds in side bar
+  const [loadingMessages, setLoadingMessages] = useState(false); // set loading state when fetching all the messages in chat window
+  const [error, setError] = useState<string | null>(null); // set error state when handling events
 
-export default function useChatLogic(initialUserId = '') {
-  const [currentUser, setCurrentUser] = useState<string>(initialUserId);
-  const [selectedChatId, setSelectedChatId] = useState<string>('chat-1');
+  // fetch all chats for current user
+  const fetchChats = useCallback(async (userId?: string) => {
+    console.log('check chat fetching')
 
-  // fake conversations/messages for prototype
-  const conversations: Conversation[] = useMemo(
-    () =>
-      new Array(8).fill(0).map((_, i) => ({ id: `chat-${i + 1}`, otherUsernameId: `user-${i + 2}`, preview: `Last message preview ${i + 1}` })),
+    if (!userId) return;
+    setLoadingChats(true);
+    setError(null);
+    try {
+      const req: getChatsRequest = { userId };
+
+      console.log('chat fetch wtf happen here ????', req)
+      const res: getChatsResponse = await apiGetChats(req);
+      console.log('the hell ???')
+      setConversations(res.chats || []);
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to load chats');
+    } finally {
+      setLoadingChats(false);
+    }
+  }, []);
+
+  // fetch history for selected chat and current user
+  const fetchHistory = useCallback(
+    async (chatId?: string, userId?: string) => {
+      if (!chatId || !userId) return;
+      setLoadingMessages(true);
+      setError(null);
+      try {
+        const req: getHistoryRequest = { userId };
+        const res: getHistoryResponse = await apiGetHistory(chatId, req);
+        setMessages(res.messages || []);
+      } catch (err: any) {
+        setError(err?.message ?? 'Failed to load messages');
+      } finally {
+        setLoadingMessages(false);
+      }
+    },
     []
   );
 
-  const initialMessages: Message[] = useMemo(
-    () => new Array(40).fill(0).map((_, i) => ({ id: `m-${i + 1}`, chatId: `chat-${(i % 8) + 1}`, senderId: i % 2 === 0 ? 'user-1' : 'user-2', content: `Fake message ${i + 1}`, createdAt: new Date().toISOString() })),
-    []
+  // When currentUserId changes fetch chats, this should be deleted in the future
+  useEffect(() => {
+    if (!currentUserId) return;
+    fetchChats(currentUserId);
+  }, [currentUserId, fetchChats]);
+
+  // When selected chat changes fetch its history
+  useEffect(() => {
+    if (!selectedChatId || !currentUserId) {
+      setMessages([]);
+      return;
+    }
+    fetchHistory(selectedChatId, currentUserId);
+  }, [selectedChatId, currentUserId, fetchHistory]);
+
+  // handle input change, useCallback just for fun literally
+  const handleInputChange = useCallback((value: string) => {
+    setMessageInput(value);
+  }, []);
+
+  // send message (handles both existing chat and first-time if needed)
+  const send = useCallback(
+    async (overrides?: { recipientId?: string }) => {
+      if (!currentUserId) {
+        setError('senderId required');
+        return null;
+      }
+
+      // trim to remove trailing whitespace
+      if (!messageInput?.trim()) return null;
+      setError(null);
+
+      try {
+        // build the request
+        const payload: sendMessageRequest = {
+          chatId: selectedChatId ?? undefined,
+          senderId: currentUserId,
+          recipientId: overrides?.recipientId,
+          content: messageInput.trim(),
+        };
+
+        const res: sendMessageResponse = await apiSendMessage(payload);
+
+        // update messages list (append)
+        if (res?.message) {
+          // have to copy ...prev to make state pure
+          setMessages((prev) => [...prev, res.message]);
+        }
+        // if a new chat was created, add it to conversations and select it
+        if (res?.chat) {
+          setConversations((prev) => {
+            const exists = prev.find((c) => c.id === res.chat.id);
+            if (exists) return prev;
+            return [res.chat, ...prev]; // add new chat to top of the conversation list
+          });
+          if (!selectedChatId) { // set selected id to new chat
+            setSelectedChatId(res.chat.id);
+          }
+        }
+        setMessageInput('');
+        return res;
+      } catch (err: any) {
+        setError(err?.message ?? 'Failed to send message');
+        return null;
+      }
+    },
+    [currentUserId, messageInput, selectedChatId]
   );
 
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  // edit a message (only updates local state after API call)
+  const edit = useCallback(
+    async (messageId: string, content: string) => {
+      if (!currentUserId) {
+        setError('userId required');
+        return false;
+      }
 
-  const messagesFor = useCallback((chatId: string) => messages.filter((m) => m.chatId === chatId), [messages]);
+      try {
+        const req: editMessageRequest = { content, userId: currentUserId };
+        await apiEditMessage(messageId, req);
+        setMessages((prev) =>
+          prev.map((m) => (m.id === messageId ? { ...m, content, isEdited: true } : m))
+        );
+        return true;
+      } catch (err: any) {
+        setError(err?.message ?? 'Failed to edit message');
+        return false;
+      }
+    },
+    [currentUserId]
+  );
 
-  const sendMessage = useCallback((chatId: string, content: string) => {
-    const id = `m-${Date.now()}`;
-    const m: Message = { id, chatId, senderId: currentUser || 'user-1', content, createdAt: new Date().toISOString() };
-    setMessages((prev) => [...prev, m]);
-    return m;
-  }, [currentUser]);
+  // delete a message (forEveryone toggles message.isDeleted, otherwise mark isDeletedForYou)
+  const remove = useCallback(
+    async (messageId: string, forEveryone = false) => {
+      if (!currentUserId) {
+        setError('userId required');
+        return false;
+      }
+      try {
+        const req: deleteMessageRequest = { userId: currentUserId, forEveryone };
+        await apiDeleteMessage(messageId, req);
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === messageId
+              ? forEveryone
+                ? { ...m, isDeleted: true }
+                : { ...m, isDeletedForYou: true }
+              : m
+          )
+        );
+        return true;
+      } catch (err: any) {
+        setError(err?.message ?? 'Failed to delete message');
+        return false;
+      }
+    },
+    [currentUserId]
+  );
 
-  const editMessage = useCallback((messageId: string, content: string) => {
-    setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, content } : m)));
-  }, []);
-
-  const deleteMessage = useCallback((messageId: string) => {
-    setMessages((prev) => prev.filter((m) => m.id !== messageId));
-  }, []);
+  const messagesForSelected = useMemo(() => messages, [messages]);
 
   return {
-    currentUser,
-    setCurrentUser,
+    // state
+    currentUserId,
+    setCurrentUserId,
+    conversations,
     selectedChatId,
     setSelectedChatId,
-    conversations,
-    messages,
-    messagesFor,
-    sendMessage,
-    editMessage,
-    deleteMessage,
+    messages: messagesForSelected,
+    messageInput,
+
+    // status
+    loadingChats,
+    loadingMessages,
+    error,
+
+    // actions
+    fetchChats,
+    fetchHistory,
+    handleInputChange,
+    send,
+    edit,
+    remove,
   };
 }

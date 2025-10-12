@@ -1,73 +1,68 @@
-// ...existing code...
 import axios from 'axios';
+import type { deleteMessageRequest, editMessageRequest, getChatsRequest, getChatsResponse, getHistoryRequest, getHistoryResponse, sendMessageRequest, sendMessageResponse } from '../types/chats';
 
 const api = axios.create({
   baseURL: 'http://localhost:3000',
   headers: { 'Content-Type': 'application/json' },
 });
 
-export interface SendMessagePayload {
-  chatId?: string;
-  senderId: string;
-  recipientId?: string;
-  content: string;
-}
-
-export interface MessageDetails {
-  id: string;
-  chatId: string;
-  senderId: string;
-  content: string;
-  isEdited: boolean;
-  isDeleted: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface SendMessageResult {
-  message: MessageDetails;
-  chatCreated: boolean;
-  chat?: any;
-  statuses?: any[];
-}
-
-export async function sendMessage(payload: SendMessagePayload): Promise<SendMessageResult> {
+export async function getChats(request: getChatsRequest): Promise<getChatsResponse> {
   try {
-    const res = await api.post('/chats/messages', payload);
-    return res.data.data;
-  } catch (err: any) {
-    throw err.response?.data ?? err;
+    console.log('see if getChats being called')
+    const res = await api.get('/chats', { params: request });
+    console.log("wtf", res)
+
+    return res.data
+  } catch (error: any) {
+    console.log(error)
+    throw error.response?.data ?? error;
   }
 }
 
-export async function getHistory(chatId: string, userId: string) {
+export async function sendMessage(request: sendMessageRequest): Promise<sendMessageResponse> {
+  try {
+    const res = await api.post('/chats/messages', request);
+    console.log('send message', res)
+
+    return res.data;
+  } catch (error: any) {
+    throw error.response?.data ?? error;
+  }
+}
+
+export async function getHistory(chatId: string, request: getHistoryRequest): Promise<getHistoryResponse> {
   try {
     const res = await api.get(`/chats/${encodeURIComponent(chatId)}/messages`, {
-      params: { userId },
+      params: request,
     });
-    return res.data.data;
-  } catch (err: any) {
-    throw err.response?.data ?? err;
+    console.log('history', res)
+
+    return res.data;
+  } catch (error: any) {
+    throw error.response?.data ?? error;
   }
 }
 
-export async function editMessage(messageId: string, payload: { senderId: string; content: string }) {
+export async function editMessage(messageId: string, request: editMessageRequest): Promise<void> {
   try {
-    const res = await api.put(`/chats/messages/${encodeURIComponent(messageId)}`, payload);
-    return res.data.data ?? true;
-  } catch (err: any) {
-    throw err.response?.data ?? err;
+    const res = await api.put(`/chats/messages/${encodeURIComponent(messageId)}`, request);
+    console.log('edit message', res)
+
+  } catch (error: any) {
+    throw error.response?.data ?? error;
   }
 }
 
-export async function deleteMessage(messageId: string, payload: { senderId: string; forEveryone?: boolean }) {
+export async function deleteMessage(messageId: string, request: deleteMessageRequest): Promise<void> {
   try {
-    const res = await api.delete(`/chats/messages/${encodeURIComponent(messageId)}`, { data: payload });
-    return res.data.data ?? true;
-  } catch (err: any) {
-    throw err.response?.data ?? err;
+    const res = await api.delete(`/chats/messages/${encodeURIComponent(messageId)}`, {
+      params: request
+    });
+    console.log('delete message', res)
+
+  } catch (error: any) {
+    throw error.response?.data ?? error;
   }
 }
 
-export default { sendMessage, getHistory, editMessage, deleteMessage };
-// ...existing code...
+export default { getChats, sendMessage, getHistory, editMessage, deleteMessage };

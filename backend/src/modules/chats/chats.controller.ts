@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, HttpCode, Logger } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, HttpCode, Logger, Query } from '@nestjs/common';
 import { ChatsService } from './chats.service';
 import {
   SendMessageDto,
@@ -7,6 +7,8 @@ import {
   GetHistoryDto,
   sendMessageResponseDto,
   getHistoryResponseDto,
+  GetChatsDto,
+  getChatsResponseDto,
 } from './dto';
 
 /**
@@ -18,9 +20,9 @@ export class ChatsController {
 
   @Get()
   @HttpCode(200)
-  async getChats(@Body() dto: GetChatsDto) {
+  async getChats(@Query() dto: GetChatsDto) {
     const result = await this.chatsService.getChats(dto as any);
-    return result;
+    return getChatsResponseDto.fromChats(result.chats);
   }
 
   // Send message - either to existing chat or by recipientId
@@ -29,19 +31,14 @@ export class ChatsController {
   async sendMessage(@Body() dto: SendMessageDto) {
     // temporary flow: senderId must be provided in the body
     // service expects the payload object that includes senderId
-    Logger.log("message post", dto);
-    
     const result = await this.chatsService.sendMessage(dto as any);
-
-    Logger.log("wtf", result);
-
     return sendMessageResponseDto.fromResult(result.message, result.chat, result.chatCreated);
   }
 
   // Get chat history for a chat id
   @Get(':chatId/messages')
   @HttpCode(200)
-  async getHistory(@Param('chatId') chatId: string, @Body() dto: GetHistoryDto) {
+  async getHistory(@Param('chatId') chatId: string, @Query() dto: GetHistoryDto) {
     const result = await this.chatsService.getHistory(chatId, dto as any);
     return getHistoryResponseDto.fromHistory(result.messages)
   }
@@ -56,7 +53,7 @@ export class ChatsController {
   // Delete message (for you or everyone)
   @Delete('messages/:messageId')
   @HttpCode(204)
-  async deleteMessage(@Param('messageId') messageId: string, @Body() dto: DeleteMessageDto) {
+  async deleteMessage(@Param('messageId') messageId: string, @Query() dto: DeleteMessageDto) {
     await this.chatsService.deleteMessage(messageId, dto);
   }
 }
