@@ -1,271 +1,238 @@
-/* ROBOTO */
-
 @font-face {
-  font-family: "Roboto";
-  src: url("../assets/fonts/Roboto-Thin.ttf") format("truetype");
-  font-weight: 100;
-  font-style: normal;
-  font-display: swap;
+    font-family: RobotoThin;
+    src: url("./assets/fonts/Roboto-Thin.ttf");
 }
 @font-face {
-  font-family: "Roboto";
-  src: url("../assets/fonts/Roboto-ThinItalic.ttf") format("truetype");
-  font-weight: 100;
-  font-style: italic;
-  font-display: swap;
+    font-family: RobotoThinItalic;
+    src: url("./assets/fonts/Roboto-ThinItalic.ttf");
 }
 
 @font-face {
-  font-family: "Roboto";
-  src: url("../assets/fonts/Roboto-ExtraLight.ttf") format("truetype");
-  font-weight: 200;
-  font-style: normal;
-  font-display: swap;
+    font-family: RobotoExtraLight;
+    src: url("./assets/fonts/Roboto-ExtraLight.ttf");
 }
 @font-face {
-  font-family: "Roboto";
-  src: url("../assets/fonts/Roboto-ExtraLightItalic.ttf") format("truetype");
-  font-weight: 200;
-  font-style: italic;
-  font-display: swap;
+    font-family: RobotoExtraLightItalic;
+    src: url("./assets/fonts/Roboto-ExtraLightItalic.ttf");
 }
 
 @font-face {
-  font-family: "Roboto";
-  src: url("../assets/fonts/Roboto-Light.ttf") format("truetype");
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
+    font-family: RobotoLight;
+    src: url("./assets/fonts/Roboto-Light.ttf");
 }
 @font-face {
-  font-family: "Roboto";
-  src: url("../assets/fonts/Roboto-LightItalic.ttf") format("truetype");
-  font-weight: 300;
-  font-style: italic;
-  font-display: swap;
+    font-family: RobotoLightItalic;
+    src: url("./assets/fonts/Roboto-LightItalic.ttf");
 }
 
 @font-face {
-  font-family: "Roboto";
-  src: url("../assets/fonts/Roboto-Regular.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
+    font-family: RobotoRegular;
+    src: url("./assets/fonts/Roboto-Regular.ttf");
 }
 @font-face {
-  font-family: "Roboto";
-  src: url("../assets/fonts/Roboto-Italic.ttf") format("truetype");
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
+    font-family: RobotoItalic;
+    src: url("./assets/fonts/Roboto-Italic.ttf");
 }
 
 @font-face {
-  font-family: "Roboto";
-  src: url("../assets/fonts/Roboto-Medium.ttf") format("truetype");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
+    font-family: RobotoMedium;
+    src: url("./assets/fonts/Roboto-Medium.ttf");
 }
 @font-face {
-  font-family: "Roboto";
-  src: url("../assets/fonts/Roboto-MediumItalic.ttf") format("truetype");
-  font-weight: 500;
-  font-style: italic;
-  font-display: swap;
+    font-family: RobotoMediumItalic;
+    src: url("./assets/fonts/Roboto-MediumItalic.ttf");
 }
 
 @font-face {
-  font-family: "Roboto";
-  src: url("../assets/fonts/Roboto-SemiBold.ttf") format("truetype");
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
+    font-family: RobotoSemiBold;
+    src: url("./assets/fonts/Roboto-SemiBold.ttf");
 }
 @font-face {
-  font-family: "Roboto";
-  src: url("../assets/fonts/Roboto-SemiBoldItalic.ttf") format("truetype");
-  font-weight: 600;
-  font-style: italic;
-  font-display: swap;
+    font-family: RobotoSemiBoldItalic;
+    src: url("./assets/fonts/Roboto-SemiBoldItalic.ttf");
 }
 
 @font-face {
-  font-family: "Roboto";
-  src: url("../assets/fonts/Roboto-Bold.ttf") format("truetype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
+    font-family: RobotoBold;
+    src: url("./assets/fonts/Roboto-Bold.ttf");
 }
 @font-face {
-  font-family: "Roboto";
-  src: url("../assets/fonts/Roboto-BoldItalic.ttf") format("truetype");
-  font-weight: 700;
-  font-style: italic;
-  font-display: swap;
+    font-family: RobotoBoldItalic;
+    src: url("./assets/fonts/Roboto-BoldItalic.ttf");
 }
 
 @font-face {
-  font-family: "Roboto";
-  src: url("../assets/fonts/Roboto-ExtraBold.ttf") format("truetype");
-  font-weight: 800;
-  font-style: normal;
-  font-display: swap;
+    font-family: RobotoExtraBold;
+    src: url("./assets/fonts/Roboto-ExtraBold.ttf");
 }
 @font-face {
-  font-family: "Roboto";
-  src: url("../assets/fonts/Roboto-ExtraBoldItalic.ttf") format("truetype");
-  font-weight: 800;
-  font-style: italic;
-  font-display: swap;
+    font-family: RobotoExtraBoldItalic;
+    src: url("./assets/fonts/Roboto-ExtraBoldItalic.ttf");
 }
 
 @font-face {
-  font-family: "Roboto";
-  src: url("../assets/fonts/Roboto-Black.ttf") format("truetype");
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
+    font-family: RobotoBlack;
+    src: url("./assets/fonts/Roboto-Black.ttf");
 }
 @font-face {
-  font-family: "Roboto";
-  src: url("../assets/fonts/Roboto-BlackItalic.ttf") format("truetype");
-  font-weight: 900;
-  font-style: italic;
-  font-display: swap;
+    font-family: RobotoBlackItalic;
+    src: url("./assets/fonts/Roboto-BlackItalic.ttf");
 }
 
-/* SOURCE SERIF */
+/* SOURCE SERIF 4 */
 
 @font-face {
-  font-family: "Source Serif 4";
-  src: url("../assets/fonts/SourceSerif4-ExtraLight.ttf") format("truetype");
-  font-weight: 200;
-  font-style: normal;
-  font-display: swap;
+    font-family: SourceSerif4ExtraLight;
+    src: url("./assets/fonts/SourceSerif4-ExtraLight.ttf");
 }
 @font-face {
-  font-family: "Source Serif 4";
-  src: url("../assets/fonts/SourceSerif4-ExtraLightItalic.ttf") format("truetype");
-  font-weight: 200;
-  font-style: italic;
-  font-display: swap;
+    font-family: SourceSerif4ExtraLightItalic;
+    src: url("./assets/fonts/SourceSerif4-ExtraLightItalic.ttf");
 }
 
 @font-face {
-  font-family: "Source Serif 4";
-  src: url("../assets/fonts/SourceSerif4-Light.ttf") format("truetype");
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
+    font-family: SourceSerif4Light;
+    src: url("./assets/fonts/SourceSerif4-Light.ttf");
 }
 @font-face {
-  font-family: "Source Serif 4";
-  src: url("../assets/fonts/SourceSerif4-LightItalic.ttf") format("truetype");
-  font-weight: 300;
-  font-style: italic;
-  font-display: swap;
+    font-family: SourceSerif4LightItalic;
+    src: url("./assets/fonts/SourceSerif4-LightItalic.ttf");
 }
 
 @font-face {
-  font-family: "Source Serif 4";
-  src: url("../assets/fonts/SourceSerif4-Regular.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
+    font-family: SourceSerif4Regular;
+    src: url("./assets/fonts/SourceSerif4-Regular.ttf");
 }
 @font-face {
-  font-family: "Source Serif 4";
-  src: url("../assets/fonts/SourceSerif4-Italic.ttf") format("truetype");
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
+    font-family: SourceSerif4Italic;
+    src: url("./assets/fonts/SourceSerif4-Italic.ttf");
 }
 
 @font-face {
-  font-family: "Source Serif 4";
-  src: url("../assets/fonts/SourceSerif4-Medium.ttf") format("truetype");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
+    font-family: SourceSerif4Medium;
+    src: url("./assets/fonts/SourceSerif4-Medium.ttf");
 }
 @font-face {
-  font-family: "Source Serif 4";
-  src: url("../assets/fonts/SourceSerif4-MediumItalic.ttf") format("truetype");
-  font-weight: 500;
-  font-style: italic;
-  font-display: swap;
+    font-family: SourceSerif4MediumItalic;
+    src: url("./assets/fonts/SourceSerif4-MediumItalic.ttf");
 }
 
 @font-face {
-  font-family: "Source Serif 4";
-  src: url("../assets/fonts/SourceSerif4-SemiBold.ttf") format("truetype");
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
+    font-family: SourceSerif4SemiBold;
+    src: url("./assets/fonts/SourceSerif4-SemiBold.ttf");
 }
 @font-face {
-  font-family: "Source Serif 4";
-  src: url("../assets/fonts/SourceSerif4-SemiBoldItalic.ttf") format("truetype");
-  font-weight: 600;
-  font-style: italic;
-  font-display: swap;
+    font-family: SourceSerif4SemiBoldItalic;
+    src: url("./assets/fonts/SourceSerif4-SemiBoldItalic.ttf");
 }
 
 @font-face {
-  font-family: "Source Serif 4";
-  src: url("../assets/fonts/SourceSerif4-Bold.ttf") format("truetype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
+    font-family: SourceSerif4Bold;
+    src: url("./assets/fonts/SourceSerif4-Bold.ttf");
 }
 @font-face {
-  font-family: "Source Serif 4";
-  src: url("../assets/fonts/SourceSerif4-BoldItalic.ttf") format("truetype");
-  font-weight: 700;
-  font-style: italic;
-  font-display: swap;
+    font-family: SourceSerif4BoldItalic;
+    src: url("./assets/fonts/SourceSerif4-BoldItalic.ttf");
 }
 
 @font-face {
-  font-family: "Source Serif 4";
-  src: url("../assets/fonts/SourceSerif4-ExtraBold.ttf") format("truetype");
-  font-weight: 800;
-  font-style: normal;
-  font-display: swap;
+    font-family: SourceSerif4ExtraBold;
+    src: url("./assets/fonts/SourceSerif4-ExtraBold.ttf");
 }
 @font-face {
-  font-family: "Source Serif 4";
-  src: url("../assets/fonts/SourceSerif4-ExtraBoldItalic.ttf") format("truetype");
-  font-weight: 800;
-  font-style: italic;
-  font-display: swap;
+    font-family: SourceSerif4ExtraBoldItalic;
+    src: url("./assets/fonts/SourceSerif4-ExtraBoldItalic.ttf");
 }
 
 @font-face {
-  font-family: "Source Serif 4";
-  src: url("../assets/fonts/SourceSerif4-Black.ttf") format("truetype");
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
+    font-family: SourceSerif4Black;
+    src: url("./assets/fonts/SourceSerif4-Black.ttf");
 }
 @font-face {
-  font-family: "Source Serif 4";
-  src: url("../assets/fonts/SourceSerif4-BlackItalic.ttf") format("truetype");
-  font-weight: 900;
-  font-style: italic;
-  font-display: swap;
+    font-family: SourceSerif4BlackItalic;
+    src: url("./assets/fonts/SourceSerif4-BlackItalic.ttf");
 }
 
-:root {
-  --font-sans: "Roboto", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
-  --font-serif: "Source Serif 4", Georgia, "Times New Roman", Times, serif;
+/* SOURCE SERIF 4 (18pt optical size) */
+
+@font-face {
+    font-family: SourceSerif4_18ptExtraLight;
+    src: url("./assets/fonts/SourceSerif4_18pt-ExtraLight.ttf");
+}
+@font-face {
+    font-family: SourceSerif4_18ptExtraLightItalic;
+    src: url("./assets/fonts/SourceSerif4_18pt-ExtraLightItalic.ttf");
 }
 
-body {
-  font-family: var(--font-sans);
+@font-face {
+    font-family: SourceSerif4_18ptLight;
+    src: url("./assets/fonts/SourceSerif4_18pt-Light.ttf");
 }
-.serif {
-  font-family: var(--font-serif);
+@font-face {
+    font-family: SourceSerif4_18ptLightItalic;
+    src: url("./assets/fonts/SourceSerif4_18pt-LightItalic.ttf");
+}
+
+@font-face {
+    font-family: SourceSerif4_18ptRegular;
+    src: url("./assets/fonts/SourceSerif4_18pt-Regular.ttf");
+}
+@font-face {
+    font-family: SourceSerif4_18ptItalic;
+    src: url("./assets/fonts/SourceSerif4_18pt-Italic.ttf");
+}
+
+@font-face {
+    font-family: SourceSerif4_18ptMedium;
+    src: url("./assets/fonts/SourceSerif4_18pt-Medium.ttf");
+}
+@font-face {
+    font-family: SourceSerif4_18ptMediumItalic;
+    src: url("./assets/fonts/SourceSerif4_18pt-MediumItalic.ttf");
+}
+
+@font-face {
+    font-family: SourceSerif4_18ptSemiBold;
+    src: url("./assets/fonts/SourceSerif4_18pt-SemiBold.ttf");
+}
+@font-face {
+    font-family: SourceSerif4_18ptSemiBoldItalic;
+    src: url("./assets/fonts/SourceSerif4_18pt-SemiBoldItalic.ttf");
+}
+
+@font-face {
+    font-family: SourceSerif4_18ptBold;
+    src: url("./assets/fonts/SourceSerif4_18pt-Bold.ttf");
+}
+@font-face {
+    font-family: SourceSerif4_18ptBoldItalic;
+    src: url("./assets/fonts/SourceSerif4_18pt-BoldItalic.ttf");
+}
+
+@font-face {
+    font-family: SourceSerif4_18ptExtraBold;
+    src: url("./assets/fonts/SourceSerif4_18pt-ExtraBold.ttf");
+}
+@font-face {
+    font-family: SourceSerif4_18ptExtraBoldItalic;
+    src: url("./assets/fonts/SourceSerif4_18pt-ExtraBoldItalic.ttf");
+}
+
+@font-face {
+    font-family: SourceSerif4_18ptBlack;
+    src: url("./assets/fonts/SourceSerif4_18pt-Black.ttf");
+}
+@font-face {
+    font-family: SourceSerif4_18ptBlackItalic;
+    src: url("./assets/fonts/SourceSerif4_18pt-BlackItalic.ttf");
+}
+
+@theme {
+    --font-roboto-regular: RobotoRegular, "sans-serif";
+    --font-roboto-italic: RobotoItalic, "sans-serif";
+    --font-sourceserif4-regular: SourceSerif4Regular, "serif";
+    --font-sourceserif4-italic: SourceSerif4Italic, "serif";
+    --font-sourceserif4-18pt-regular: SourceSerif4_18ptRegular, "serif";
+    --font-sourceserif4-18pt-italic: SourceSerif4_18ptItalic, "serif";
 }
 
