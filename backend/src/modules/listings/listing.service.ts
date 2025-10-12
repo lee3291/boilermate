@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaClient, Listing, Status } from '@prisma/client';
+import { PrismaClient} from '@prisma/client';
+import {Listing} from './interfaces/listing.interface';
 import { CreateListingDto } from './dtos/create-listing.dto';
 import { UpdateListingDto } from './dtos/update-listing.dto';
 
@@ -15,7 +16,7 @@ export class ListingService {
         return this.prisma.listing.create({
             data: {
                 ...dto,
-                status: Status.ACTIVE,
+                status: 'ACTIVE',
                 viewCount: 0,  // initialize view count
             },
         });

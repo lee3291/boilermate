@@ -13,8 +13,12 @@ export class CreateListingDto {
     @IsNumber()
     pricing: number;
 
-    @IsArray()
-    @IsString({ each: true })
+    @IsNumber()
+    numberBed: number;
+
+    @IsNumber()
+    numberBath: number;
+
     media: string[];
 }
 

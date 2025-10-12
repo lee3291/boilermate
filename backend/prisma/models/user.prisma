@@ -3,4 +3,5 @@ model User {
   email            String      @unique
   hashedPassword   String
   isVerified       Boolean     @default(false)
+  listings         Listing[]
 }

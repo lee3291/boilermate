@@ -4,8 +4,10 @@ export interface Listing {
     title: string;
     description: string;
     pricing: number;
-    media: string[];
-    status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+    //media: string[];
+    status: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+    numberBed : number;
+    numberBath : number;
     viewCount: number;
     createdAt: Date;
 }

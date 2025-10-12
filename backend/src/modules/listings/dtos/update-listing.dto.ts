@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsUUID, IsArray} from 'class-validator';
+import { IsString, IsNumber, IsUUID} from 'class-validator';
 
 export class UpdateListingDto {
     @IsUUID()
@@ -13,7 +13,9 @@ export class UpdateListingDto {
     @IsNumber()
     pricing: number;
 
-    @IsArray()
-    @IsString({ each: true })
-    media: string[];
+    @IsNumber()
+    numberBed: number;
+
+    @IsNumber()
+    numberBath: number;
 }

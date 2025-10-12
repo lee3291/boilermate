@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Plus } from "lucide-react"
-import Listing from "./pages/listing/Listing";
+import Listing from "./pages/listing/ListingForm";
 export default function App() {
     const [isModalOpen, setIsModalOpen] = useState(false)
     return (
