@@ -1,0 +1,80 @@
+enum ListingStatus {
+  ACTIVE
+  ARCHIVED
+  RESOLVED
+}
+
+enum FlagReason {
+  OUTDATED
+  SCAM
+  INACCURATE
+  OTHER
+}
+
+// ---------------- Core: Listing ----------------
+// (from diagram: listingID, creatorID, title, description, pricing, location,
+// media, status, viewCount, createdAt)
+model Listing {
+  id          String        @id @default(cuid())
+  creatorId   String                                        // user as plain string
+
+  title       String
+  description String        @db.Text
+  price       Int                                           // simple: cents (diagram: double)
+  location    String
+
+  mediaUrls   String[]                                      // Array<String>
+  status      ListingStatus @default(ACTIVE)
+
+  viewCount   Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  saves       SavedListing[]
+  contacts    ContactedListing[]
+  flags       ListingFlag[]
+
+  @@index([status])
+  @@index([location])
+  @@index([price])
+}
+
+// ---------------- Saves (compare/favorites) ----------------
+model SavedListing {
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@id([userId, listingId])
+  @@index([listingId])
+}
+
+// ---------------- Contacted (track “already contacted”) ----------------
+model ContactedListing {
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@id([userId, listingId])
+  @@index([listingId])
+}
+
+// ---------------- Flags (report/mark outdated) ----------------
+model ListingFlag {
+  id         String     @id @default(cuid())
+  listingId  String
+  reporterId String                                         // user as plain string
+  reason     FlagReason
+  note       String?     @db.Text
+  createdAt  DateTime    @default(now())
+
+  listing    Listing     @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+  @@index([reason])
+}
+
