@@ -12,7 +12,9 @@ export default function Listings() {
                 </div>
                 <div aria-hidden className="mt-10 w-px bg-gray-900 h-200" />
 
-                <div className="flex-1">This is where content must be rendered</div>
+                <div className="flex-1">
+                    This is where content must be rendered
+                </div>
             </div>
         </div>
     );
