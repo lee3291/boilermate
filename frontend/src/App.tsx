@@ -14,10 +14,13 @@ export default function App() {
                 className="fixed bottom-8 right-8 w-14 h-14 bg-black text-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-800 transition-colors"
                 aria-label="Add roommate listing"
             >
-                <Plus className="w-6 h-6 transition-transform duration-300 group-hover:rotate-90" />
+                <Plus className="w-6 h-6 transition-transform duration-300 group-hover:rotate-90"/>
             </button>
 
             <Listing isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}/>
+            <a href="/listing-map" className="text-blue-500 hover:underline font-bold">
+                Map of all listings
+            </a>
         </div>
 
     );
