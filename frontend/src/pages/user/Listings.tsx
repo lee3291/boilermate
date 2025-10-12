@@ -1,4 +1,5 @@
 import Navbar from "./components/Navbar.tsx"
+import CreateListingForm from "./CreateListingForm.tsx"
 
 export default function Listings() {
     return (
@@ -16,6 +17,8 @@ export default function Listings() {
                     This is where content must be rendered
                 </div>
             </div>
+
+            <CreateListingForm />
         </div>
     );
 }

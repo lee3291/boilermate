@@ -5,5 +5,5 @@ export class CreateListingDto {
   location!: string;
   mediaUrls!: string[];
   creatorId?: string;
-  status?: 'ACTIVE' | 'PAUSED'  | 'REMOVED';
+  status?: 'ACTIVE' | 'ARCHIVED' | 'RESOLVED';
 }
