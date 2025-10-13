@@ -9,18 +9,22 @@ export default function BugReportPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validation to check that all fields are filled
+
     if (!title || !description || !steps) {
       setMessage('Please fill in all fields.');
       return;
     }
 
     try {
+        // Send POST request to backend API
       const res = await fetch('http://localhost:3000/bug-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, description, stepsToReprod: steps }),
       });
 
+      // Handle successful submission
       if (res.ok) {
         setMessage('Bug report submitted successfully.');
         setTitle('');
