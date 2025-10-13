@@ -2,6 +2,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './style.css'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import BugReportPage from './pages/bug-report/BugReportPage';
+
 
 // Import all top-level views/components
 
@@ -38,7 +40,8 @@ const router = createBrowserRouter([
 
   // user role here, page related to user role in here
   {
-
+  path: '/bug-report',
+  element: <BugReportPage />,
   },
 
   // NOTES: you can just do a similar setup to test the page you created
