@@ -34,6 +34,9 @@ export class MessageWithStatusDto {
   createdAt: Date;
 
   @Expose()
+  imageUrl: string;
+
+  @Expose()
   isDeletedForYou: boolean; // The key field for the "delete for me" status
 
   static fromInterface(rawMessageWithStatusDetails: MessageWithStatusDetails): MessageWithStatusDto {

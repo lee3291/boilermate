@@ -3,7 +3,8 @@ export interface MessageWithStatus {
   id: string; // message id
   chatId: string // chat box id
   senderId: string // message owner
-  content: string // message content
+  content?: string // message content => now optional as may only send image
+  imageUrl?: string // image attached to a message => optional as may only send content
   isEdited: boolean // is this message been edited yet ?
   isDeleted: boolean // is this message been deleted for everyone yet?
   createdAt: Date;

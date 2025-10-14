@@ -4,15 +4,7 @@
  */
 
 //* This section is reserved for basic interface
-export interface MessageWithStatusDetails {
-  id: string; // message id
-  chatId: string // chat box id
-  senderId: string // message owner
-  content: string // message content
-  isEdited: boolean // is this message been edited yet ?
-  isDeleted: boolean // is this message been deleted for everyone yet?
-  createdAt: Date;
-  updatedAt: Date;
+export interface MessageWithStatusDetails extends MessageDetails {
   isDeletedForYou?: boolean // this is a merge between the message with the message status table to form 1 single object for performance boost
 }
 
@@ -24,12 +16,13 @@ export interface ChatDetails {
 }
 
 export interface MessageDetails {
-  id: string;
-  chatId: string;
-  senderId: string;
-  content: string;
-  isEdited: boolean;
-  isDeleted: boolean;
+  id: string; // message id
+  chatId: string // chat box id
+  senderId: string // message owner
+  content?: string // message content
+  imageUrl?: string // the link to the image, no need to send back the imageId and key to frontend
+  isEdited: boolean // is this message been edited yet ?
+  isDeleted: boolean // is this message been deleted for everyone yet?
   createdAt: Date;
   updatedAt: Date;
 }
@@ -49,7 +42,9 @@ export interface sendMessageDetails {
   chatId?: string;
   senderId: string;
   recipientId: string;
-  content: string;
+  content?: string;
+  imageUrl?: string; // need this to update the database
+  imageKey?: string; // this is a special location of the image on the bucket
 }
 export interface sendMessageResults {
   message: MessageDetails;
@@ -60,7 +55,7 @@ export interface sendMessageResults {
 //* This section is reserved for getting the message history
 
 export interface getMessagesDetails {
-  userId: string,
+  userId: string, // shouldn't need this in the future when authorized
 }
 
 export interface getMessagesResults {
@@ -69,6 +64,7 @@ export interface getMessagesResults {
 
 //* This section is reserved for editing a message, it should return MessageDetails
 export interface editMessageDetails {
+  // don't let them edit the picture lmao
   content: string,
   userId: string
 }
@@ -76,6 +72,7 @@ export interface editMessageDetails {
 //* This section is reserved for deleteing a message
 
 export interface deleteMessageDetails {
+  // may need to update as do we delete the message as well ???
   userId: string,
   forEveryone: string // used to be boolean but have to change as params only take string
 }

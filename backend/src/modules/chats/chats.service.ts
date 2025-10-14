@@ -67,17 +67,23 @@ export class ChatsService {
   /**
    * Send a message. If chatId not provided, find or create the chat between sender and recipient.
    * This uses a transaction when creating a chat + message + statuses so the operations are atomic.
+   * Now supports optional image attachments via imageId.
    */
   async sendMessage(sendMessageDetails: sendMessageDetails): Promise<sendMessageResults> {
     const client: any = this.prisma as any;
-    const { chatId, senderId, recipientId, content } = sendMessageDetails;
+    const { chatId, senderId, recipientId, content, imageUrl, imageKey } = sendMessageDetails;
 
     try {
+      // Validate: message must have either content or imageId
+      if (!content && !imageUrl) {
+        throw new BadRequestException('Message must have either content or image');
+      }
+
       if (!chatId) {
-        // first time sending text
-        const [userAId, userBId] = [senderId, recipientId].sort();
+        // First time sending message -> create chat
+        const [userAId, userBId] = [senderId, recipientId].sort(); // Sort for unique constraint
         const txResult = await client.$transaction(async (tx: any) => {
-          // create chat
+          // Create chat
           const chat = await tx.chat.create({
             data: {
               userAId,
@@ -86,12 +92,24 @@ export class ChatsService {
             },
           });
 
-          // create message
+          //TODO: Have to create the image object first
+          const image = (imageUrl && imageUrl) 
+            ? await tx.image.create({
+                data: {
+                  url: imageUrl,
+                  key: imageKey,
+                  userId: senderId,
+                }
+              }) 
+            : null;
+
+          // Create message with optional image
           const message = await tx.message.create({
             data: {
               chatId: chat.id,
               senderId,
-              content,
+              content: content || null, // Allow null for image-only messages
+              imageId: image?.id
             },
           });
 
@@ -108,21 +126,33 @@ export class ChatsService {
         }
       }
 
-      // not the first message sent -> no need to create chat -> only have to update latestMessage
+      // Not the first message -> update existing chat
       const txResult = await client.$transaction(async (tx: any) => {
         const chat = await tx.chat.findUnique({ where: { id: chatId } });
         if (!chat) throw new NotFoundException('Chat not found');
 
-        // create message
+        //TODO: Have to create the image object first
+        const image = (imageUrl && imageUrl) 
+          ? await tx.image.create({
+              data: {
+                url: imageUrl,
+                key: imageKey,
+                userId: senderId,
+              }
+            }) 
+          : null;
+
+        // Create message with optional image
         const message = await tx.message.create({
           data: {
             chatId,
             senderId,
-            content,
+            content: content || null, // Allow null for image-only messages
+            imageId: image?.id
           },
         });
 
-        // update the latestMessage in chat
+        // Update the latestMessage timestamp in chat
         await tx.chat.update({
           where: { id: chatId },
           data: { latestMessageAt: new Date() } 
@@ -148,6 +178,7 @@ export class ChatsService {
 
   /**
    * Get chat history for a chatId
+   * Includes image data when messages have image attachments
    */
   async getHistory(chatId: string, getMessagesDetails: getMessagesDetails): Promise<getMessagesResults>{
     const client: any = this.prisma as any;
@@ -162,39 +193,48 @@ export class ChatsService {
         throw new NotFoundException('Chat not found');
       }
 
+      // Fetch messages with image data
       const rawMessages = await client.message.findMany({
         where: { chatId },
-        orderBy: { createdAt: 'asc' },
+        orderBy: { createdAt: 'asc' }, // Chronological order
         select: {
           id: true,
           chatId: true,
           content: true,
           senderId: true,
+          imageId: true, // Include image ID
           createdAt: true,
           updatedAt: true,
           isEdited: true,
           isDeleted: true,
-          statuses: { // this is like a join operations so already joined with messageId => only need userId
+          statuses: { // Join with UserMessageStatus for per-user delete status
             where: { userId },
             select: { isDeleted: true },
+          },
+
+          //TODO: please update this query here to correctly fetch image
+          image: {
+            select: {
+              url: true, // Get the image URL
+            },
           },
         },
       });
 
-      // need to updated to have isDeletedForYou in right format
+      // Transform messages to include isDeletedForYou status
       const messages = rawMessages.map((m: any) => ({
         id: m.id,
         chatId: m.chatId,
         senderId: m.senderId,
         content: m.content,
+        imageUrl: m.image?.url ?? null, //! warning if bad thing happen
         isEdited: m.isEdited,
         isDeleted: m.isDeleted,
         createdAt: m.createdAt,
         updatedAt: m.updatedAt,
-        isDeletedForYou: (m.statuses && m.statuses[0]?.isDeleted) ?? false,
+        isDeletedForYou: (m.statuses && m.statuses[0]?.isDeleted) ?? false, // Default to false if no status
       })) as MessageWithStatusDetails[];
 
-      // Return the two separate arrays as requested by the interface.
       return {
         messages: messages as MessageWithStatusDetails[]
       };
@@ -229,6 +269,7 @@ export class ChatsService {
         throw new BadRequestException('You are not authorized to edit this message');
       }
 
+      //* No need to handle editing image => a bit complex
       // update the message
       const updatedMessage = await client.message.update({
         where: { id: messageId },
@@ -281,6 +322,7 @@ export class ChatsService {
           throw new BadRequestException('You can only delete your own messages for everyone');
         }
 
+        //TODO: may need to update functionality to add soft delete for image
         // soft delete on Message table
         await client.message.update({
           where: { id: messageId },
@@ -300,6 +342,8 @@ export class ChatsService {
           this.chatGateway.emitMessageDelete(chat.id, userId, messageId);
         }
       } else { // Delete for you
+
+        //TODO: may need to update functionality to add soft delete for image
         // here we create a new entry in the userMessageStatus table
         await client.userMessageStatus.create({
           data: {

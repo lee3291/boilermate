@@ -32,7 +32,7 @@ export default function useChatLogic(initialUserId: string) {
 
   // fetch all chats for current user
   const fetchChats = useCallback(async (userId?: string) => {
-    console.log('check chat fetching')
+    //console.log('check chat fetching')
 
     if (!userId) return;
     setLoadingChats(true);
@@ -40,7 +40,9 @@ export default function useChatLogic(initialUserId: string) {
     try {
       const req: getChatsRequest = { userId };
       const res: getChatsResponse = await apiGetChats(req);
-      console.log('the hell ???')
+
+      //console.log('the hell ???')
+
       setConversations(res.chats || []);
     } catch (err: any) {
       setError(err?.message ?? 'Failed to load chats');
@@ -158,12 +160,14 @@ export default function useChatLogic(initialUserId: string) {
   // send message (handles both existing chat and first-time if needed)
   const send = useCallback(
     async (overrides?: { recipientId?: string }) => {
+
+      //TODO: Need to modify this to account for sending image
       if (!currentUserId) {
         setError('senderId required');
         return null;
       }
 
-      console.log('verify function being called')
+      //console.log('verify function being called')
 
       // trim to remove trailing whitespace
       if (!messageInput?.trim()) return null;
@@ -210,6 +214,7 @@ export default function useChatLogic(initialUserId: string) {
 
   // edit a message (only updates local state after API call)
   const edit = useCallback(
+    //*  need to care about editing an image
     async (messageId: string, content: string) => {
       if (!currentUserId) {
         setError('userId required');

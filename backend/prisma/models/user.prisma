@@ -12,5 +12,8 @@ model User {
 
   // 3. Message Sender - Opposite of Message.sender
   messagesSent     Message[]   @relation("MessageSender") 
-  messageStatuses  UserMessageStatus[] // <-- ADD THIS LINE
+  messageStatuses  UserMessageStatus[]
+
+  // 4. Image owner - Opposite of Image.user
+  images           Image[]
 }

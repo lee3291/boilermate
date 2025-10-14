@@ -21,7 +21,8 @@ model Message {
   id               String      @id @default(uuid())
   chatId           String
   senderId         String
-  content          String      @db.Text
+  content          String?     @db.Text
+  imageId          String?
   isEdited         Boolean     @default(false)
   isDeleted        Boolean     @default(false) // delete message for everyone
   createdAt        DateTime    @default(now())
@@ -31,6 +32,7 @@ model Message {
   chat             Chat        @relation(fields: [chatId], references: [id])
   sender           User        @relation("MessageSender", fields: [senderId], references: [id])
   statuses         UserMessageStatus[] // Link to per-user statuses
+  image            Image?      @relation(fields: [imageId], references: [id]) // link image id to image object
   
   // Index for fast retrieval and sorting within a single chat thread
   @@index([chatId, createdAt]) 
