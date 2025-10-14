@@ -13,6 +13,7 @@ import {
   sendMessageResults,
 } from './interfaces';
 import { PrismaService } from '@core/database/prisma.service';
+import { ChatGateway } from './chat.gateway';
 
 /**
  * ChatsService
@@ -22,7 +23,10 @@ import { PrismaService } from '@core/database/prisma.service';
 
 @Injectable()
 export class ChatsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly chatGateway: ChatGateway
+  ) {}
 
   /**
    * Send all chats with other users, find all the current chatId that contains userId and
@@ -54,6 +58,7 @@ export class ChatsService {
       }
 
     } catch (error) {
+      Logger.error('getChats error', error)
       if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException('Failed to find chats');
     }
@@ -93,6 +98,9 @@ export class ChatsService {
           return { chat, message };
         });
 
+        // Emit new message event through WebSocket
+        this.chatGateway.emitNewMessage(txResult.chat.id, senderId, txResult.message);
+
         return {
           message: txResult.message as MessageDetails,
           chatCreated: true,
@@ -120,14 +128,18 @@ export class ChatsService {
           data: { latestMessageAt: new Date() } 
         });
 
-        return { message };
+        return { chat, message };
       });
+
+      // Emit new message event through WebSocket
+      this.chatGateway.emitNewMessage(txResult.chat.id, senderId, txResult.message);
 
       return {
         message: txResult.message as MessageDetails,
         chatCreated: false,
       };
     } catch (error) {
+      Logger.error(error)
       if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
       if (error && error.code === 'P2002') throw new ConflictException('Unique constraint violation');
       throw new InternalServerErrorException('Failed to send message');
@@ -187,6 +199,7 @@ export class ChatsService {
         messages: messages as MessageWithStatusDetails[]
       };
     } catch (error) {
+      Logger.error(error)
       if (error instanceof NotFoundException) throw error;
       throw new InternalServerErrorException('Failed to retrieve chat history');
     }
@@ -217,14 +230,29 @@ export class ChatsService {
       }
 
       // update the message
-      await client.message.update({
+      const updatedMessage = await client.message.update({
         where: { id: messageId },
         data: {
           content: content,
           isEdited: true,
         },
       });
+
+      // Find the chat and emit message edit event
+      const chat = await client.chat.findFirst({
+        where: {
+          messages: {
+            some: { id: messageId }
+          }
+        }
+      });
+
+      if (chat) {
+        this.chatGateway.emitMessageEdit(chat.id, userId, messageId, content);
+      }
+
     } catch (error) {
+      Logger.error(error)
       if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException('Failed to edit message');
     }
@@ -247,7 +275,7 @@ export class ChatsService {
         throw new NotFoundException('Message not found');
       }
       
-      if (forEveryone) { // Delete for everyone
+      if (forEveryone === 'true') { // Delete for everyone
         // check authorization
         if (message.senderId != userId) {
           throw new BadRequestException('You can only delete your own messages for everyone');
@@ -258,16 +286,31 @@ export class ChatsService {
           where: { id: messageId },
           data: { isDeleted: true },
         });
+
+        // Find the chat and emit message delete event
+        const chat = await client.chat.findFirst({
+          where: {
+            messages: {
+              some: { id: messageId }
+            }
+          }
+        });
+
+        if (chat) {
+          this.chatGateway.emitMessageDelete(chat.id, userId, messageId);
+        }
       } else { // Delete for you
         // here we create a new entry in the userMessageStatus table
         await client.userMessageStatus.create({
           data: {
             userId: userId,
-            messageId: messageId
+            messageId: messageId,
+            isDeleted: true
           }
         })
       }
     } catch (error) {
+      Logger.error(error)
       if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException('Failed to delete message');
     }

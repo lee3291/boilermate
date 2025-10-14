@@ -18,6 +18,7 @@ import type {
   editMessageRequest,
   deleteMessageRequest,
 } from '@/types/chats/chat';
+import { chatSocket } from '@/services/chatSocket';
 
 export default function useChatLogic(initialUserId: string) {
   const [currentUserId, setCurrentUserId] = useState<string>(initialUserId); // initialUserId allow pre-set in page
@@ -38,8 +39,6 @@ export default function useChatLogic(initialUserId: string) {
     setError(null);
     try {
       const req: getChatsRequest = { userId };
-
-      console.log('chat fetch wtf happen here ????', req)
       const res: getChatsResponse = await apiGetChats(req);
       console.log('the hell ???')
       setConversations(res.chats || []);
@@ -69,20 +68,87 @@ export default function useChatLogic(initialUserId: string) {
     []
   );
 
-  // When currentUserId changes fetch chats, this should be deleted in the future
+  // When currentUserId changes fetch chats and connect to WebSocket to subscribe to current chat
   useEffect(() => {
     if (!currentUserId) return;
-    fetchChats(currentUserId);
-  }, [currentUserId, fetchChats]);
+    //fetchChats(currentUserId);
 
-  // When selected chat changes fetch its history
-  useEffect(() => {
-    if (!selectedChatId || !currentUserId) {
-      setMessages([]);
-      return;
+    async function initConnection() {
+      try {
+        // Wait for socket connection before fetching
+        await chatSocket.connect(currentUserId);
+        await fetchChats(currentUserId);
+      } catch (error) {
+        console.error('Failed to initialize:', error);
+        setError('Connection failed');
+      }
     }
+    
+    // Connect to WebSocket
+    //chatSocket.connect(currentUserId);
+    initConnection();
+
+    return () => {
+      // this is a clean up function when a user disconnect (log out, ...)
+      // will be called when the component unmount itself before using new effect after dependencies changes
+      chatSocket.disconnect();
+    };
+  }, [currentUserId]);
+
+  // When selected chat changes fetch its history and join chat room
+  useEffect(() => {
+    if (!selectedChatId || !currentUserId) return;
+    
     fetchHistory(selectedChatId, currentUserId);
+    chatSocket.joinChat(selectedChatId); // emit signal to backend that user join a new chat
+
+    return () => {
+      // this is a function that is used when a component unmount itself
+      // before the effect runs again due to dependencies changes
+      chatSocket.leaveChat(selectedChatId);
+    };
   }, [selectedChatId, currentUserId, fetchHistory]);
+
+  // Set up WebSocket event handlers
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    // this handler is used to update the newest message for other users
+    const messageHandler = (message: MessageWithStatus) => {
+      setMessages(prev => [...prev, message]);
+    };
+
+    // this handler is used to find the edited message and update it for other users
+    const editHandler = (data: { messageId: string; content: string }) => {
+      setMessages(prev => prev.map(msg => 
+        msg.id === data.messageId 
+          ? { ...msg, content: data.content, isEdited: true }
+          : msg
+      ));
+    };
+
+    // this handler is used to find the deleted message and update it for other users if appropriated
+    const deleteHandler = (data: { messageId: string }) => {
+      setMessages(prev => prev.map(msg =>
+        msg.id === data.messageId
+          ? { ...msg, isDeleted: true }
+          : msg
+      ));
+    };
+
+    // these are used to clean up the handler after using
+    const unsubMessage = chatSocket.onMessage(messageHandler);
+    const unsubEdit = chatSocket.onMessageEdit(editHandler);
+    const unsubDelete = chatSocket.onMessageDelete(deleteHandler);
+
+    return () => {
+      // these are clean up function that will be used to clean up the handlers when
+      // the userId is changed
+      unsubMessage();
+      unsubEdit();
+      unsubDelete();
+    };
+  }, [currentUserId]);
 
   // handle input change, useCallback just for fun literally
   const handleInputChange = useCallback((value: string) => {
@@ -96,6 +162,8 @@ export default function useChatLogic(initialUserId: string) {
         setError('senderId required');
         return null;
       }
+
+      console.log('verify function being called')
 
       // trim to remove trailing whitespace
       if (!messageInput?.trim()) return null;
@@ -117,6 +185,7 @@ export default function useChatLogic(initialUserId: string) {
           // have to copy ...prev to make state pure
           setMessages((prev) => [...prev, res.message]);
         }
+
         // if a new chat was created, add it to conversations and select it
         if (res?.chat) {
           setConversations((prev) => {
@@ -128,6 +197,7 @@ export default function useChatLogic(initialUserId: string) {
             setSelectedChatId(res.chat.id);
           }
         }
+
         setMessageInput('');
         return res;
       } catch (err: any) {
@@ -163,20 +233,22 @@ export default function useChatLogic(initialUserId: string) {
 
   // delete a message (forEveryone toggles message.isDeleted, otherwise mark isDeletedForYou)
   const remove = useCallback(
-    async (messageId: string, forEveryone = false) => {
+    async (messageId: string, forEveryone: boolean) => {
       if (!currentUserId) {
         setError('userId required');
         return false;
       }
+      console.log('wtf', forEveryone)
+      
       try {
-        const req: deleteMessageRequest = { userId: currentUserId, forEveryone };
+        const req: deleteMessageRequest = { userId: currentUserId, forEveryone: forEveryone };
         await apiDeleteMessage(messageId, req);
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === messageId
-              ? forEveryone
-                ? { ...m, isDeleted: true }
-                : { ...m, isDeletedForYou: true }
+        setMessages((prev) => // all chat history
+          prev.map((m) => // start mapping for updated window
+            m.id === messageId // find matching id
+              ? forEveryone // nested boolean
+                ? { ...m, isDeleted: true } // set global delete
+                : { ...m, isDeletedForYou: true } // set deleted for you
               : m
           )
         );

@@ -37,11 +37,12 @@ model Message {
 }
 
 model UserMessageStatus {
-  id               String         @id @default(uuid())
+  id               String      @id @default(uuid())
   userId           String
   messageId        String
   
-  isDeleted        Boolean     @default(false) // True if this specific user has hidden the message
+  isDeleted        Boolean     @default(true) 
+  // have this for an easier to integrate workflow => technically doesn't need it but good for more flexibility
   
   user             User        @relation(fields: [userId], references: [id])
   message          Message     @relation(fields: [messageId], references: [id])

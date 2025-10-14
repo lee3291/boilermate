@@ -1,4 +1,3 @@
-// lightweight sidebar for chat list
 import ConversationListItem from './components/ConversationListItem';
 import type { Chat } from '@/types/chats/chat';
 

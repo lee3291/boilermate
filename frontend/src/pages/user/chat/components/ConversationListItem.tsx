@@ -1,5 +1,3 @@
-// conversation list item
-
 import type { Chat } from '@/types/chats/chat';
 
 export default function ConversationListItem({ chat, otherUsernameId, preview, selected, onClick, currentUserId }: { chat?: Chat; otherUsernameId?: string; preview?: string; selected?: boolean; onClick?: () => void; currentUserId?: string }) {

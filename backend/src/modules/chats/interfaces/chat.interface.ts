@@ -77,6 +77,6 @@ export interface editMessageDetails {
 
 export interface deleteMessageDetails {
   userId: string,
-  forEveryone: boolean
+  forEveryone: string // used to be boolean but have to change as params only take string
 }
 

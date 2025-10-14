@@ -28,16 +28,16 @@ export default function InputBar({
   };
 
   return (
-    <div className="px-3 py-2 border-t bg-white flex gap-3 items-end">
+    <div className="px-3 py-2 border-t bg-white flex gap-3 items-end max-h-60">
       <textarea
         ref={textareaRef}
         value={value}
         onChange={handleInput}
         placeholder="Message"
         rows={1}
-        className="flex-1 resize-none px-4 py-2 rounded-full border border-gray-200 min-h-[36px] max-h-[200px] leading-5 overflow-hidden align-middle"
+        className="flex-1 resize-none px-4 py-2 rounded-full border border-gray-200 min-h-[36px] max-h-[200px] leading-5 overflow-y-auto align-middle"
       />
-      <button onClick={handleSend} className="bg-blue-600 text-white px-4 h-9 rounded-full hover:bg-blue-700 transition-colors">Send</button>
+      <button onClick={handleSend} className="flex-none bg-blue-600 text-white px-4 h-9 rounded-full hover:bg-blue-700 transition-colors">Send</button>
     </div>
   );
 }
