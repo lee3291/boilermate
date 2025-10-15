@@ -6,6 +6,12 @@ import {
   editMessage as apiEditMessage,
   deleteMessage as apiDeleteMessage,
 } from '@/services/chatService';
+import {
+  getPresignedUrl as apiGetPresignedUrl,
+  uploadFileToS3 as apiUploadFileToS3
+} from '@/services/uploadService';
+import { compressImage } from '@/utils/imageCompression';
+import config from '@/utils/config';
 import type {
   Chat,
   MessageWithStatus,
@@ -26,6 +32,8 @@ export default function useChatLogic(initialUserId: string) {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null); // enable clicking for the chat sidebar, save state
   const [messages, setMessages] = useState<MessageWithStatus[]>([]); // set the message display part in the chat window
   const [messageInput, setMessageInput] = useState<string>(''); // set the message in the input bar
+  const [selectedFile, setSelectedFile] = useState<File | null>(null); // store the selected image file
+  const [isUploadingImage, setIsUploadingImage] = useState(false); // track if image is being uploaded
   const [loadingChats, setLoadingChats] = useState(false); // set loading state when fetching all chatIds in side bar
   const [loadingMessages, setLoadingMessages] = useState(false); // set loading state when fetching all the messages in chat window
   const [error, setError] = useState<string | null>(null); // set error state when handling events
@@ -157,6 +165,22 @@ export default function useChatLogic(initialUserId: string) {
     setMessageInput(value);
   }, []);
 
+  // handle file selection for image upload
+  const handleFileChange = useCallback((file: File | null) => {
+    // validate file type - only allow image formats
+    if (file && !file.type.startsWith('image/')) {
+      setError('Please select an image file (PNG, JPG, JPEG)');
+      return;
+    }
+    // validate file size - max 10MB before compression
+    if (file && file.size > 10 * 1024 * 1024) {
+      setError('Image size must be less than 10MB');
+      return;
+    }
+    setSelectedFile(file); // store the selected file
+    setError(null); // clear any previous errors
+  }, []);
+
   // send message (handles both existing chat and first-time if needed)
   const send = useCallback(
     async (overrides?: { recipientId?: string }) => {
@@ -169,18 +193,59 @@ export default function useChatLogic(initialUserId: string) {
 
       //console.log('verify function being called')
 
-      // trim to remove trailing whitespace
-      if (!messageInput?.trim()) return null;
+      // Check if there's content to send (either text or image)
+      const hasText = messageInput?.trim();
+      const hasImage = selectedFile !== null;
+
+      // prevent sending empty message
+      if (!hasText && !hasImage) return null;
+      
       setError(null);
 
       try {
+        let imageUrl: string | undefined; // will store the final S3 URL if image is uploaded
+        let imageKey: string | undefined;
+
+        // If user selected an image, handle the upload workflow
+        if (selectedFile) {
+          setIsUploadingImage(true); // show loading state for image upload
+
+          try {
+            // Compress the image to reduce file size
+            const compressedFile = await compressImage(selectedFile);
+
+            // Request presigned URL from backend
+            const { preSignedUrl, key } = await apiGetPresignedUrl({
+              contentType: compressedFile.type, // send MIME type to backend
+              userId: currentUserId, // send user ID for tracking
+            });
+
+            // Upload compressed image directly to S3 using presigned URL
+            await apiUploadFileToS3(preSignedUrl, compressedFile);
+
+            // Construct the final S3 URL from key (backend will create Image record)
+            imageUrl = `${config.s3BaseUrl}/${key}`;
+            imageKey = key;
+          } catch (uploadError: any) {
+            setError(uploadError?.message ?? 'Failed to upload image');
+            setIsUploadingImage(false); // reset upload state
+            return null; // abort sending message if image upload fails
+          } finally {
+            setIsUploadingImage(false); // reset upload state
+          }
+        }
+
         // build the request
         const payload: sendMessageRequest = {
           chatId: selectedChatId ?? undefined,
           senderId: currentUserId,
           recipientId: overrides?.recipientId,
-          content: messageInput.trim(),
+          content: hasText ? messageInput.trim() : '', // send empty string if no text (backend handles image-only)
+          imageUrl, //include imageUrl if image was uploaded
+          imageKey,
         };
+
+        console.log('wtf', payload);
 
         const res: sendMessageResponse = await apiSendMessage(payload);
 
@@ -202,14 +267,15 @@ export default function useChatLogic(initialUserId: string) {
           }
         }
 
-        setMessageInput('');
+        setMessageInput(''); // clear text input after sending
+        setSelectedFile(null); // clear selected file after sending
         return res;
       } catch (err: any) {
         setError(err?.message ?? 'Failed to send message');
         return null;
       }
     },
-    [currentUserId, messageInput, selectedChatId]
+    [currentUserId, messageInput, selectedChatId, selectedFile] // add selectedFile to dependencies
   );
 
   // edit a message (only updates local state after API call)
@@ -243,7 +309,6 @@ export default function useChatLogic(initialUserId: string) {
         setError('userId required');
         return false;
       }
-      console.log('wtf', forEveryone)
       
       try {
         const req: deleteMessageRequest = { userId: currentUserId, forEveryone: forEveryone };
@@ -277,6 +342,8 @@ export default function useChatLogic(initialUserId: string) {
     setSelectedChatId,
     messages: messagesForSelected,
     messageInput,
+    selectedFile, // expose selected file for UI display
+    isUploadingImage, // expose upload state for UI feedback
 
     // status
     loadingChats,
@@ -287,6 +354,7 @@ export default function useChatLogic(initialUserId: string) {
     fetchChats,
     fetchHistory,
     handleInputChange,
+    handleFileChange, // expose file handler for ImageUploadButton
     send,
     edit,
     remove,

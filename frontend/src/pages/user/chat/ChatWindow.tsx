@@ -14,6 +14,9 @@ export default function ChatWindow({
   onEdit,
   onDelete,
   selectedConversation,
+  selectedFile,
+  onFileChange,
+  isUploadingImage,
 }: {
   chatId?: string | null;
   currentUserId?: string;
@@ -26,6 +29,9 @@ export default function ChatWindow({
   onEdit?: (messageId: string, content: string) => Promise<boolean>;
   onDelete?: (messageId: string, forEveryone: boolean) => Promise<boolean>;
   selectedConversation?: Chat | null;
+  selectedFile?: File | null;
+  onFileChange?: (file: File | null) => void;
+  isUploadingImage?: boolean;
 }) {
   // placeholder when no chat is selected
   if (!chatId) {
@@ -69,6 +75,9 @@ export default function ChatWindow({
               : selectedConversation.userAId;
             return onSend?.({ recipientId });
           }}
+          selectedFile={selectedFile}
+          onFileChange={onFileChange}
+          isUploading={isUploadingImage}
         />
       </div>
     </div>

@@ -38,6 +38,9 @@ export default function ChatPage() {
             onEdit={logic.edit}
             onDelete={logic.remove}
             selectedConversation={logic.conversations.find((c) => c.id === logic.selectedChatId) ?? null}
+            selectedFile={logic.selectedFile}
+            onFileChange={logic.handleFileChange}
+            isUploadingImage={logic.isUploadingImage}
           />
         </div>
       </div>

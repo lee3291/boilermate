@@ -1,5 +1,53 @@
 import { useState } from 'react';
 
+/**
+ * Component to display image in chat message
+ * Handles different aspect ratios (landscape/portrait)
+ */
+function ImageDisplay({ imageUrl }: { imageUrl: string }) {
+  const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Calculate dimensions when image loads
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    setDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+    setIsLoading(false);
+  };
+
+  // Determine if image is landscape or portrait
+  const isLandscape = dimensions ? dimensions.width > dimensions.height : true;
+  
+  // Set max dimensions based on orientation
+  const maxWidth = isLandscape ? 400 : 250; // landscape: wider, portrait: narrower
+  const maxHeight = isLandscape ? 250 : 400; // landscape: shorter, portrait: taller
+
+  return (
+    <div className="relative">
+      {/* Loading state */}
+      {isLoading && (
+        <div className="animate-pulse bg-gray-200 rounded-lg" style={{ width: maxWidth, height: 200 }}>
+          <div className="flex items-center justify-center h-full text-gray-400">Loading...</div>
+        </div>
+      )}
+      
+      {/* Actual image */}
+      <img
+        src={imageUrl}
+        alt="Chat image"
+        onLoad={handleImageLoad}
+        onClick={() => window.open(imageUrl, '_blank')} // open full size in new tab
+        className={`rounded-lg cursor-pointer hover:opacity-90 transition-opacity ${isLoading ? 'hidden' : 'block'}`}
+        style={{
+          maxWidth: `${maxWidth}px`, // limit max width based on orientation
+          maxHeight: `${maxHeight}px`, // limit max height based on orientation
+          objectFit: 'contain', // maintain aspect ratio
+        }}
+      />
+    </div>
+  );
+}
+
 export default function Message({
   m,
   isMine,
@@ -14,6 +62,11 @@ export default function Message({
   const [hover, setHover] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(m.content);
+
+  // Check if message contains an image
+  const hasImage = m.imageUrl && m.imageUrl.trim().length > 0;
+  // Check if message contains text content
+  const hasContent = m.content && m.content.trim().length > 0;
 
   return (
     <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} w-full mb-3`}>
@@ -33,11 +86,20 @@ export default function Message({
           )}
 
           <div className="flex items-center gap-1">
-            {/* Actions for my messages => only have this when the message is not deleted*/}
-            {isMine && hover && !m.isDeleted && !m.isDeletedForYou && (
+            {/* Actions for my messages => only show for text messages or non-deleted messages */}
+            {isMine && hover && !m.isDeleted && !m.isDeletedForYou && !hasImage && (
               <div className="text-xs text-gray-500 mr-1">
                 <button onClick={() => setEditing(true)} className="hover:underline">Edit</button>
                 <span className="mx-1">|</span>
+                <button onClick={() => onDelete?.(m.id, false)} className="hover:underline">Delete For You</button>
+                <span className="mx-1">|</span>
+                <button onClick={() => onDelete?.(m.id, true)} className="hover:underline">Delete For Everyone</button>
+              </div>
+            )}
+
+            {/* Actions for image messages - only delete options (no edit) */}
+            {isMine && hover && !m.isDeleted && !m.isDeletedForYou && hasImage && (
+              <div className="text-xs text-gray-500 mr-1">
                 <button onClick={() => onDelete?.(m.id, false)} className="hover:underline">Delete For You</button>
                 <span className="mx-1">|</span>
                 <button onClick={() => onDelete?.(m.id, true)} className="hover:underline">Delete For Everyone</button>
@@ -82,7 +144,13 @@ export default function Message({
                   </div>
                 </div>
               ) : (
-                <div>{m.content}</div>
+                <div>
+                  {/* Display image if present */}
+                  {hasImage && <ImageDisplay imageUrl={m.imageUrl} />}
+                  
+                  {/* Display text content if present */}
+                  {hasContent && <div className={hasImage ? 'mt-2' : ''}>{m.content}</div>}
+                </div>
               )}
             </div>
 

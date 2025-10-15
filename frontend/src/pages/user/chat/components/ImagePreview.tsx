@@ -1,1 +1,0 @@
-//TODO: This is where the user see a small preview of the picture they are trying to send

@@ -1,19 +1,27 @@
 import { useRef } from 'react';
+import ImageUploadButton from './ImageUploadButton';
 
 export default function InputBar({
   value,
   onChange,
   onSend,
+  onFileChange, // new prop for handling file selection
+  selectedFile, // new prop for displaying selected file
+  isUploading, // new prop for showing upload state
 }: {
   value?: string;
   onChange?: (v: string) => void;
   onSend?: (opts?: { recipientId?: string }) => Promise<any> | void;
+  onFileChange?: (file: File | null) => void; // handler for file selection
+  selectedFile?: File | null; // currently selected file
+  isUploading?: boolean; // whether image is being uploaded
 }) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   function handleSend() {
-    const trimmed = (value ?? '').trim();
-    if (trimmed.length === 0) return;
+    // allow sending if there's text OR a file
+    const hasContent = (value ?? '').trim().length > 0 || selectedFile !== null;
+    if (!hasContent) return; // prevent sending empty message
     onSend?.();
   }
 
@@ -29,15 +37,32 @@ export default function InputBar({
 
   return (
     <div className="px-3 py-2 border-t bg-white flex gap-3 items-end max-h-60">
+      {/* Image upload button - placed before textarea */}
+      <ImageUploadButton
+        onFileChange={onFileChange || (() => {})} // use provided handler or noop
+        disabled={isUploading} // disable during upload
+        selectedFileName={selectedFile?.name} // show selected file name
+      />
+
+      {/* Message textarea - disabled when file is selected */}
       <textarea
         ref={textareaRef}
         value={value}
         onChange={handleInput}
-        placeholder="Message"
+        placeholder={selectedFile ? "Image selected" : "Message"} // change placeholder when file selected
         rows={1}
-        className="flex-1 resize-none px-4 py-2 rounded-full border border-gray-200 min-h-[36px] max-h-[200px] leading-5 overflow-y-auto align-middle"
+        disabled={selectedFile !== null || isUploading} // disable text input when file is selected or uploading
+        className="flex-1 resize-none px-4 py-2 rounded-full border border-gray-200 min-h-[36px] max-h-[200px] leading-5 overflow-y-auto align-middle disabled:bg-gray-50 disabled:text-gray-500"
       />
-      <button onClick={handleSend} className="flex-none bg-blue-600 text-white px-4 h-9 rounded-full hover:bg-blue-700 transition-colors">Send</button>
+
+      {/* Send button - shows loading state during upload */}
+      <button 
+        onClick={handleSend} 
+        disabled={isUploading} // disable during upload
+        className="flex-none bg-blue-600 text-white px-4 h-9 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isUploading ? 'Uploading...' : 'Send'}
+      </button>
     </div>
   );
 }

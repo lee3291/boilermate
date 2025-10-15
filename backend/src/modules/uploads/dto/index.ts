@@ -1,2 +1,2 @@
-export * from './image-request.dto'
-export * from './image-response.dto'
+export * from './media-request.dto'
+export * from './media-response.dto'

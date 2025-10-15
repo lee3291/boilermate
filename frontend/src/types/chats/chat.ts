@@ -33,7 +33,9 @@ export interface sendMessageRequest {
   chatId?: string; // doesn't have chatId if this is the first time sending message
   senderId: string;
   recipientId?: string; // technically shouldn't need recipient when sending to existing chat
-  content: string;
+  content?: string; // message text content, now could be optional as sent only image
+  imageUrl?: string; // optional S3 image URL (key) from upload
+  imageKey?: string; // optional, must have if have imageUrl
 }
 
 export interface sendMessageResponse {

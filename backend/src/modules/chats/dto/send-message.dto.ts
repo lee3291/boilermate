@@ -8,5 +8,5 @@ export class SendMessageDto {
   recipientId?: string; // technically shouldn't need recipient when sending to existing chat
   content?: string; // now optional as can send image without text
   imageUrl?: string // optional as no need to add image with a message
-  key?: string // optional => the key to the aws bucket
+  imageKey?: string // optional => the key to the aws bucket
 }

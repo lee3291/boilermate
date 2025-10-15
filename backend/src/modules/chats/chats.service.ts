@@ -92,7 +92,6 @@ export class ChatsService {
             },
           });
 
-          //TODO: Have to create the image object first
           const image = (imageUrl && imageUrl) 
             ? await tx.image.create({
                 data: {
@@ -113,7 +112,10 @@ export class ChatsService {
             },
           });
 
-          return { chat, message };
+          return { chat, message: {
+            ...message,
+            imageUrl: image?.url
+          }};
         });
 
         // Emit new message event through WebSocket
@@ -158,7 +160,10 @@ export class ChatsService {
           data: { latestMessageAt: new Date() } 
         });
 
-        return { chat, message };
+        return { chat, message: {
+          ...message,
+          imageUrl: image?.url
+        }};
       });
 
       // Emit new message event through WebSocket
