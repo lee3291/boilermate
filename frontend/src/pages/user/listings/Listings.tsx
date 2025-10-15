@@ -2,10 +2,12 @@ import Navbar from "../components/Navbar.tsx"
 import Card from "./ListingsCard.tsx"
 import useSWR from 'swr';
 import { fetcher } from '../../../services/listingsFetcher';
+import { useState } from "react";
+import CreateListingModal from "./CreateListingModal";
 
 export default function Listings() {
-    const { data, error, isLoading } = useSWR('/listings/active', fetcher);
-
+    const { data, error, isLoading, mutate } = useSWR('/listings/active', fetcher);
+    const [openCreate, setOpenCreate] = useState(false);
 
     return (
         <div className="bg-white w-full h-[400px]">
@@ -14,7 +16,12 @@ export default function Listings() {
             <div className="pt-4 flex items-start gap-4">
                 <div className="pl-15">
                     <h1 className="pb-2 font-extralight font-sourceserif4-18pt-regular tracking-[-0.02em] text-[55px] text-maingray">Listings</h1>
-                    <button className="h-12 w-60 bg-white border-black border-1 rounded-[100px] font-sans">Create a Listing</button>
+                    <button
+                        onClick={() => setOpenCreate(true)}
+                        className="h-12 w-60 bg-white border border-black rounded-[100px] font-sans hover:bg-black hover:text-white transition cursor-pointer"
+                    >
+                        Create a Listing
+                    </button>
                 </div>
                 <div aria-hidden className="mt-10 w-px bg-gray-900 h-200" />
 
@@ -35,6 +42,14 @@ export default function Listings() {
                     </div>
                 </div>
             </div>
+            <CreateListingModal
+                open={openCreate}
+                onClose={() => setOpenCreate(false)}
+                onCreated={() => {
+                    // revalidate the list after a successful creation
+                    mutate();
+                }}
+                />
         </div>
     );
 }
