@@ -13,9 +13,8 @@ export class UpdateListingDto {
     @IsNumber()
     pricing: number;
 
-    @IsNumber()
-    numberBed: number;
+    @IsString()
+    location: string;
 
-    @IsNumber()
-    numberBath: number;
+    media: string[];
 }

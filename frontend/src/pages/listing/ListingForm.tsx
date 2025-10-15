@@ -9,19 +9,24 @@ interface ListingFormProps {
 
 export default function ListingForm({ isOpen, onClose }: ListingFormProps) {
     const [title, setTitle] = useState("");
-    const [address, setAddress] = useState("");
+    const [location, setLocation] = useState("");
     const [rent, setRent] = useState("");
-    const [bedrooms, setBedrooms] = useState("");
-    const [bathrooms, setBathrooms] = useState("");
     const [description, setDescription] = useState("");
     const [selectedImages, setSelectedImages] = useState<File[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
     if (!isOpen) return null;
 
-    // Ensure only positive numbers
-    const handlePositiveNumber = (e: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<string>>) => {
-        const value = e.target.value.replace(/[^0-9]/g, "");
+    // Rent price can only be > 0
+    const handleNumber = (e: React.ChangeEvent<HTMLInputElement>,
+                          setter: React.Dispatch<React.SetStateAction<string>>) => {
+        let value = e.target.value;
+        // Remove all characters except digits and dot
+        value = value.replace(/[^0-9.]/g, "");
+        const parts = value.split(".");
+        if (parts.length > 2) {
+            value = parts[0] + "." + parts[1]; // keep only first dot
+        }
         setter(value);
     };
 
@@ -54,17 +59,14 @@ export default function ListingForm({ isOpen, onClose }: ListingFormProps) {
                 title,
                 description,
                 pricing: Number(rent),
-                numberBed: Number(bedrooms),
-                numberBath: Number(bathrooms),
+                location,
                 media: [],
             });
             alert("You have just created a listing successfully!");
             //Reset
             setTitle("");
-            setAddress("");
+            setLocation("");
             setRent("");
-            setBedrooms("");
-            setBathrooms("");
             setDescription("");
             setSelectedImages([]);
             setImagePreviews([]);
@@ -103,69 +105,42 @@ export default function ListingForm({ isOpen, onClose }: ListingFormProps) {
                         />
                     </div>
 
-                    {/* Address */}
+                    {/* Location */}
                     <div className="space-y-2">
-                        <label htmlFor="address" className="block text-sm font-medium text-gray-700">Location</label>
+                        <label htmlFor="location" className="block text-sm font-medium text-gray-700">Location</label>
                         <input
                             type="text"
-                            id="address"
-                            value={address}
-                            onChange={e => setAddress(e.target.value)}
+                            id="location"
+                            value={location}
+                            onChange={e => setLocation(e.target.value)}
                             placeholder="123 Main St, City, State"
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
                             required
                         />
                     </div>
 
-                    {/* Rent, Bedrooms, Bathrooms */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                            <label htmlFor="rent" className="block text-sm font-medium text-gray-700">Monthly Rent</label>
-                            <input
-                                type="number"
-                                id="rent"
-                                value={rent}
-                                onChange={e => handlePositiveNumber(e, setRent)}
-                                placeholder="0"
-                                min="1"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                                required
-                            />
-                        </div>
+                    {/* Rent*/}
+                    <div className="space-y-2">
+                        <label htmlFor="rent" className="block text-sm font-medium text-gray-700">
+                            Monthly Rent
+                        </label>
+                        <input
+                            type="text" // use text to fully control allowed chars
+                            id="rent"
+                            value={rent}
+                            onChange={e => handleNumber(e, setRent)}
+                            placeholder="0.00"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                            required
+                        />
 
-                        <div className="space-y-2">
-                            <label htmlFor="bedrooms" className="block text-sm font-medium text-gray-700">Bedrooms</label>
-                            <input
-                                type="number"
-                                id="bedrooms"
-                                value={bedrooms}
-                                onChange={e => handlePositiveNumber(e, setBedrooms)}
-                                placeholder="0"
-                                min="1"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                                required
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <label htmlFor="bathrooms" className="block text-sm font-medium text-gray-700">Bathrooms</label>
-                            <input
-                                type="number"
-                                id="bathrooms"
-                                value={bathrooms}
-                                onChange={e => handlePositiveNumber(e, setBathrooms)}
-                                placeholder="0"
-                                min="1"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                                required
-                            />
-                        </div>
                     </div>
 
                     {/* Photos */}
                     <div className="space-y-2">
                         <label className="block text-sm font-medium text-gray-700">Photos</label>
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                        <div
+                            className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
                             <input
                                 type="file"
                                 id="images"

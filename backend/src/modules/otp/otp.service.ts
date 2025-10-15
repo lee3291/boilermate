@@ -1,9 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException} from '@nestjs/common';
 import nodemailer from 'nodemailer';
 import {OTPRecord} from './interfaces/otp.interface';
+import {User} from './interfaces/otp.interface';
+import { PrismaClient} from '@prisma/client';
 @Injectable()
 export class OTPService {
     //Store OPT for each user
+    private prisma = new PrismaClient();
     private otpStore: Record<string, OTPRecord> = {};
 
     private generateOTP(): string {
@@ -43,5 +46,31 @@ export class OTPService {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Get user by email
+     */
+    async findUser(email: string): Promise<Partial<User>> {
+        const user = await this.prisma.user.findUnique({
+            where: { email },
+        });
+
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+
+        return user;
+    }
+
+    /**
+     * Update password
+     */
+    async updatePassword(email: string, newPassword:string): Promise<Partial<User>> {
+        await this.findUser(email); // ensure it exists
+        return this.prisma.user.update({
+            where: { email },
+            data: {hashedPassword: newPassword},
+        });
     }
 }

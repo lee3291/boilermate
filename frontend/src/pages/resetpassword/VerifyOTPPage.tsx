@@ -20,7 +20,7 @@ export default function VerifyOTPPage() {
             const data = await response.json();
             if (data.valid) {
                 alert("OTP verified successfully!");
-                navigate("/reset-password");
+                navigate("/reset-password", { state: { email } });
             } else {
                 alert("Invalid OTP");
             }

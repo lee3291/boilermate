@@ -13,6 +13,7 @@ export class ListingService {
      * Backend automatically sets status to ACTIVE and viewCount to 0.
      */
     async create(dto: CreateListingDto): Promise<Listing> {
+        // @ts-ignore
         return this.prisma.listing.create({
             data: {
                 ...dto,
@@ -30,7 +31,6 @@ export class ListingService {
             orderBy: { createdAt: 'desc' },
         });
     }
-
     /**
      * Get a single listing by ID
      */
@@ -45,13 +45,11 @@ export class ListingService {
 
         return listing;
     }
-
     /**
      * Update a listing by ID
      */
     async update(listingID: string, dto: UpdateListingDto): Promise<Listing> {
         await this.findOne(listingID); // ensure it exists
-
         return this.prisma.listing.update({
             where: { listingID },
             data: dto,
@@ -63,7 +61,6 @@ export class ListingService {
      */
     async remove(listingID: string): Promise<Listing> {
         await this.findOne(listingID); // ensure it exists
-
         return this.prisma.listing.delete({
             where: { listingID },
         });

@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate} from "react-router-dom";
 import PasswordInput from "../../components/PasswordInput";
+import { useLocation } from "react-router-dom";
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -8,7 +9,8 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errorPassword, setErrorPassword] = useState("");
   const [errorConfirmPassword, setErrorConfirmPassword] = useState("");
-
+  const location = useLocation();
+  const email = location.state?.email; // user’s email
   const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPassword(value);
@@ -34,7 +36,7 @@ export default function ResetPasswordPage() {
     }
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!password || !confirmPassword) {
       return;
@@ -47,7 +49,26 @@ export default function ResetPasswordPage() {
       return;
     }
     //Go to the login page
-    navigate("/");
+    try {
+      const response = await fetch("http://localhost:3000/otp/update-password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, newPassword: password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Change password successfully!");
+        navigate("/");
+      } else {
+        alert(data.message || "Something went wrong");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong");
+    }
+
   };
 
   return (
