@@ -1,13 +1,47 @@
 import { PrismaService } from '@core/database/prisma.service';
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcrypt';
+import { EmailVerificationService } from '@modules/email-verification/email-verification.service';
+import { RequestCodeDto } from './dto/request-code.dto';
+import { VerifyCodeDto } from './dto/verify-code.dto';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly emailVerificationService: EmailVerificationService,
+  ) {}
+
+  async requestCode(dto: RequestCodeDto) {
+    const { email } = dto;
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
+    if (existingUser) {
+      throw new ConflictException('An account with this email already exists.');
+    }
+    return this.emailVerificationService.createVerification(email);
+  }
+
+  async verifyCode(dto: VerifyCodeDto) {
+    return this.emailVerificationService.verifyCode(dto.email, dto.code);
+  }
 
   async register(dto: RegisterDto) {
+    const isVerified = await this.emailVerificationService.isEmailVerified(
+      dto.email,
+    );
+    if (!isVerified) {
+      throw new UnauthorizedException(
+        'Email has not been verified. Please verify your email before registering.',
+      );
+    }
+
     const existing = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -18,7 +52,7 @@ export class AuthService {
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
-        hashedPassword,
+        passwordHash: hashedPassword,
       },
     });
 
