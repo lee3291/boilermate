@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Post, Req } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Post, Req, Get } from '@nestjs/common';
 import { ListingsService } from './listings.service';
 import {
     CreateListingBody,
@@ -53,10 +53,15 @@ function assertCreateBody(body: any): asserts body is CreateListingBody {
 export class ListingsController {
     constructor(private readonly listingsService: ListingsService) {}
 
+    @Get('active')
+    getActive() {
+        return this.listingsService.findActive();
+    }
+
     @Post()
     async create(
         @Body() rawBody: any,
-        @Req() req: any,
+        // @Req() req: any,
     ): Promise<CreateListingResult> {
         // 1) validate minimal fields
         assertCreateBody(rawBody);
@@ -73,12 +78,12 @@ export class ListingsController {
 
         const input: CreateListingDetails = {
             ...body,
-            creatorId: req.user?.id, // ensure your auth guard sets req.user
+            // creatorId: req.user?.id, // ensure your auth guard sets req.user
         };
 
-        if (!input.creatorId) {
-            throw new BadRequestException('creatorId missing from auth context');
-        }
+        // if (!input.creatorId) {
+        //     throw new BadRequestException('creatorId missing from auth context');
+        // }
 
         // 3) delegate to service
         return this.listingsService.create(input);

@@ -4,6 +4,5 @@ export class CreateListingDto {
   price!: number;
   location!: string;
   mediaUrls!: string[];
-  creatorId?: string;
   status?: 'ACTIVE' | 'ARCHIVED' | 'RESOLVED';
 }

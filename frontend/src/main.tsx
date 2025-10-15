@@ -7,7 +7,8 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 // Components used for protected areas
 import App from './App.tsx'
-import Listings from './pages/user/Listings.tsx'
+import Listings from './pages/user/listings/Listings.tsx'
+// import ListingsCreateTest from './pages/user/ListingsTest.tsx';
 
 const router = createBrowserRouter([
   {

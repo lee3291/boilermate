@@ -17,7 +17,7 @@ export interface CreateListingBody {
  * What the service actually needs after the controller injects auth context.
  */
 export interface CreateListingDetails extends CreateListingBody {
-  creatorId: string;
+  // creatorId: string;
 }
 
 /**
@@ -26,7 +26,7 @@ export interface CreateListingDetails extends CreateListingBody {
  */
 export interface ListingResponse {
   id: string;
-  creatorId: string;
+  // creatorId: string;
 
   title: string;
   description: string;

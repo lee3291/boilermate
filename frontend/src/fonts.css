@@ -229,7 +229,11 @@
 
 @theme {
     --font-roboto-regular: RobotoRegular, "sans-serif";
+    --font-roboto-medium: RobotoMedium, "sans-serif";
+    --font-roboto-semibold: RobotoSemiBold, "sans-serif";
+    --font-roboto-bold: RobotoBold, "sans-serif";
     --font-roboto-italic: RobotoItalic, "sans-serif";
+    --font-roboto-light: RobotoLight, "sans-serif";
     --font-sourceserif4-regular: SourceSerif4Regular, "serif";
     --font-sourceserif4-italic: SourceSerif4Italic, "serif";
     --font-sourceserif4-18pt-regular: SourceSerif4_18ptRegular, "serif";

@@ -9,16 +9,22 @@ import {
 @Injectable()
 export class ListingsService {
     constructor(private readonly prisma: PrismaService) {}
+    async findActive() {
+        return this.prisma.listing.findMany({
+            where: { status: 'ACTIVE' },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
 
     async create(input: CreateListingDetails): Promise<CreateListingResult> {
-        if (!input.creatorId) {
-            throw new BadRequestException('creatorId is required');
-        }
+        // if (!input.creatorId) {
+        //     throw new BadRequestException('creatorId is required');
+        // }
 
         // Let Prisma/DB apply defaults (status=ACTIVE, viewCount=0, timestamps)
         const created = await this.prisma.listing.create({
             data: {
-                creatorId: input.creatorId,
+                // creatorId: input.creatorId,
                 title: input.title,
                 description: input.description,
                 price: input.price,
@@ -30,7 +36,7 @@ export class ListingsService {
 
         const listing: ListingResponse = {
             id: created.id,
-            creatorId: created.creatorId,
+            // creatorId: created.creatorId,
             title: created.title,
             description: created.description,
             price: created.price,

@@ -6,9 +6,9 @@ enum ListingStatus {
 
 // ---------------- Core: Listing ----------------
 // (from diagram: listingID, creatorID, title, description, pricing, location, media, status, viewCount, createdAt)
+// creatorId   String
 model Listing {
   id          String        @id @default(cuid())
-  creatorId   String
 
   title       String
   description String        @db.Text
