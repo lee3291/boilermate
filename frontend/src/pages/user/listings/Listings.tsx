@@ -2,8 +2,12 @@ import Navbar from "../components/Navbar.tsx"
 import Card from "./ListingsCard.tsx"
 import useSWR from 'swr';
 import { fetcher } from '../../../services/listingsFetcher';
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import CreateListingModal from "./CreateListingModal";
+
+import { useUser } from "./temp/UserContext";
+import { getSavedListings } from "../../../services/savedListings";
+import { setSavedHint } from "../../../services/savedCache";
 
 export default function Listings() {
     const { data, error, isLoading, mutate } = useSWR('/listings/active', fetcher);
@@ -13,10 +17,30 @@ export default function Listings() {
     const [minDollar, setMinDollar] = useState<string>('');
     const [maxDollar, setMaxDollar] = useState<string>('');
 
-    const [minMoveIn, setMinMoveIn] = useState<string>(''); // yyyy-mm-dd
-    const [maxMoveIn, setMaxMoveIn] = useState<string>(''); // yyyy-mm-dd
+    const [minMoveIn, setMinMoveIn] = useState<string>('');
+    const [maxMoveIn, setMaxMoveIn] = useState<string>('');
 
     const [locFilter, setLocFilter] = useState<string>('');
+
+    const { username } = useUser();
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            if (!username || !data || data.length === 0) return;
+            try {
+                const res = await getSavedListings(username, 1, 500);
+                if (cancelled) return;
+
+                for (const s of res.listings ?? []) {
+                    setSavedHint(username, s.id, true);
+                }
+            } catch {
+            }
+        })();
+
+        return () => { cancelled = true; };
+    }, [username, data]);
 
     const minMoveMs = useMemo(
         () => (minMoveIn ? new Date(minMoveIn + 'T00:00:00').getTime() : undefined),
@@ -27,7 +51,6 @@ export default function Listings() {
         [maxMoveIn]
     );
 
-    // Order the selected window if both ends are set
     const desiredMoveStart = useMemo(() => {
         if (minMoveMs === undefined && maxMoveMs === undefined) return undefined;
         if (minMoveMs !== undefined && maxMoveMs !== undefined) return Math.min(minMoveMs, maxMoveMs);
@@ -57,8 +80,8 @@ export default function Listings() {
         return data.filter((l: any) => {
             const textOk =
                 !q ||
-                    (l.title ?? '').toLowerCase().includes(q) ||
-                    (l.description ?? '').toLowerCase().includes(q);
+                (l.title ?? '').toLowerCase().includes(q) ||
+                (l.description ?? '').toLowerCase().includes(q);
 
             const price = Number(l.price ?? 0);
             const minOk = minCents === undefined || price >= minCents;
@@ -70,11 +93,10 @@ export default function Listings() {
             const wantStart = desiredMoveStart ?? -Infinity;
             const wantEnd   = desiredMoveEnd   ?? +Infinity;
 
-            // Overlap if intervals intersect at all
             const moveOk = (listStart <= wantEnd) && (listEnd >= wantStart);
             const locationOk =
                 !locFilter ||
-                    String(l.location ?? '').toLowerCase().includes(locFilter.toLowerCase().trim());
+                String(l.location ?? '').toLowerCase().includes(locFilter.toLowerCase().trim());
 
             return textOk && minOk && maxOk && moveOk && locationOk;
         });
@@ -100,7 +122,7 @@ export default function Listings() {
 
                         <a
                             className="mt-2 h-12 w-60 hover:bg-white border hover:text-black hover:border-black rounded-[100px] font-sans bg-black text-white transition cursor-pointer text-center pt-[11px]"
-                            href="/temp-saved">
+                            href="/saved">
                             Saved Listings
                         </a>
 
@@ -114,7 +136,7 @@ export default function Listings() {
                             onChange={(e) => setQuery(e.target.value)}
                             placeholder="Search listings"
                             className="h-10 w-60 border border-gray-300 rounded-[100px] px-4 text-sm outline-none focus:border-gray-400"
-                            />
+                        />
 
                         <h1 className="pt-5 font-extralight font-sourceserif4-18pt-regular tracking-[-0.02em] text-[40px] text-maingray">
                             Filter
@@ -132,7 +154,7 @@ export default function Listings() {
                                     onChange={(e) => setMinDollar(e.target.value)}
                                     placeholder="0.00"
                                     className="h-9 w-28 border border-gray-300 rounded-[100px] px-3 text-sm outline-none focus:border-gray-400"
-                                    />
+                                />
                             </div>
                             <div className="flex items-center gap-2">
                                 <label className="text-sm text-gray-700">Max $</label>
@@ -144,7 +166,7 @@ export default function Listings() {
                                     onChange={(e) => setMaxDollar(e.target.value)}
                                     placeholder="9999.99"
                                     className="h-9 w-28 border border-gray-300 rounded-[100px] px-3 text-sm outline-none focus:border-gray-400"
-                                    />
+                                />
                             </div>
 
                         </div>
@@ -158,7 +180,7 @@ export default function Listings() {
                                     value={minMoveIn}
                                     onChange={(e) => setMinMoveIn(e.target.value)}
                                     className="h-9 w-44 border border-gray-300 rounded-[100px] px-3 text-sm outline-none focus:border-gray-400"
-                                    />
+                                />
                             </div>
                             <div className="flex flex-col items-start gap-2">
                                 <label className="text-sm text-gray-700">Latest move-in</label>
@@ -167,7 +189,7 @@ export default function Listings() {
                                     value={maxMoveIn}
                                     onChange={(e) => setMaxMoveIn(e.target.value)}
                                     className="h-9 w-44 border border-gray-300 rounded-[100px] px-3 text-sm outline-none focus:border-gray-400"
-                                    />
+                                />
                             </div>
                         </div>
 
@@ -180,9 +202,8 @@ export default function Listings() {
                                 onChange={(e) => setLocFilter(e.target.value)}
                                 placeholder="e.g. West Lafayette"
                                 className="h-9 w-40 border border-gray-300 rounded-[100px] px-3 text-sm outline-none focus:border-gray-400"
-                                />
+                            />
                         </div>
-
 
                         <button
                             type="button"
@@ -197,10 +218,16 @@ export default function Listings() {
                         >
                             Clear
                         </button>
+
+                        <h1 className="pt-5 font-extralight font-sourceserif4-18pt-regular tracking-[-0.02em] text-[40px] text-maingray">
+                            Sort
+                        </h1>
+
+
                     </div>
                 </div>
 
-                <div aria-hidden className="mt-10 w-px bg-gray-900 h-200" />
+                <div aria-hidden className="mt-10 w-px bg-gray-900 h-300" />
 
                 <div className="flex-1 pb-10">
                     <div className="flex flex-wrap justify-between w-fit gap-10 ml-5 mr-16 mt-10">
@@ -220,6 +247,7 @@ export default function Listings() {
 
                         {filtered?.map((l: any) => (
                             <Card
+                                key={l.id} // 👈 important for stable re-render
                                 location={l.location}
                                 id={l.id}
                                 title={l.title}
@@ -228,7 +256,7 @@ export default function Listings() {
                                 body={l.description}
                                 moveInEnd={l.moveInEnd}
                                 moveInStart={l.moveInStart}
-                                />
+                            />
                         ))}
                     </div>
                 </div>
@@ -240,7 +268,7 @@ export default function Listings() {
                 onCreated={() => {
                     mutate();
                 }}
-                />
+            />
         </div>
     );
 }

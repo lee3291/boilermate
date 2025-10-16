@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar.tsx";
 
 import { getSavedListings } from "../../../services/savedListings";
 import { useUser } from "./temp/UserContext";
+import ListingComparison, { type ListingForCompare } from "./ListingComparison"; // <- ADD
 
 type Listing = {
     id: string;
@@ -31,6 +32,26 @@ export default function SavedListings() {
         [total]
     );
 
+    // NEW: selection + comparison visibility
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [showComparison, setShowComparison] = useState(false);
+
+    const toggleSelected = (id: string) => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
+
+    const clearSelection = () => setSelectedIds(new Set());
+
+    const selectedListings: ListingForCompare[] = useMemo(
+        () => listings.filter((l) => selectedIds.has(l.id)),
+        [listings, selectedIds]
+    );
+
     useEffect(() => {
         if (!username) return;
 
@@ -43,6 +64,8 @@ export default function SavedListings() {
                 if (ac.signal.aborted) return;
                 setListings(res.listings);
                 setTotal(res.total);
+                // Clear selections if items changed
+                clearSelection();
             } catch (e: any) {
                 if (ac.signal.aborted) return;
                 setError(e?.message ?? "Failed to load saved listings");
@@ -58,7 +81,9 @@ export default function SavedListings() {
         return (
             <div className="w-full">
                 <Navbar />
-                <div className="p-6 text-gray-600">Please sign in to view your saved listings.</div>
+                <div className="p-6 text-gray-600">
+                    Please sign in to view your saved listings.
+                </div>
             </div>
         );
     }
@@ -67,19 +92,64 @@ export default function SavedListings() {
         <div className="w-full">
             <Navbar />
 
-            <div className="px-20 pt-6 space-y-4">
-                <h1 className="font-sourceserif4-18pt-regular text-[55px] tracking-[-0.02em] text-maingray">
-                    Saved Listings{total ? ` (${total})` : ""}
-                </h1>
+            <div className="px-20 pt-6">
+                <div className="flex items-start justify-between gap-4">
+                    <div>
+                        <h1 className="font-sourceserif4-18pt-regular text-[55px] tracking-[-0.02em] text-maingray">
+                            Saved Listings
+                        </h1>
+
+                        <p className="pb-5 font-roboto-light text-gray-600">
+                            Total saved listings: {total ? ` ${total}` : ""}
+                        </p>
+                    </div>
+
+                    <div className="mt-7 flex items-center gap-3 font-roboto-light">
+                        <a
+                            className="hover:underline hover:underline-offset-2"
+                            href="/listings"
+                        >
+                            Return to Listings
+                        </a>
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                className="rounded border px-3 py-1 text-sm disabled:opacity-50 cursor-pointer hover:bg-black hover:text-white transition"
+                                disabled={selectedIds.size < 2}
+                                onClick={() => setShowComparison(true)}
+                                title={
+                                    selectedIds.size < 2
+                                        ? "Select at least two to compare"
+                                        : "Open comparison"
+                                }
+                            >
+                                Compare ({selectedIds.size})
+                            </button>
+                            {selectedIds.size > 0 && (
+                                <button
+                                    className="rounded border px-3 py-1 text-sm hover:bg-black hover:text-white transition cursor-pointer"
+                                    onClick={clearSelection}
+                                    title="Clear selected"
+                                >
+                                    Clear
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
 
                 {loading && <div className="p-4">Loading saved listings…</div>}
 
                 {!loading && error && (
-                    <div className="p-4 text-red-600 border border-red-200 rounded">{error}</div>
+                    <div className="rounded border border-red-200 p-4 text-red-600">
+                        {error}
+                    </div>
                 )}
 
                 {!loading && !error && listings.length === 0 && (
-                    <div className="p-4 text-gray-600">You haven’t saved any listings yet.</div>
+                    <div className="p-4 text-gray-600">
+                        You haven’t saved any listings yet.
+                    </div>
                 )}
 
                 {!loading && !error && listings.length > 0 && (
@@ -91,37 +161,50 @@ export default function SavedListings() {
                                     currency: "USD",
                                 }).format(l.price / 100);
 
+                                const checked = selectedIds.has(l.id);
+
                                 return (
-                                    <li key={l.id} className="border rounded-lg p-4">
+                                    <li key={l.id} className="rounded-lg border p-4">
                                         <div className="flex items-start justify-between gap-4">
-                                            <div className="min-w-0">
+                                            <label className="mt-1 flex items-start gap-2">
+                                                <input
+                                                    type="checkbox"
+                                                    className="mt-1 h-4 w-4 accent-gray-700 cursor-pointer"
+                                                    checked={checked}
+                                                    onChange={() => toggleSelected(l.id)}
+                                                    aria-label={`Select ${l.title} for comparison`}
+                                                    />
+                                            </label>
+
+                                            <div className="min-w-0 flex-1">
                                                 <Link
                                                     to={`/listings/${l.id}`}
                                                     state={{
                                                         id: l.id,
                                                         title: l.title,
                                                         author: l.user,
-                                                        price: formattedPrice, // string, as ListingDetails expects
+                                                        price: formattedPrice,
                                                         body: l.description ?? "",
                                                         location: l.location,
                                                         moveInStart: l.moveInStart ?? "—",
                                                         moveInEnd: l.moveInEnd ?? "—",
                                                     }}
-                                                    className="text-lg font-roboto-semibold hover:underline break-words"
+                                                    className="break-words text-xl font-sourceserif4-18pt-regular hover:underline"
                                                 >
                                                     {l.title}
                                                 </Link>
-                                                <div className="text-sm text-gray-500 truncate">
+                                                <div className="truncate text-sm font-roboto-regular text-gray-400">
                                                     by {l.user} • {l.location}
                                                 </div>
                                             </div>
-                                            <div className="text-sm text-gray-700 font-roboto-light shrink-0">
+
+                                            <div className="shrink-0 text-sm font-roboto-light text-gray-700">
                                                 {formattedPrice}
                                             </div>
                                         </div>
 
                                         {l.description ? (
-                                            <p className="mt-2 text-gray-700 line-clamp-2 font-roboto-light">
+                                            <p className="mt-2 line-clamp-2 font-roboto-light text-gray-700">
                                                 {l.description}
                                             </p>
                                         ) : null}
@@ -135,9 +218,9 @@ export default function SavedListings() {
                         </ul>
 
                         {/* Pagination */}
-                        <div className="flex items-center gap-2 pt-2">
+                        <div className="flex items-center gap-2 pt-5">
                             <button
-                                className="px-3 py-1 border rounded disabled:opacity-50"
+                                className="rounded px-3 py-1 border disabled:opacity-50"
                                 disabled={page <= 1}
                                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                             >
@@ -147,7 +230,7 @@ export default function SavedListings() {
                                 Page {page} / {totalPages}
                             </span>
                             <button
-                                className="px-3 py-1 border rounded disabled:opacity-50"
+                                className="rounded px-3 py-1 border disabled:opacity-50"
                                 disabled={page >= totalPages}
                                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                             >
@@ -157,6 +240,14 @@ export default function SavedListings() {
                     </>
                 )}
             </div>
+
+            {/* NEW: Comparison modal */}
+            {showComparison && (
+                <ListingComparison
+                    listings={selectedListings}
+                    onClose={() => setShowComparison(false)}
+                    />
+            )}
         </div>
     );
 }
