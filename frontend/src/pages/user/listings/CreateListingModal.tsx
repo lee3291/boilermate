@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 type CreateListingModalProps = {
     open: boolean;
@@ -10,6 +11,8 @@ export default function CreateListingModal({ open, onClose, onCreated }: CreateL
     const [title, setTitle] = useState("");
     const [price, setPrice] = useState<string>("");
     const [description, setDescription] = useState("");
+    const [location, setLocation] = useState("");
+    const [mediaUrlsCsv, setMediaUrlsCsv] = useState<string>("");
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -47,23 +50,43 @@ export default function CreateListingModal({ open, onClose, onCreated }: CreateL
         setError(null);
         setSubmitting(true);
         try {
+            // Turn "a, b, c" into ["a","b","c"] and filter blanks
+            const mediaUrls = (mediaUrlsCsv || "")
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean);
+
             const payload = {
                 title: title.trim(),
                 description: description.trim(),
-                // store cents as integer if your API expects that
-                price: Math.round(Number(price || 0) * 100),
+                price: Math.round(Number(price || 0) * 100), // cents
+                location: location.trim(),                   // REQUIRED by validator
+                mediaUrls,                                   // REQUIRED array (can be [])
+                // status: optional (DB defaults to ACTIVE)
             };
 
-            // Adjust the endpoint to match your API
-            const res = await fetch("/listings", {
+            const res = await fetch(`${API_BASE}/listings`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
             });
 
             if (!res.ok) {
-                const text = await res.text().catch(() => "");
-                throw new Error(text || `Request failed with ${res.status}`);
+                // show any validation details from Nest’s BadRequestException
+                let message = `Request failed with ${res.status}`;
+                try {
+                    const maybeJson = await res.json();
+                    if (maybeJson?.message) {
+                        message = typeof maybeJson.message === "string" ? maybeJson.message : JSON.stringify(maybeJson.message);
+                    }
+                    if (maybeJson?.errors) {
+                        message += ` — ${Object.entries(maybeJson.errors).map(([k, v]) => `${k}: ${v}`).join("; ")}`;
+                    }
+                } catch {
+                    const text = await res.text().catch(() => "");
+                    if (text) message = text;
+                }
+                throw new Error(message);
             }
 
             const created = await res.json().catch(() => ({}));
@@ -73,6 +96,8 @@ export default function CreateListingModal({ open, onClose, onCreated }: CreateL
             setTitle("");
             setPrice("");
             setDescription("");
+            setLocation("");
+            setMediaUrlsCsv("");
             onClose();
         } catch (err: any) {
             setError(err?.message || "Something went wrong.");
@@ -119,8 +144,9 @@ export default function CreateListingModal({ open, onClose, onCreated }: CreateL
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 required
+                                maxLength={120}
                                 className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-gray-900"
-                                placeholder="e.g., Handmade Mug"
+                                placeholder="e.g., West Ville Apartment, St. XX"
                                 />
                         </div>
 
@@ -141,6 +167,20 @@ export default function CreateListingModal({ open, onClose, onCreated }: CreateL
                         </div>
 
                         <div className="space-y-1">
+                            <label htmlFor="location" className="text-sm font-medium text-gray-700">Location</label>
+                            <input
+                                id="location"
+                                type="text"
+                                value={location}
+                                onChange={(e) => setLocation(e.target.value)}
+                                required
+                                maxLength={140}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-gray-900"
+                                placeholder="e.g., West Lafayette, IN"
+                                />
+                        </div>
+
+                        <div className="space-y-1">
                             <label htmlFor="description" className="text-sm font-medium text-gray-700">
                                 Description
                             </label>
@@ -149,9 +189,26 @@ export default function CreateListingModal({ open, onClose, onCreated }: CreateL
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                                 rows={4}
+                                required
+                                maxLength={10000}
                                 className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-gray-900"
-                                placeholder="Tell buyers more about your listing..."
+                                placeholder="Tell potential roomates more about your listing..."
                                 />
+                        </div>
+
+                        <div className="space-y-1">
+                            <label htmlFor="mediaUrls" className="text-sm font-medium text-gray-700">
+                                Media URLs (comma-separated, optional)
+                            </label>
+                            <input
+                                id="mediaUrls"
+                                type="text"
+                                value={mediaUrlsCsv}
+                                onChange={(e) => setMediaUrlsCsv(e.target.value)}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-gray-900"
+                                placeholder="https://example.com/img1.jpg, https://example.com/img2.jpg"
+                                />
+                            <p className="text-xs text-gray-500">Up to 20 URLs. Leave blank if none.</p>
                         </div>
 
                         {error && (

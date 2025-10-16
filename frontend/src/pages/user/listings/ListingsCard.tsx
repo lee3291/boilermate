@@ -17,6 +17,15 @@ export default function ListingsCard({title, author, price, body}: ListingsCardP
                     </h1>
                     <h1 className="text-gray-500 font-roboto-bold text-lg">{price}</h1>
                     <h1 className="pt-2 font-roboto-light text-lg text-wrap">{body}</h1>
+
+                    <div className="flex justify-baseline gap-3">
+                        <button className="mt-10 h-12 w-35 bg-black text-white font-roboto-light rounded-4xl cursor-pointer">
+                            Apply to join
+                        </button>
+                        <button className="mt-10 h-12 w-30 bg-white text-black border-black border-1 font-roboto-light rounded-4xl cursor-pointer">
+                            Contact
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
