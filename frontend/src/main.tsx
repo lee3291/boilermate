@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './style.css'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import ListingDetails from './pages/user/listings/ListingDetails.tsx';
 
 // Import all top-level views/components
 
@@ -12,6 +13,11 @@ import ResetPasswordPage from './pages/resetpassword/ResetPasswordPage.tsx';
 import VerifyOTPPage from './pages/resetpassword/VerifyOTPPage.tsx';
 import ListingMap from './pages/listing/ListingMap.tsx';
 import ListingForm from './pages/listing/ListingForm.tsx';
+
+import Listings from './pages/user/listings/Listings.tsx'
+import TempAccount from './pages/user/listings/temp/TempAccount.tsx';
+import { UserProvider } from './pages/user/listings/temp/UserContext.tsx';
+// import ListingsCreateTest from './pages/user/ListingsTest.tsx';
 
 const router = createBrowserRouter([
   {
@@ -65,11 +71,31 @@ const router = createBrowserRouter([
         onClose={() => console.log('closed')}
     />,
   },
+      {
+    path: '/listings/',
+    element: <Listings/>,
+    errorElement: <div>404 Page Not Found</div>,
+    children: [{}]
+  },
+  {
+    path: '/listings/:id',
+    element: <ListingDetails />
+  },
+  {
+    path: '/temp-account/',
+    element: <TempAccount/>,
+    errorElement: <div>404 Page Not Found</div>,
+    children: [{}]
+  },
+
+
   // NOTES: you can just do a similar setup to test the page you created
 ])
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <RouterProvider router={router} />
+      <UserProvider>
+          <RouterProvider router={router} />
+      </UserProvider>
   </StrictMode>,
 );
