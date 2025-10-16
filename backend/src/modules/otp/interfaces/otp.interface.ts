@@ -7,7 +7,7 @@ export interface OTPRecord {
 export interface User {
     id: string
     email: string
-    hashedPassword: string
+    passwordHash: string
     isVerified: boolean
     listings: Listing[]
 }

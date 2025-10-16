@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="edd594b5-bfac-4f36-a620-236995196198" name="Changes" comment="Merge remote-tracking branch 'origin/main' into huyvu">
+      <change afterPath="$PROJECT_DIR$/backend/prisma/migrations/20251015002010_add_user_and_preference_models/migration.sql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/prisma/migrations/20251015004346_add_email_verification/migration.sql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/prisma/models/email-verification.prisma" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/prisma/models/preference.prisma" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/src/modules/auth/auth.controller.spec.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/src/modules/auth/auth.controller.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/src/modules/auth/auth.module.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/src/modules/auth/auth.service.spec.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/src/modules/auth/auth.service.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/src/modules/auth/dto/register.dto.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/src/modules/auth/dto/request-code.dto.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/src/modules/auth/dto/verify-code.dto.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/src/modules/email-verification/email-verification.module.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/src/modules/email-verification/email-verification.service.spec.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/src/modules/email-verification/email-verification.service.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/components/InputField.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/pages/public/SignUpPage.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/services/api.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/services/auth.service.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/backend/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/backend/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/prisma/models/user.prisma" beforeDir="false" afterPath="$PROJECT_DIR$/backend/prisma/models/user.prisma" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/prisma/schema.prisma" beforeDir="false" afterPath="$PROJECT_DIR$/backend/prisma/schema.prisma" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/app.module.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/app.module.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/otp/interfaces/otp.interface.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/modules/otp/interfaces/otp.interface.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/otp/otp.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/modules/otp/otp.service.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/App.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/main.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/main.tsx" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="main" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="UPDATE_TYPE" value="REBASE" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 1
+}</component>
+  <component name="ProjectId" id="33Ur2VTy4v3bMUvl8nxqr63vySh" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_MARK_IGNORED_FILES_AS_EXCLUDED&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;Merging huyvu&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;C:\\Program Files\\JetBrains\\IntelliJ IDEA 2023.3.2\\plugins\\javascript-impl\\jsLanguageServicesImpl\\external&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="RunManager">
+    <configuration default="true" type="DjangoTestsConfigurationType">
+      <module name="boilermate" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="TARGET" value="" />
+      <option name="SETTINGS_FILE" value="" />
+      <option name="CUSTOM_SETTINGS" value="false" />
+      <option name="USE_OPTIONS" value="false" />
+      <option name="OPTIONS" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="JetRunConfigurationType">
+      <module name="boilermate" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
+      <module name="boilermate" />
+      <option name="filePath" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="PyBehaveRunConfigurationType" factoryName="Behave">
+      <module name="boilermate" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="ADDITIONAL_ARGS" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="PythonConfigurationType" factoryName="Python">
+      <module name="boilermate" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="Python.FlaskServer">
+      <module name="boilermate" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="launchJavascriptDebuger" value="false" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="Tox" factoryName="Tox">
+      <module name="boilermate" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Autodetect">
+      <module name="boilermate" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Doctests">
+      <module name="boilermate" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="jdk-21.0.2-openjdk-21.0.2-f644763e9732-c0c073db" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="edd594b5-bfac-4f36-a620-236995196198" name="Changes" comment="" />
+      <created>1759382285217</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1759382285217</updated>
+      <workItem from="1759382286375" duration="42000" />
+      <workItem from="1759382616927" duration="1553000" />
+      <workItem from="1759384204075" duration="298000" />
+      <workItem from="1759384543922" duration="113000" />
+      <workItem from="1759384808157" duration="203000" />
+      <workItem from="1759385027245" duration="810000" />
+      <workItem from="1759414893642" duration="28000" />
+      <workItem from="1759414986980" duration="710000" />
+      <workItem from="1759415743117" duration="4090000" />
+      <workItem from="1759463827077" duration="1232000" />
+      <workItem from="1759465855384" duration="20000" />
+      <workItem from="1759465920261" duration="859000" />
+      <workItem from="1759466810617" duration="2523000" />
+      <workItem from="1759470153471" duration="4251000" />
+      <workItem from="1759548232286" duration="23000" />
+      <workItem from="1759548344248" duration="10626000" />
+      <workItem from="1759600139958" duration="20845000" />
+      <workItem from="1760150864219" duration="15912000" />
+      <workItem from="1760210354578" duration="6484000" />
+      <workItem from="1760239947058" duration="2070000" />
+      <workItem from="1760292574285" duration="8327000" />
+      <workItem from="1760306782541" duration="2248000" />
+      <workItem from="1760310386257" duration="6155000" />
+      <workItem from="1760492277227" duration="1890000" />
+      <workItem from="1760494196673" duration="30841000" />
+      <workItem from="1760635381249" duration="635000" />
+    </task>
+    <task id="LOCAL-00001" summary="feat: Add components and reset password related pages">
+      <option name="closed" value="true" />
+      <created>1759470357225</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1759470357225</updated>
+    </task>
+    <task id="LOCAL-00002" summary="fix: Delete .idea">
+      <option name="closed" value="true" />
+      <created>1759470608474</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1759470608474</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Merge remote-tracking branch 'origin/main' into huyvu">
+      <option name="closed" value="true" />
+      <created>1759546470183</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1759546470183</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Merge remote-tracking branch 'origin/main' into huyvu&#10;feat: finish OTP Request Page">
+      <option name="closed" value="true" />
+      <created>1759555364600</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1759555364600</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Merge remote-tracking branch 'origin/main' into huyvu&#10;feat: finish OTP Request Page">
+      <option name="closed" value="true" />
+      <created>1759555428563</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1759555428563</updated>
+    </task>
+    <task id="LOCAL-00006" summary="feat: frontend of verify OTP page and reset password page">
+      <option name="closed" value="true" />
+      <created>1759600415718</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1759600415718</updated>
+    </task>
+    <task id="LOCAL-00007" summary="feat: connect frontend with api endpoints for reset password related">
+      <option name="closed" value="true" />
+      <created>1759634237938</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1759634237938</updated>
+    </task>
+    <task id="LOCAL-00008" summary="feat: allow user to create a listing">
+      <option name="closed" value="true" />
+      <created>1760191176862</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1760191176862</updated>
+    </task>
+    <task id="LOCAL-00009" summary="feat: listing schema and listing api">
+      <option name="closed" value="true" />
+      <created>1760204924186</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1760204924186</updated>
+    </task>
+    <task id="LOCAL-00010" summary="feat: update schema and allow user to upload photos">
+      <option name="closed" value="true" />
+      <created>1760294317610</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1760294317610</updated>
+    </task>
+    <task id="LOCAL-00011" summary="feat: make listingService.ts">
+      <option name="closed" value="true" />
+      <created>1760297824033</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1760297824033</updated>
+    </task>
+    <task id="LOCAL-00012" summary="feat: GG Map page">
+      <option name="closed" value="true" />
+      <created>1760310465048</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1760310465048</updated>
+    </task>
+    <task id="LOCAL-00013" summary="fix: Listing schema and update new password to supabase">
+      <option name="closed" value="true" />
+      <created>1760494693332</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1760494693332</updated>
+    </task>
+    <task id="LOCAL-00014" summary="feat : display markers">
+      <option name="closed" value="true" />
+      <created>1760580534582</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1760580534582</updated>
+    </task>
+    <task id="LOCAL-00015" summary="fix : create api endpoint to display information for each marker">
+      <option name="closed" value="true" />
+      <created>1760584287307</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1760584287307</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="feat: Add components and reset password related pages" />
+    <MESSAGE value="fix: Delete .idea" />
+    <MESSAGE value="Merge remote-tracking branch 'origin/main' into huyvu&#10;&#10;# Conflicts:&#10;#&#9;frontend/package-lock.json&#10;#&#9;frontend/package.json&#10;#&#9;frontend/src/App.tsx&#10;" />
+    <MESSAGE value="Merge remote-tracking branch 'origin/main' into huyvu&#10;# Please enter a commit message to explain why this merge is necessary,&#10;# especially if it merges an updated upstream into a topic branch.&#10;#&#10;# Lines starting with '#' will be ignored, and an empty message aborts&#10;# the commit.&#10;" />
+    <MESSAGE value="Merge remote-tracking branch 'origin/main' into huyvu&#10;feat: finish OTP Request Page" />
+    <MESSAGE value="feat: frontend of verify OTP page and reset password page" />
+    <MESSAGE value="feat: connect frontend with api endpoints for reset password related" />
+    <MESSAGE value="feat: allow user to create a listing" />
+    <MESSAGE value="feat: listing schema and listing api" />
+    <MESSAGE value="feat: update schema and allow user to upload photos" />
+    <MESSAGE value="feat: make listingService.ts" />
+    <MESSAGE value="feat: GG Map page" />
+    <MESSAGE value="fix: Listing schema and update new password to supabase" />
+    <MESSAGE value="feat : display markers" />
+    <MESSAGE value="fix : create api endpoint to display information for each marker" />
+    <MESSAGE value="Merge" />
+    <MESSAGE value="Merge remote-tracking branch 'origin/main' into huyvu" />
+    <option name="LAST_COMMIT_MESSAGE" value="Merge remote-tracking branch 'origin/main' into huyvu" />
+  </component>
+</project>

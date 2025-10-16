@@ -11,6 +11,7 @@ import OTPRequestPage from "./pages/resetpassword/OTPRequestPage.tsx";
 import ResetPasswordPage from './pages/resetpassword/ResetPasswordPage.tsx';
 import VerifyOTPPage from './pages/resetpassword/VerifyOTPPage.tsx';
 import ListingMap from './pages/listing/ListingMap.tsx';
+import ListingForm from './pages/listing/ListingForm.tsx';
 
 const router = createBrowserRouter([
   {
@@ -56,6 +57,13 @@ const router = createBrowserRouter([
   {
     path: "/listing-map",
     element: <ListingMap />,
+  },
+  {
+    path: "/listing-form",
+    element: <ListingForm
+        isOpen={true}
+        onClose={() => console.log('closed')}
+    />,
   },
   // NOTES: you can just do a similar setup to test the page you created
 ])

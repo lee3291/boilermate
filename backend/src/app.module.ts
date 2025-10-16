@@ -4,9 +4,12 @@ import { AppService } from './app.service';
 import { PrismaModule } from '@core/database/prisma.module';
 import { DogsModule } from '@modules/dogs/dogs.module'
 import { OTPModule } from './modules/otp/otp.module';
-import { ListingModule } from './modules/listings/listing.module';
+import { ListingModule } from './modules/listings/listing.module'
+import { AuthModule } from './modules/auth/auth.module';
+import { EmailVerificationModule } from './modules/email-verification/email-verification.module';
+
 @Module({
-  imports: [PrismaModule, DogsModule, OTPModule, ListingModule],
+  imports: [PrismaModule, DogsModule, AuthModule, EmailVerificationModule,  OTPModule, ListingModule],
   controllers: [AppController],
   providers: [AppService],
 })
