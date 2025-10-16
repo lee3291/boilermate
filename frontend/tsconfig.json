@@ -9,7 +9,7 @@
     "paths": {
       "@/*": ["src/*"]
     },
-    "types": ["node"],
+    "types": ["node", "google.maps"],
     "lib": ["dom", "dom.iterable", "esnext"]
   }
 }

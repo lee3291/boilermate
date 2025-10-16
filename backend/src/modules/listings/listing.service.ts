@@ -24,12 +24,18 @@ export class ListingService {
     }
 
     /**
-     * Get all listings, ordered by creation date descending
+     * Get all listings
      */
-    async findAll(): Promise<Listing[]> {
-        return this.prisma.listing.findMany({
-            orderBy: { createdAt: 'desc' },
+    async findAll() {
+        //Extract 3 attributes to show in the gg map
+        const listings = await this.prisma.listing.findMany({
+            select: {
+                title: true,
+                location: true,
+                pricing: true,
+            },
         });
+        return listings;
     }
     /**
      * Get a single listing by ID
@@ -42,7 +48,6 @@ export class ListingService {
         if (!listing) {
             throw new NotFoundException('Listing not found');
         }
-
         return listing;
     }
     /**

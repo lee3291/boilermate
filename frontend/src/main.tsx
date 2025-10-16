@@ -52,10 +52,6 @@ const router = createBrowserRouter([
     element: <ResetPasswordPage />,
   },
   // Dashboard
-  {
-    path: "/otp-request",
-    element: <OTPRequestPage />,
-  },
   // Map
   {
     path: "/listing-map",
