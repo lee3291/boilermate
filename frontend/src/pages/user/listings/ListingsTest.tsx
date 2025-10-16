@@ -8,6 +8,9 @@ type CreateListingBody = {
     price: number;
     location: string;
     mediaUrls: string[];
+    // NEW:
+    moveInStart: string; // send as 'YYYY-MM-DD'
+    moveInEnd: string;   // send as 'YYYY-MM-DD'
     status?: ListingStatus;
 };
 
@@ -24,6 +27,9 @@ type CreateListingResult = {
         viewCount: number;
         createdAt: string;
         updatedAt: string;
+        // Optional in case your API includes these in the response:
+        moveInStart?: string | null;
+        moveInEnd?: string | null;
     };
 };
 
@@ -38,6 +44,11 @@ export default function ListingsCreateTest() {
     const [description, setDescription] = useState('');
     const [price, setPrice] = useState<string>(''); // as text, convert -> int
     const [location, setLocation] = useState('');
+
+    // NEW: move-in window (strings; <input type="date"> gives 'YYYY-MM-DD')
+    const [moveInStart, setMoveInStart] = useState('');
+    const [moveInEnd, setMoveInEnd] = useState('');
+
     const [mediaUrlsText, setMediaUrlsText] = useState(''); // comma/line separated
     const [status, setStatus] = useState<ListingStatus | ''>('');
 
@@ -81,12 +92,24 @@ export default function ListingsCreateTest() {
             return;
         }
 
+        // Minimal client-side presence check to align with controller's "required string"
+        if (!moveInStart.trim() || !moveInEnd.trim()) {
+            setSubmitting(false);
+            setServerErrors({
+                ...( !moveInStart.trim() ? { moveInStart: 'moveInStart is required' } : {} ),
+                ...( !moveInEnd.trim() ? { moveInEnd: 'moveInEnd is required' } : {} ),
+            });
+            return;
+        }
+
         const body: CreateListingBody = {
             title: title.trim(),
             description: description.trim(),
             price: cents,
             location: location.trim(),
             mediaUrls,
+            moveInStart: moveInStart.trim(), // 'YYYY-MM-DD'
+            moveInEnd: moveInEnd.trim(),     // 'YYYY-MM-DD'
             ...(status ? { status } : {}),
         };
 
@@ -120,6 +143,8 @@ export default function ListingsCreateTest() {
             setPrice('');
             setLocation('');
             setMediaUrlsText('');
+            setMoveInStart(''); // NEW
+            setMoveInEnd('');   // NEW
             setStatus('');
         } catch (err: any) {
             setGenericError(err?.message || 'Network error');
@@ -169,7 +194,7 @@ export default function ListingsCreateTest() {
                                 value={token}
                                 onChange={(e) => setToken(e.target.value)}
                                 className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2"
-                                />
+                            />
                             <p className="mt-1 text-xs text-gray-500">
                                 Sent as <code className="font-mono">Authorization: Bearer &lt;token&gt;</code>
                             </p>
@@ -182,7 +207,6 @@ export default function ListingsCreateTest() {
                         </p>
                     )}
                 </section>
-
 
                 {/* Form */}
                 <form
@@ -208,7 +232,7 @@ export default function ListingsCreateTest() {
                             className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2"
                             maxLength={120}
                             required
-                            />
+                        />
                         {serverErrors.title && <p className="mt-1 text-xs text-red-600">{serverErrors.title}</p>}
                     </div>
 
@@ -221,7 +245,7 @@ export default function ListingsCreateTest() {
                             rows={4}
                             maxLength={10000}
                             required
-                            />
+                        />
                         {serverErrors.description && <p className="mt-1 text-xs text-red-600">{serverErrors.description}</p>}
                     </div>
 
@@ -235,7 +259,7 @@ export default function ListingsCreateTest() {
                                 className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2"
                                 inputMode="decimal"
                                 required
-                                />
+                            />
                             {serverErrors.price && <p className="mt-1 text-xs text-red-600">{serverErrors.price}</p>}
                         </div>
 
@@ -247,8 +271,39 @@ export default function ListingsCreateTest() {
                                 className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2"
                                 maxLength={140}
                                 required
-                                />
+                            />
                             {serverErrors.location && <p className="mt-1 text-xs text-red-600">{serverErrors.location}</p>}
+                        </div>
+                    </div>
+
+                    {/* NEW: Move-in window */}
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                            <label className="block text-sm font-medium">Move-in Start</label>
+                            <input
+                                type="date"
+                                value={moveInStart}
+                                onChange={(e) => setMoveInStart(e.target.value)}
+                                className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2"
+                                required
+                            />
+                            {serverErrors.moveInStart && (
+                                <p className="mt-1 text-xs text-red-600">{serverErrors.moveInStart}</p>
+                            )}
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium">Move-in End</label>
+                            <input
+                                type="date"
+                                value={moveInEnd}
+                                onChange={(e) => setMoveInEnd(e.target.value)}
+                                className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2"
+                                required
+                            />
+                            {serverErrors.moveInEnd && (
+                                <p className="mt-1 text-xs text-red-600">{serverErrors.moveInEnd}</p>
+                            )}
                         </div>
                     </div>
 
@@ -260,7 +315,7 @@ export default function ListingsCreateTest() {
                             className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2"
                             rows={3}
                             placeholder="https://... , https://..."
-                            />
+                        />
                         {serverErrors.mediaUrls && <p className="mt-1 text-xs text-red-600">{serverErrors.mediaUrls}</p>}
                         <p className="mt-1 text-xs text-gray-500">Parsed: {mediaUrls.length} url(s)</p>
                     </div>
@@ -303,6 +358,13 @@ export default function ListingsCreateTest() {
                             <div><span className="font-medium">Price (cents):</span> {result.listing.price}</div>
                             <div><span className="font-medium">Location:</span> {result.listing.location}</div>
                             <div><span className="font-medium">Status:</span> {result.listing.status}</div>
+                            {/* Show move-in window if API returns it */}
+                            {(result.listing.moveInStart || result.listing.moveInEnd) && (
+                                <>
+                                    <div><span className="font-medium">Move-in Start:</span> {result.listing.moveInStart ?? '—'}</div>
+                                    <div><span className="font-medium">Move-in End:</span> {result.listing.moveInEnd ?? '—'}</div>
+                                </>
+                            )}
                             <div><span className="font-medium">Created:</span> {new Date(result.listing.createdAt).toLocaleString()}</div>
                             <div className="mt-2">
                                 <span className="font-medium">Media URLs:</span>

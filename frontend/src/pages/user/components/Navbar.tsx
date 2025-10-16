@@ -19,7 +19,7 @@ export default function Navbar() {
 
             <nav className="relative z-10 h-16 w-[92%] mx-auto rounded-2xl border bg-white px-4 md:px-6">
                 <div className="h-full flex items-center justify-between gap-4">
-                    <h3 className="text-[22px] font-serif tracking-tight">BoilerMate</h3>
+                    <a className="text-[22px] font-serif tracking-tight select-none cursor-pointer" href="/">BoilerMate</a>
 
                     <ul className="hidden md:flex items-center gap-6 text-[16px]">
                         {NAV_ITEMS.map((item) => (

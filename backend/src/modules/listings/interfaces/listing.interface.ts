@@ -52,3 +52,47 @@ export interface ListingResponse {
 export interface CreateListingResult {
   listing: ListingResponse;
 }
+
+
+export interface SaveListingBody {
+  username: string; // e.g. Supabase user_metadata.username; OR provided directly
+}
+
+/** Result of a save action */
+export interface SaveListingResult {
+  listingId: string;
+  username: string;
+  isSaved: true;
+  createdAt: string; // ISO
+}
+
+/** Result of an unsave action */
+export interface UnsaveListingResult {
+  listingId: string;
+  username: string;
+  isSaved: false;
+}
+
+/** Count of saves for a listing */
+export interface SaveCountResult {
+  listingId: string;
+  count: number;
+}
+
+/** Who saved a listing (usernames only) */
+export interface SavedByResult {
+  listingId: string;
+  usernames: string[];
+  page: number;
+  pageSize: number;
+  total: number; // total rows
+}
+
+/** Listings saved by a specific user */
+export interface SavedListingsResult {
+  username: string;
+  listings: ListingResponse[];
+  page: number;
+  pageSize: number;
+  total: number; // total rows matching
+}

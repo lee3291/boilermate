@@ -11,6 +11,7 @@ import App from './App.tsx'
 import Listings from './pages/user/listings/Listings.tsx'
 import TempAccount from './pages/user/listings/temp/TempAccount.tsx';
 import { UserProvider } from './pages/user/listings/temp/UserContext.tsx';
+import SavedListings from './pages/user/listings/SavedListings.tsx';
 // import ListingsCreateTest from './pages/user/ListingsTest.tsx';
 
 const router = createBrowserRouter([
@@ -58,6 +59,13 @@ const router = createBrowserRouter([
     errorElement: <div>404 Page Not Found</div>,
     children: [{}]
   },
+  {
+    path: '/temp-saved/',
+    element: <SavedListings/>,
+    errorElement: <div>404 Page Not Found</div>,
+    children: [{}]
+  },
+
 
 
   // NOTES: you can just do a similar setup to test the page you created

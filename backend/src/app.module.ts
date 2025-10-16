@@ -5,8 +5,8 @@ import { PrismaModule } from '@core/database/prisma.module';
 import { ListingsModule } from '@modules/listings/listings.module'
 
 @Module({
-  imports: [PrismaModule, ListingsModule],
-  controllers: [AppController],
-  providers: [AppService],
+    imports: [PrismaModule, ListingsModule],
+    controllers: [AppController],
+    providers: [AppService],
 })
 export class AppModule {}

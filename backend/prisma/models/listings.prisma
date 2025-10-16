@@ -25,8 +25,23 @@ model Listing {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
+  saves       Saved[]
+
   @@index([status])
   @@index([location])
   @@index([price])
 }
 
+model Saved {
+  username   String
+  listingId  String
+
+  listing    Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime      @default(now())
+
+  @@id([username, listingId])
+
+  @@index([username])
+  @@index([listingId])
+}

@@ -13,6 +13,33 @@ export default function Listings() {
     const [minDollar, setMinDollar] = useState<string>('');
     const [maxDollar, setMaxDollar] = useState<string>('');
 
+    const [minMoveIn, setMinMoveIn] = useState<string>(''); // yyyy-mm-dd
+    const [maxMoveIn, setMaxMoveIn] = useState<string>(''); // yyyy-mm-dd
+
+    const [locFilter, setLocFilter] = useState<string>('');
+
+    const minMoveMs = useMemo(
+        () => (minMoveIn ? new Date(minMoveIn + 'T00:00:00').getTime() : undefined),
+        [minMoveIn]
+    );
+    const maxMoveMs = useMemo(
+        () => (maxMoveIn ? new Date(maxMoveIn + 'T23:59:59.999').getTime() : undefined),
+        [maxMoveIn]
+    );
+
+    // Order the selected window if both ends are set
+    const desiredMoveStart = useMemo(() => {
+        if (minMoveMs === undefined && maxMoveMs === undefined) return undefined;
+        if (minMoveMs !== undefined && maxMoveMs !== undefined) return Math.min(minMoveMs, maxMoveMs);
+        return minMoveMs;
+    }, [minMoveMs, maxMoveMs]);
+
+    const desiredMoveEnd = useMemo(() => {
+        if (minMoveMs === undefined && maxMoveMs === undefined) return undefined;
+        if (minMoveMs !== undefined && maxMoveMs !== undefined) return Math.max(minMoveMs, maxMoveMs);
+        return maxMoveMs;
+    }, [minMoveMs, maxMoveMs]);
+
     const minCents = useMemo(() => {
         const n = parseFloat(minDollar);
         return Number.isFinite(n) ? Math.max(0, Math.round(n * 100)) : undefined;
@@ -37,9 +64,21 @@ export default function Listings() {
             const minOk = minCents === undefined || price >= minCents;
             const maxOk = maxCents === undefined || price <= maxCents;
 
-            return textOk && minOk && maxOk;
+            const listStart = l.moveInStart ? new Date(l.moveInStart).getTime() : -Infinity;
+            const listEnd   = l.moveInEnd   ? new Date(l.moveInEnd).getTime()   : +Infinity;
+
+            const wantStart = desiredMoveStart ?? -Infinity;
+            const wantEnd   = desiredMoveEnd   ?? +Infinity;
+
+            // Overlap if intervals intersect at all
+            const moveOk = (listStart <= wantEnd) && (listEnd >= wantStart);
+            const locationOk =
+                !locFilter ||
+                    String(l.location ?? '').toLowerCase().includes(locFilter.toLowerCase().trim());
+
+            return textOk && minOk && maxOk && moveOk && locationOk;
         });
-    }, [data, query, minCents, maxCents]);
+    }, [data, query, minCents, maxCents, desiredMoveStart, desiredMoveEnd, locFilter]);
 
     return (
         <div className="bg-white w-full h-[400px]">
@@ -58,6 +97,12 @@ export default function Listings() {
                         >
                             Create a Listing
                         </button>
+
+                        <a
+                            className="mt-2 h-12 w-60 hover:bg-white border hover:text-black hover:border-black rounded-[100px] font-sans bg-black text-white transition cursor-pointer text-center pt-[11px]"
+                            href="/temp-saved">
+                            Saved Listings
+                        </a>
 
                         <h1 className="pt-5 font-extralight font-sourceserif4-18pt-regular tracking-[-0.02em] text-[40px] text-maingray">
                             Search
@@ -102,17 +147,56 @@ export default function Listings() {
                                     />
                             </div>
 
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setMinDollar('');
-                                    setMaxDollar('');
-                                }}
-                                className="h-9 px-3 border border-gray-300 rounded-[100px] text-sm hover:bg-gray-100"
-                            >
-                                Clear
-                            </button>
                         </div>
+
+                        {/* Move-in window (dates) */}
+                        <div className="mt-2 flex flex-col justify-start gap-2">
+                            <div className="flex flex-col items-start gap-2">
+                                <label className="text-sm text-gray-700">Earliest move-in</label>
+                                <input
+                                    type="date"
+                                    value={minMoveIn}
+                                    onChange={(e) => setMinMoveIn(e.target.value)}
+                                    className="h-9 w-44 border border-gray-300 rounded-[100px] px-3 text-sm outline-none focus:border-gray-400"
+                                    />
+                            </div>
+                            <div className="flex flex-col items-start gap-2">
+                                <label className="text-sm text-gray-700">Latest move-in</label>
+                                <input
+                                    type="date"
+                                    value={maxMoveIn}
+                                    onChange={(e) => setMaxMoveIn(e.target.value)}
+                                    className="h-9 w-44 border border-gray-300 rounded-[100px] px-3 text-sm outline-none focus:border-gray-400"
+                                    />
+                            </div>
+                        </div>
+
+                        {/* Location filter */}
+                        <div className="mt-2 flex items-center gap-2">
+                            <label className="text-sm text-gray-700">Location</label>
+                            <input
+                                type="text"
+                                value={locFilter}
+                                onChange={(e) => setLocFilter(e.target.value)}
+                                placeholder="e.g. West Lafayette"
+                                className="h-9 w-40 border border-gray-300 rounded-[100px] px-3 text-sm outline-none focus:border-gray-400"
+                                />
+                        </div>
+
+
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setMinDollar('');
+                                setMaxDollar('');
+                                setMinMoveIn('');
+                                setMaxMoveIn('');
+                                setLocFilter('');
+                            }}
+                            className="mt-2 h-9 px-3 border border-gray-300 rounded-[100px] text-sm hover:bg-gray-100"
+                        >
+                            Clear
+                        </button>
                     </div>
                 </div>
 
@@ -142,6 +226,8 @@ export default function Listings() {
                                 author={l.user ?? 'Unknown'}
                                 price={`$${(l.price / 100).toFixed(2)}`}
                                 body={l.description}
+                                moveInEnd={l.moveInEnd}
+                                moveInStart={l.moveInStart}
                                 />
                         ))}
                     </div>
