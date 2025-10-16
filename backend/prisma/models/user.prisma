@@ -9,13 +9,9 @@ model User {
   isVerified    Boolean       @default(false)
   status        UserStatus?   @default(ACTIVE)
   searchStatus  SearchStatus? @default(LOOKING)
-<<<<<<< HEAD
   preferences   Preference[]
   listings      Listing[]
-=======
-
   preferences   Preference[]
->>>>>>> origin/main
 }
 
 enum UserStatus {

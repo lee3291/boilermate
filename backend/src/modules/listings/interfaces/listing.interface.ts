@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 export interface Listing {
     listingID: string;
     userID: string;
@@ -11,7 +10,6 @@ export interface Listing {
     viewCount: number;
     createdAt: Date;
 }
-=======
 export type ListingStatus = 'ACTIVE' | 'ARCHIVED' | 'RESOLVED';
 
 /**
@@ -66,4 +64,3 @@ export interface ListingResponse {
 export interface CreateListingResult {
   listing: ListingResponse;
 }
->>>>>>> origin/main

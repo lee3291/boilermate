@@ -13,7 +13,6 @@ import ResetPasswordPage from './pages/resetpassword/ResetPasswordPage.tsx';
 import VerifyOTPPage from './pages/resetpassword/VerifyOTPPage.tsx';
 import ListingMap from './pages/listing/ListingMap.tsx';
 import ListingForm from './pages/listing/ListingForm.tsx';
-
 import Listings from './pages/user/listings/Listings.tsx'
 import TempAccount from './pages/user/listings/temp/TempAccount.tsx';
 import { UserProvider } from './pages/user/listings/temp/UserContext.tsx';
@@ -76,6 +75,12 @@ const router = createBrowserRouter([
     element: <Listings/>,
     errorElement: <div>404 Page Not Found</div>,
     children: [{}]
+  },
+  {
+    path: '/listings/:id',
+    element: <ListingDetails />
+  },
+  {
   },
   {
     path: '/listings/:id',
