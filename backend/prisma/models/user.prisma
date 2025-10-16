@@ -9,7 +9,8 @@ model User {
   isVerified    Boolean       @default(false)
   status        UserStatus?   @default(ACTIVE)
   searchStatus  SearchStatus? @default(LOOKING)
-
+  preferences   Preference[]
+  listings      Listing[]
   preferences   Preference[]
 }
 

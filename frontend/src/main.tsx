@@ -8,6 +8,11 @@ import ListingDetails from './pages/user/listings/ListingDetails.tsx';
 
 // Components used for protected areas
 import App from './App.tsx'
+import OTPRequestPage from "./pages/resetpassword/OTPRequestPage.tsx";
+import ResetPasswordPage from './pages/resetpassword/ResetPasswordPage.tsx';
+import VerifyOTPPage from './pages/resetpassword/VerifyOTPPage.tsx';
+import ListingMap from './pages/listing/ListingMap.tsx';
+import ListingForm from './pages/listing/ListingForm.tsx';
 import Listings from './pages/user/listings/Listings.tsx'
 import TempAccount from './pages/user/listings/temp/TempAccount.tsx';
 import { UserProvider } from './pages/user/listings/temp/UserContext.tsx';
@@ -24,29 +29,58 @@ const router = createBrowserRouter([
         path: 'idk', // enter path you want
         element: <App /> // should be <Home/>
       },
-      {
-        // do similar for other page
-      }
       // you can add other public page here (About, ...)
     ]
+
   },
 
   // login page
-  {},
+  //{},
   // signup page
-  {},
+  //{},
 
   // admin role here, page related to admin role in here
-  {
-
-  },
+ // {},
 
   // user role here, page related to user role in here
+  //{},
+  // For reset password
   {
+    path: "/otp-request",
+    element: <OTPRequestPage />,
+  },
+  {
+    path: "/verify-otp",
+    element: <VerifyOTPPage />,
+  },
+  {
+    path: "/reset-password",
+    element: <ResetPasswordPage />,
+  },
+  // Dashboard
+  // Map
+  {
+    path: "/listing-map",
+    element: <ListingMap />,
+  },
+  {
+    path: "/listing-form",
+    element: <ListingForm
+        isOpen={true}
+        onClose={() => console.log('closed')}
+    />,
+  },
+      {
     path: '/listings/',
     element: <Listings/>,
     errorElement: <div>404 Page Not Found</div>,
     children: [{}]
+  },
+  {
+    path: '/listings/:id',
+    element: <ListingDetails />
+  },
+  {
   },
   {
     path: '/listings/:id',
@@ -69,4 +103,4 @@ createRoot(document.getElementById('root')!).render(
           <RouterProvider router={router} />
       </UserProvider>
   </StrictMode>,
-)
+);
