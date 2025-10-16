@@ -12,6 +12,8 @@ export interface CreateListingBody {
   location: string;
   mediaUrls: string[];
   status?: ListingStatus;
+  moveInStart?: string;
+  moveInEnd?: string;
 }
 
 /**
@@ -38,6 +40,9 @@ export interface ListingResponse {
 
   status: ListingStatus;
   viewCount: number;
+
+  moveInStart: string | null; // "YYYY-MM-DD"
+  moveInEnd: string | null;   // "YYYY-MM-DD"
 
   createdAt: string;    // ISO
   updatedAt: string;    // ISO

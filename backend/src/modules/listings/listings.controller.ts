@@ -40,6 +40,18 @@ function assertCreateBody(body: any): asserts body is CreateListingBody {
         errors.location = 'location must be ≤ 140 chars';
     }
 
+    if (typeof body?.moveInStart !== 'string' || body.moveInStart.trim().length === 0) {
+        errors.moveInStart = 'moveInStart is required';
+    } else if (body.moveInStart.trim().length > 140) {
+        errors.moveInStart = 'moveInStart must be ≤ 140 chars';
+    }
+
+    if (typeof body?.moveInEnd !== 'string' || body.moveInEnd.trim().length === 0) {
+        errors.moveInEnd = 'moveInEnd is required';
+    } else if (body.moveInEnd.trim().length > 140) {
+        errors.moveInEnd = 'moveInEnd must be ≤ 140 chars';
+    }
+
     if (!Array.isArray(body?.mediaUrls)) {
         errors.mediaUrls = 'mediaUrls must be an array of URL strings';
     } else if (body.mediaUrls.length > 20) {
@@ -79,6 +91,8 @@ export class ListingsController {
             description: rawBody.description.trim(),
             price: rawBody.price,
             location: rawBody.location.trim(),
+            moveInStart: rawBody.moveInStart?.trim() || undefined,
+            moveInEnd: rawBody.moveInEnd?.trim() || undefined,
             mediaUrls: rawBody.mediaUrls,
             status: rawBody.status, // optional (DB defaults to ACTIVE)
         };

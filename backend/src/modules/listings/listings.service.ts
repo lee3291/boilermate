@@ -31,9 +31,14 @@ export class ListingsService {
                 price: input.price,
                 location: input.location,
                 mediaUrls: input.mediaUrls,
+                moveInStart: input.moveInStart,
+                moveInEnd: input.moveInEnd,
                 ...(input.status ? { status: input.status } : {}), // omit to use DB default
             },
         });
+
+        const toYMD = (d: Date | null): string | null =>
+            d ? d.toISOString().slice(0, 10) : null;
 
         const listing: ListingResponse = {
             id: created.id,
@@ -43,6 +48,8 @@ export class ListingsService {
             description: created.description,
             price: created.price,
             location: created.location,
+            moveInStart: toYMD(created.moveInStart),
+            moveInEnd:   toYMD(created.moveInEnd),
             mediaUrls: created.mediaUrls,
             status: created.status as ListingResponse['status'],
             viewCount: created.viewCount,

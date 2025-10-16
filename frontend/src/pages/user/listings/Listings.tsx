@@ -136,6 +136,7 @@ export default function Listings() {
 
                         {filtered?.map((l: any) => (
                             <Card
+                                location={l.location}
                                 id={l.id}
                                 title={l.title}
                                 author={l.user ?? 'Unknown'}
