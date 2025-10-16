@@ -1,4 +1,5 @@
 import accountIcon from "@/assets/images/account.png"
+import { useUser } from "../listings/temp/UserContext";
 
 export default function Navbar() {
     type navItem = { label: string; href: string };
@@ -9,6 +10,8 @@ export default function Navbar() {
         { label: "Roomates", href: "/roomates" },
         { label: "Messages", href: "/messages" },
     ];
+
+    const { username } = useUser();
 
     return (
         <div className="sticky top-0 z-50 w-full pt-7">
@@ -28,10 +31,10 @@ export default function Navbar() {
                         ))}
                     </ul>
 
-                    <div className="flex items-center gap-2">
+                    <a href="/temp-account" className="flex items-center gap-2">
                         <img src={accountIcon} className="h-6 w-auto"/>
-                        <p className="font-sans text-[16px]">Account</p>
-                    </div>
+                        <p className="font-sans text-[16px]">{username || "Account"}</p>
+                    </a>
                 </div>
             </nav>
         </div>
