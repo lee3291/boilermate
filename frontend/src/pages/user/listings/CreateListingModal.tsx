@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useUser } from "./temp/UserContext";
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 type CreateListingModalProps = {
@@ -8,6 +9,7 @@ type CreateListingModalProps = {
 };
 
 export default function CreateListingModal({ open, onClose, onCreated }: CreateListingModalProps) {
+    const { username } = useUser();
     const [title, setTitle] = useState("");
     const [price, setPrice] = useState<string>("");
     const [description, setDescription] = useState("");
@@ -58,9 +60,11 @@ export default function CreateListingModal({ open, onClose, onCreated }: CreateL
 
             const payload = {
                 title: title.trim(),
+                user: username.trim(),
                 description: description.trim(),
                 price: Math.round(Number(price || 0) * 100), // cents
                 location: location.trim(),                   // REQUIRED by validator
+                // creatorId: username.trim(),
                 mediaUrls,                                   // REQUIRED array (can be [])
                 // status: optional (DB defaults to ACTIVE)
             };

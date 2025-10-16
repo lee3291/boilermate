@@ -26,6 +26,7 @@ export class ListingsService {
             data: {
                 // creatorId: input.creatorId,
                 title: input.title,
+                user: input.user,
                 description: input.description,
                 price: input.price,
                 location: input.location,
@@ -36,8 +37,9 @@ export class ListingsService {
 
         const listing: ListingResponse = {
             id: created.id,
-            // creatorId: created.creatorId,
+            // creatorId: input.creatorId,
             title: created.title,
+            user: created.user,
             description: created.description,
             price: created.price,
             location: created.location,

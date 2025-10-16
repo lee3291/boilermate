@@ -1,5 +1,7 @@
 export class CreateListingDto {
   title!: string;
+  user!: string;
+  creatorId!: string;
   description!: string;
   price!: number;
   location!: string;

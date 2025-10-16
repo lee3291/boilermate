@@ -6,6 +6,7 @@ export type ListingStatus = 'ACTIVE' | 'ARCHIVED' | 'RESOLVED';
  */
 export interface CreateListingBody {
   title: string;
+  user: string;
   description: string;
   price: number;        // cents
   location: string;
@@ -28,6 +29,7 @@ export interface ListingResponse {
   id: string;
   // creatorId: string;
 
+  user: string;
   title: string;
   description: string;
   price: number;

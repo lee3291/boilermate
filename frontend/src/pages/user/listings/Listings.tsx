@@ -34,7 +34,7 @@ export default function Listings() {
                             <Card
                                 key={l.id}
                                 title={l.title}
-                                author={l.creatorId?.slice(0, 6) ?? 'Unknown'}
+                                author={l.user ?? 'Unknown'}
                                 price={`$${(l.price / 100).toFixed(2)}`}
                                 body={l.description}
                                 />
@@ -46,7 +46,6 @@ export default function Listings() {
                 open={openCreate}
                 onClose={() => setOpenCreate(false)}
                 onCreated={() => {
-                    // revalidate the list after a successful creation
                     mutate();
                 }}
                 />

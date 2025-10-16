@@ -18,6 +18,12 @@ function assertCreateBody(body: any): asserts body is CreateListingBody {
         errors.title = 'title must be ≤ 120 chars';
     }
 
+    if (typeof body?.user !== 'string' || body.user.trim().length === 0) {
+        errors.user = 'user is required';
+    } else if (body.user.trim().length > 120) {
+        errors.user = 'user must be ≤ 120 chars';
+    }
+
     if (typeof body?.description !== 'string' || body.description.trim().length === 0) {
         errors.description = 'description is required';
     } else if (body.description.trim().length > 10_000) {
@@ -69,6 +75,7 @@ export class ListingsController {
         // 2) normalize and inject auth (creatorId)
         const body: CreateListingBody = {
             title: rawBody.title.trim(),
+            user: rawBody.user.trim(),
             description: rawBody.description.trim(),
             price: rawBody.price,
             location: rawBody.location.trim(),
@@ -78,7 +85,7 @@ export class ListingsController {
 
         const input: CreateListingDetails = {
             ...body,
-            // creatorId: req.user?.id, // ensure your auth guard sets req.user
+        //     creatorId: req.user?.id, // ensure your auth guard sets req.user
         };
 
         // if (!input.creatorId) {
