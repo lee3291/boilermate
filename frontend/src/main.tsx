@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './style.css'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import ListingDetails from './pages/user/listings/ListingDetails.tsx';
 
 // Import all top-level views/components
 
@@ -46,6 +47,10 @@ const router = createBrowserRouter([
     element: <Listings/>,
     errorElement: <div>404 Page Not Found</div>,
     children: [{}]
+  },
+  {
+    path: '/listings/:id',
+    element: <ListingDetails />
   },
   {
     path: '/temp-account/',

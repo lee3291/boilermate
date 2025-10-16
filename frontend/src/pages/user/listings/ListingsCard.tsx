@@ -1,11 +1,18 @@
+import { Link } from "react-router-dom";
+
 type ListingsCardProps = {
+    id: string;
     title: string;
     author: string;
     price: string;
     body: string;
 };
 
-export default function ListingsCard({title, author, price, body}: ListingsCardProps) {
+export default function ListingsCard({id, title, author, price, body}: ListingsCardProps) {
+    // const handleReadMore = () => {
+    //     window.open(`/listings/${encodeURIComponent(id)}`, "_blank", "noopener,noreferrer");
+    // };
+
     return (
         <div>
             <div className="absolute h-100 w-140 z-0 bg-black/20 blur-[5px] rounded-lg" />
@@ -25,6 +32,19 @@ export default function ListingsCard({title, author, price, body}: ListingsCardP
                         <button className="mt-10 h-12 w-30 bg-white text-black border-black border-1 font-roboto-light rounded-4xl cursor-pointer">
                             Contact
                         </button>
+                        {/*<button
+                        onClick={handleReadMore}
+                        className="ml-2 mt-10 hover:underline-offset-4 hover:underline font-roboto-light text-gray-500 cursor-pointer">
+                        Read more
+                        </button>*/}
+
+                        <Link
+                            to={`/listings/${id}`}
+                            state={{ id, title, author, price, body }}
+                            rel="noopener noreferrer"
+                            className="ml-2 mt-13 hover:underline-offset-4 hover:underline font-roboto-light text-gray-500 cursor-pointer">
+                            Read more
+                        </Link>
                     </div>
                 </div>
             </div>
