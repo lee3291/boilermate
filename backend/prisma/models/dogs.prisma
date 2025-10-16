@@ -1,9 +1,0 @@
-model Dog {
-  id        String   @id @default(uuid()) // Unique identifier for the dog
-  name      String   // Name of the dog
-  breed     String   // Breed of the dog
-  age       Int      // Age of the dog in years
-  isGoodBoy Boolean  @default(true) // Whether the dog is a good boy/girl (always true!)
-  createdAt DateTime @default(now()) // When the dog was added to our system
-  updatedAt DateTime @updatedAt      // When the dog was last updated
-}
