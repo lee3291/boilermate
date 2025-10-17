@@ -3,7 +3,7 @@ import {
   useContext,
   useState,
   useEffect,
-  ReactNode,
+  type ReactNode,
 } from 'react';
 import { jwtDecode } from 'jwt-decode';
 

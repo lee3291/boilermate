@@ -113,7 +113,7 @@ const SignUpPage = () => {
               type='text'
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              placeholder='123456'
+              placeholder='xxxxxx'
               required
             />
             <button

@@ -25,10 +25,11 @@ import { UserProvider } from './pages/user/listings/temp/UserContext.tsx';
 import SavedListings from './pages/user/listings/SavedListings';
 // import ListingsCreateTest from './pages/user/ListingsTest.tsx';
 
+import ProtectedRoute from './components/ProtectedRoute';
 import UserProfilePage from './pages/user/UserProfilePage';
 
 const router = createBrowserRouter([
-  // Auth Routes
+  // Public routes
   {
     path: '/',
     element: <LandingPage />,
@@ -43,16 +44,6 @@ const router = createBrowserRouter([
     element: <SignUpPage />,
   },
   {
-    path: '/profile',
-    element: <UserProfilePage />,
-  },
-
-  // Existing App Routes
-  {
-    path: '/bug-report',
-    element: <BugReportPage />,
-  },
-  {
     path: '/otp-request',
     element: <OTPRequestPage />,
   },
@@ -64,46 +55,55 @@ const router = createBrowserRouter([
     path: '/reset-password',
     element: <ResetPasswordPage />,
   },
-  // Dashboard
-  // Map
+
+  // Protected routes
   {
-    path: '/listing-map',
-    element: <ListingMap />,
-  },
-  {
-    path: '/listing-form',
-    element: (
-      <ListingForm isOpen={true} onClose={() => console.log('closed')} />
-    ),
-  },
-  {
-    path: '/listings/',
-    element: <Listings />,
-    errorElement: <div>404 Page Not Found</div>,
-    children: [{}],
-  },
-  {
-    path: '/listings/:id',
-    element: <ListingDetails />,
-  },
-  {
-    path: '/saved',
-    element: <SavedListings />,
-  },
-  {
-    path: '/temp-account/',
-    element: <TempAccount />,
-    errorElement: <div>404 Page Not Found</div>,
-    children: [{}],
-  },
-  {
-    path: '/messages',
-    element: <ChatPage />,
+    element: <ProtectedRoute />,
+    children: [
+      {
+        path: '/profile',
+        element: <UserProfilePage />,
+      },
+      {
+        path: '/bug-report',
+        element: <BugReportPage />,
+      },
+      {
+        path: '/listing-map',
+        element: <ListingMap />,
+      },
+      {
+        path: '/listing-form',
+        element: (
+          <ListingForm isOpen={true} onClose={() => console.log('closed')} />
+        ),
+      },
+      {
+        path: '/listings',
+        element: <Listings />,
+      },
+      {
+        path: '/listings/:id',
+        element: <ListingDetails />,
+      },
+      {
+        path: '/saved',
+        element: <SavedListings />,
+      },
+      {
+        path: '/temp-account',
+        element: <TempAccount />,
+      },
+      {
+        path: '/messages',
+        element: <ChatPage />,
+      },
+    ],
   },
 ]);
 
 import { AuthProvider } from './contexts/AuthContext';
-// ...existing code...
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <UserProvider>
