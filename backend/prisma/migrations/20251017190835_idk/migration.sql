@@ -1,10 +1,6 @@
-/*
-  Warnings:
+-- CreateEnum
+CREATE TYPE "ListingStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'ARCHIVED');
 
-  - You are about to drop the column `hashedPassword` on the `User` table. All the data in the column will be lost.
-  - Added the required column `passwordHash` to the `User` table without a default value. This is not possible if the table is not empty.
-
-*/
 -- CreateEnum
 CREATE TYPE "Visibility" AS ENUM ('PUBLIC', 'PRIVATE');
 
@@ -13,16 +9,6 @@ CREATE TYPE "UserStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'SUSPENDED');
 
 -- CreateEnum
 CREATE TYPE "SearchStatus" AS ENUM ('LOOKING', 'NOT_LOOKING', 'HIDDEN');
-
--- AlterTable
-ALTER TABLE "User" DROP COLUMN "hashedPassword",
-ADD COLUMN     "avatarURL" TEXT,
-ADD COLUMN     "bio" TEXT,
-ADD COLUMN     "passwordHash" TEXT NOT NULL,
-ADD COLUMN     "phoneNumber" TEXT,
-ADD COLUMN     "profileInfo" JSONB,
-ADD COLUMN     "searchStatus" "SearchStatus" DEFAULT 'LOOKING',
-ADD COLUMN     "status" "UserStatus" DEFAULT 'ACTIVE';
 
 -- CreateTable
 CREATE TABLE "Chat" (
@@ -60,6 +46,18 @@ CREATE TABLE "UserMessageStatus" (
 );
 
 -- CreateTable
+CREATE TABLE "EmailVerification" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "code" VARCHAR(6) NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "verifiedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "EmailVerification_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Image" (
     "id" TEXT NOT NULL,
     "key" TEXT NOT NULL,
@@ -68,6 +66,37 @@ CREATE TABLE "Image" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Image_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Listing" (
+    "id" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "user" TEXT NOT NULL DEFAULT 'Anonymous',
+    "description" TEXT NOT NULL,
+    "price" INTEGER NOT NULL,
+    "pricing" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "location" TEXT NOT NULL,
+    "roommates" INTEGER NOT NULL DEFAULT 1,
+    "mediaUrls" TEXT[],
+    "status" "ListingStatus" NOT NULL DEFAULT 'ACTIVE',
+    "moveInStart" DATE,
+    "moveInEnd" DATE,
+    "viewCount" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "userId" TEXT,
+
+    CONSTRAINT "Listing_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Saved" (
+    "username" TEXT NOT NULL,
+    "listingId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Saved_pkey" PRIMARY KEY ("username","listingId")
 );
 
 -- CreateTable
@@ -84,6 +113,47 @@ CREATE TABLE "Preference" (
     CONSTRAINT "Preference_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "Report" (
+    "id" SERIAL NOT NULL,
+    "reporterId" INTEGER NOT NULL,
+    "reportedUserId" INTEGER NOT NULL,
+    "reason" TEXT NOT NULL,
+    "comments" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'unresolved',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Report_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "BugReport" (
+    "id" SERIAL NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "stepsToReprod" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'open',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "BugReport_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "passwordHash" TEXT NOT NULL,
+    "profileInfo" JSONB,
+    "avatarURL" TEXT,
+    "phoneNumber" TEXT,
+    "bio" TEXT,
+    "isVerified" BOOLEAN NOT NULL DEFAULT false,
+    "status" "UserStatus" DEFAULT 'ACTIVE',
+    "searchStatus" "SearchStatus" DEFAULT 'LOOKING',
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE INDEX "Chat_latestMessageAt_idx" ON "Chat"("latestMessageAt");
 
@@ -97,10 +167,31 @@ CREATE INDEX "Message_chatId_createdAt_idx" ON "Message"("chatId", "createdAt");
 CREATE UNIQUE INDEX "UserMessageStatus_userId_messageId_key" ON "UserMessageStatus"("userId", "messageId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "EmailVerification_email_key" ON "EmailVerification"("email");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Image_key_key" ON "Image"("key");
 
 -- CreateIndex
+CREATE INDEX "Listing_status_idx" ON "Listing"("status");
+
+-- CreateIndex
+CREATE INDEX "Listing_location_idx" ON "Listing"("location");
+
+-- CreateIndex
+CREATE INDEX "Listing_price_idx" ON "Listing"("price");
+
+-- CreateIndex
+CREATE INDEX "Saved_username_idx" ON "Saved"("username");
+
+-- CreateIndex
+CREATE INDEX "Saved_listingId_idx" ON "Saved"("listingId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Preference_userId_key_key" ON "Preference"("userId", "key");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- AddForeignKey
 ALTER TABLE "Chat" ADD CONSTRAINT "Chat_userAId_fkey" FOREIGN KEY ("userAId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -125,6 +216,12 @@ ALTER TABLE "UserMessageStatus" ADD CONSTRAINT "UserMessageStatus_messageId_fkey
 
 -- AddForeignKey
 ALTER TABLE "Image" ADD CONSTRAINT "Image_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Listing" ADD CONSTRAINT "Listing_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Saved" ADD CONSTRAINT "Saved_listingId_fkey" FOREIGN KEY ("listingId") REFERENCES "Listing"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Preference" ADD CONSTRAINT "Preference_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
