@@ -9,6 +9,9 @@ import { useUser } from "./temp/UserContext";
 import { getSavedListings } from "../../../services/savedListings";
 import { setSavedHint } from "../../../services/savedCache";
 
+type SortKey = 'none' | 'price' | 'moveInEarliest' | 'moveInLatest' | 'title' | 'location';
+type SortDir = 'asc' | 'desc';
+
 export default function Listings() {
     const { data, error, isLoading, mutate } = useSWR('/listings/active', fetcher);
     const [openCreate, setOpenCreate] = useState(false);
@@ -21,6 +24,9 @@ export default function Listings() {
     const [maxMoveIn, setMaxMoveIn] = useState<string>('');
 
     const [locFilter, setLocFilter] = useState<string>('');
+
+    const [sortKey, setSortKey] = useState<SortKey>('none');
+    const [sortDir, setSortDir] = useState<SortDir>('asc');
 
     const { username } = useUser();
 
@@ -102,6 +108,33 @@ export default function Listings() {
         });
     }, [data, query, minCents, maxCents, desiredMoveStart, desiredMoveEnd, locFilter]);
 
+    const displayed = useMemo(() => {
+        if (!filtered) return filtered;
+        const arr = [...filtered];
+
+        const getEarliestMove = (l: any) => l.moveInStart ? new Date(l.moveInStart).getTime() : +Infinity;
+        const getLatestMove = (l: any) => l.moveInEnd ? new Date(l.moveInEnd).getTime() : -Infinity;
+
+        if (sortKey === 'price') {
+            arr.sort((a: any, b: any) => (a.price ?? 0) - (b.price ?? 0));
+        } else if (sortKey === 'moveInEarliest') {
+            arr.sort((a: any, b: any) => getEarliestMove(a) - getEarliestMove(b));
+        } else if (sortKey === 'moveInLatest') {
+            arr.sort((a: any, b: any) => getLatestMove(b) - getLatestMove(a));
+        } else if (sortKey === 'title') {
+            arr.sort((a: any, b: any) => String(a.title ?? '').localeCompare(String(b.title ?? '')));
+        } else if (sortKey === 'location') {
+            arr.sort((a: any, b: any) => String(a.location ?? '').localeCompare(String(b.location ?? '')));
+        }
+
+        if (sortDir === 'desc' && sortKey !== 'none') arr.reverse();
+        return arr;
+    }, [filtered, sortKey, sortDir]);
+
+    const pillBase = "h-9 px-4 rounded-[100px] text-sm transition cursor-pointer";
+    const pillIdle = "bg-white border border-gray-300 hover:bg-gray-100";
+    const pillActive = "bg-black text-white";
+
     return (
         <div className="bg-white w-full h-[400px]">
             <Navbar />
@@ -142,7 +175,6 @@ export default function Listings() {
                             Filter
                         </h1>
 
-                        {/* Price range (dollars) */}
                         <div className="flex flex-col justify-start gap-2">
                             <div className="flex items-center gap-2">
                                 <label className="text-sm text-gray-700">Min $</label>
@@ -168,10 +200,8 @@ export default function Listings() {
                                     className="h-9 w-28 border border-gray-300 rounded-[100px] px-3 text-sm outline-none focus:border-gray-400"
                                 />
                             </div>
-
                         </div>
 
-                        {/* Move-in window (dates) */}
                         <div className="mt-2 flex flex-col justify-start gap-2">
                             <div className="flex flex-col items-start gap-2">
                                 <label className="text-sm text-gray-700">Earliest move-in</label>
@@ -193,7 +223,6 @@ export default function Listings() {
                             </div>
                         </div>
 
-                        {/* Location filter */}
                         <div className="mt-2 flex items-center gap-2">
                             <label className="text-sm text-gray-700">Location</label>
                             <input
@@ -223,7 +252,50 @@ export default function Listings() {
                             Sort
                         </h1>
 
-
+                        <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <button
+                                className={`${pillBase} w-30 ${sortKey === 'price' && sortDir === 'asc' ? pillActive : pillIdle}`}
+                                onClick={() => { setSortKey('price'); setSortDir('asc'); }}
+                            >
+                                Price ↑
+                            </button>
+                            <button
+                                className={`${pillBase} w-30 ${sortKey === 'price' && sortDir === 'desc' ? pillActive : pillIdle}`}
+                                onClick={() => { setSortKey('price'); setSortDir('desc'); }}
+                            >
+                                Price ↓
+                            </button>
+                            <button
+                                className={`${pillBase} w-30 ${sortKey === 'moveInEarliest' ? pillActive : pillIdle}`}
+                                onClick={() => { setSortKey('moveInEarliest'); setSortDir('asc'); }}
+                            >
+                                First move-in
+                            </button>
+                            <button
+                                className={`${pillBase} w-30 ${sortKey === 'moveInLatest' ? pillActive : pillIdle}`}
+                                onClick={() => { setSortKey('moveInLatest'); setSortDir('asc'); }}
+                            >
+                                Last move-in
+                            </button>
+                            <button
+                                className={`${pillBase} w-30 ${sortKey === 'title' ? pillActive : pillIdle}`}
+                                onClick={() => { setSortKey('title'); setSortDir('asc'); }}
+                            >
+                                Title A–Z
+                            </button>
+                            <button
+                                className={`${pillBase} w-30 ${sortKey === 'location' ? pillActive : pillIdle}`}
+                                onClick={() => { setSortKey('location'); setSortDir('asc'); }}
+                            >
+                                Location A–Z
+                            </button>
+                        </div>
+                        <button
+                            className="mt-5 h-9 px-4 rounded-[100px] text-sm transition cursor-pointer bg-white border border-gray-300 hover:bg-gray-100"
+                            onClick={() => { setSortKey('none'); setSortDir('asc'); }}
+                        >
+                            Clear sort
+                        </button>
                     </div>
                 </div>
 
@@ -245,9 +317,9 @@ export default function Listings() {
                             </div>
                         )}
 
-                        {filtered?.map((l: any) => (
+                        {displayed?.map((l: any) => (
                             <Card
-                                key={l.id} // 👈 important for stable re-render
+                                key={l.id}
                                 location={l.location}
                                 id={l.id}
                                 title={l.title}
