@@ -50,10 +50,8 @@ const router = createBrowserRouter([
   //{},
   // For reset password
   {
-  path: '/bug-report',
-  element: <BugReportPage />,
-    path: "/otp-request",
-    element: <OTPRequestPage />,
+        path: '/bug-report',
+        element: <BugReportPage />,
   },
   {
     path: "/verify-otp",
