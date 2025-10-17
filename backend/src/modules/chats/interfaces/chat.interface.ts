@@ -1,0 +1,79 @@
+/**
+ * This is the place you create the interface to ensure type matching when working with the SERVICE of the MODULE
+ * There are basically 2 interface you need for every API you created,
+ */
+
+//* This section is reserved for basic interface
+export interface MessageWithStatusDetails extends MessageDetails {
+  isDeletedForYou?: boolean // this is a merge between the message with the message status table to form 1 single object for performance boost
+}
+
+export interface ChatDetails {
+  id: string;
+  userAId: string;
+  userBId: string;
+  latestMessageAt: Date;
+}
+
+export interface MessageDetails {
+  id: string; // message id
+  chatId: string // chat box id
+  senderId: string // message owner
+  content?: string // message content
+  imageUrl?: string // the link to the image, no need to send back the imageId and key to frontend
+  isEdited: boolean // is this message been edited yet ?
+  isDeleted: boolean // is this message been deleted for everyone yet?
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+//* This section is reserved for getting chatIds
+export interface getChatsDetails {
+  userId: string
+}
+
+export interface getChatsResults {
+  chats: ChatDetails[]
+}
+
+//* This section is reserved for sending message
+
+export interface sendMessageDetails {
+  chatId?: string;
+  senderId: string;
+  recipientId: string;
+  content?: string;
+  imageUrl?: string; // need this to update the database
+  imageKey?: string; // this is a special location of the image on the bucket
+}
+export interface sendMessageResults {
+  message: MessageDetails;
+  chatCreated: boolean; // return true for first time chat
+  chat?: ChatDetails;
+}
+
+//* This section is reserved for getting the message history
+
+export interface getMessagesDetails {
+  userId: string, // shouldn't need this in the future when authorized
+}
+
+export interface getMessagesResults {
+ messages: MessageWithStatusDetails[]
+}
+
+//* This section is reserved for editing a message, it should return MessageDetails
+export interface editMessageDetails {
+  // don't let them edit the picture lmao
+  content: string,
+  userId: string
+}
+
+//* This section is reserved for deleteing a message
+
+export interface deleteMessageDetails {
+  // may need to update as do we delete the message as well ???
+  userId: string,
+  forEveryone: string // used to be boolean but have to change as params only take string
+}
+

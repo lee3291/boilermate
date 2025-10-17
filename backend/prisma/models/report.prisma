@@ -1,0 +1,18 @@
+model Report {
+  id              Int       @id @default(autoincrement())
+  reporterId      Int
+  reportedUserId  Int
+  reason          String
+  comments        String
+  status          String    @default("unresolved")
+  createdAt       DateTime  @default(now())
+}
+
+model BugReport {
+  id            Int       @id @default(autoincrement())
+  title         String
+  description   String
+  stepsToReprod String
+  status        String    @default("open")
+  createdAt     DateTime  @default(now())
+}

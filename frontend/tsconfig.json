@@ -1,11 +1,15 @@
 {
-    "files": [],
-    "references": [
-        { "path": "./tsconfig.app.json" },
-        { "path": "./tsconfig.node.json" }
-    ],
-    "compilerOptions": {
-        "types": ["node"],
-        "lib": ["dom", "dom.iterable", "esnext"]
-    }
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "types": ["node", "google.maps"],
+    "lib": ["dom", "dom.iterable", "esnext"]
+  }
 }
