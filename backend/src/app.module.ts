@@ -10,6 +10,7 @@ import { OTPModule } from './modules/otp/otp.module';
 import { ListingsModule } from '@modules/listings/listings.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { EmailVerificationModule } from './modules/email-verification/email-verification.module';
+import { ProfileModule } from './modules/profile/profile.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { EmailVerificationModule } from './modules/email-verification/email-veri
     OTPModule,
     ListingsModule,
     BugReportModule,
+    ProfileModule,
   ],
   controllers: [AppController],
   providers: [AppService],
