@@ -4,6 +4,7 @@ import {
   IsBoolean,
   IsEnum,
   Matches,
+  IsArray,
 } from 'class-validator';
 import { SearchStatus } from '@prisma/client';
 
@@ -23,9 +24,10 @@ export class UpdateProfileDto {
   @IsOptional()
   searchStatus?: SearchStatus;
 
-  @IsString()
+  @IsArray()
+  @IsString({ each: true })
   @IsOptional()
-  lifestyleHashtags?: string;
+  lifestyleHashtags?: string[];
 
   @IsBoolean()
   @IsOptional()

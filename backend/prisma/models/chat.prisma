@@ -21,7 +21,7 @@ model Message {
   id               String      @id @default(uuid())
   chatId           String
   senderId         String
-  content          String?     @db.Text
+  content          String?
   imageId          String?
   isEdited         Boolean     @default(false)
   isDeleted        Boolean     @default(false) // delete message for everyone

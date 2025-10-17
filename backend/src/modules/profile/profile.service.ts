@@ -1,21 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@core/database/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { User } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ProfileService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getProfile(userId: string): Promise<any> {
+  async getProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        email: true,
-        phoneNumber: true,
-        bio: true,
-        searchStatus: true,
-        preferences: true,
+      include: {
+        preference: true, // Correct: singular, one-to-one relation
       },
     });
 
@@ -23,58 +19,112 @@ export class ProfileService {
       throw new NotFoundException('User not found');
     }
 
-    const { email, ...rest } = user;
-    const name = email.split('@')[0];
+    const { id, email, phoneNumber, bio, searchStatus, preference } = user;
+    const username = email.split('@')[0];
 
-    // Combine the derived name with the rest of the profile data
-    return { name, email, ...rest };
+    // If a preference record exists, flatten its JSON content.
+    // Otherwise, default to an empty object.
+    const flatPreferences =
+      preference && preference.preferences
+        ? Object.entries(
+            preference.preferences as { [key: string]: { value: any } },
+          ).reduce((acc: { [key: string]: any }, [key, { value }]) => {
+            acc[key] = value;
+            return acc;
+          }, {})
+        : {};
+
+    return {
+      id,
+      username,
+      email,
+      phoneNumber,
+      bio,
+      searchStatus,
+      ...flatPreferences,
+    };
   }
 
-  async updateProfile(
-    userId: string,
-    updateProfileDto: UpdateProfileDto,
-  ): Promise<User> {
-    const { lifestyleHashtags, isSmoker, hasPets, ...restOfDto } =
-      updateProfileDto;
+  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
+    const {
+      phoneNumber,
+      bio,
+      searchStatus,
+      isSmoker,
+      hasPets,
+      lifestyleHashtags,
+    } = updateProfileDto;
 
-    // Start a transaction to update the user and their preferences
     return this.prisma.$transaction(async (prisma) => {
-      // 1. Update the core User model fields
-      const updatedUser = await prisma.user.update({
-        where: { id: userId },
-        data: {
-          ...restOfDto,
-        },
-      });
+      // 1. Update the direct fields on the User model if they are provided
+      const userDataToUpdate: Prisma.UserUpdateInput = {};
+      if (phoneNumber !== undefined) userDataToUpdate.phoneNumber = phoneNumber;
+      if (bio !== undefined) userDataToUpdate.bio = bio;
+      if (searchStatus !== undefined)
+        userDataToUpdate.searchStatus = searchStatus;
 
-      // 2. Handle preferences (key-value pairs)
+      if (Object.keys(userDataToUpdate).length > 0) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: userDataToUpdate,
+        });
+      }
+
+      // 2. Prepare the new preferences data, only including provided fields
+      const newPreferencesData: { [key: string]: any } = {};
+      if (isSmoker !== undefined) {
+        newPreferencesData.isSmoker = { value: isSmoker, visibility: 'PUBLIC' };
+      }
+      if (hasPets !== undefined) {
+        newPreferencesData.hasPets = { value: hasPets, visibility: 'PUBLIC' };
+      }
       if (lifestyleHashtags !== undefined) {
+        newPreferencesData.lifestyleHashtags = {
+          value: lifestyleHashtags,
+          visibility: 'PUBLIC',
+        };
+      }
+
+      // 3. Upsert the Preference record if there's anything to update
+      if (Object.keys(newPreferencesData).length > 0) {
+        const existingPreference = await prisma.preference.findUnique({
+          where: { userId },
+        });
+
+        const existingPrefs =
+          (existingPreference?.preferences as Prisma.JsonObject) || {};
+
+        // Deep merge for lifestyleHashtags
+        if (
+          newPreferencesData.lifestyleHashtags &&
+          existingPrefs.lifestyleHashtags
+        ) {
+          const existingHashtags =
+            (existingPrefs.lifestyleHashtags as any)?.value || [];
+          const newHashtags = newPreferencesData.lifestyleHashtags.value;
+
+          newPreferencesData.lifestyleHashtags.value = [
+            ...new Set([...existingHashtags, ...newHashtags]),
+          ];
+        }
+
         await prisma.preference.upsert({
-          where: { userId_key: { userId, key: 'lifestyleHashtags' } },
-          update: { value: lifestyleHashtags },
+          where: { userId },
           create: {
             userId,
-            key: 'lifestyleHashtags',
-            value: lifestyleHashtags,
+            preferences: newPreferencesData,
+          },
+          update: {
+            preferences: {
+              ...existingPrefs,
+              ...newPreferencesData,
+            },
           },
         });
       }
-      if (isSmoker !== undefined) {
-        await prisma.preference.upsert({
-          where: { userId_key: { userId, key: 'isSmoker' } },
-          update: { value: String(isSmoker) },
-          create: { userId, key: 'isSmoker', value: String(isSmoker) },
-        });
-      }
-      if (hasPets !== undefined) {
-        await prisma.preference.upsert({
-          where: { userId_key: { userId, key: 'hasPets' } },
-          update: { value: String(hasPets) },
-          create: { userId, key: 'hasPets', value: String(hasPets) },
-        });
-      }
 
-      return updatedUser;
+      // 4. Return the fully updated profile
+      return this.getProfile(userId);
     });
   }
 }

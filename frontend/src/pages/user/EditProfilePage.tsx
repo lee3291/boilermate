@@ -1,21 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ToggleSwitch from '../../components/ToggleSwitch';
-
-// Mock initial data - in a real app, you'd fetch this
-const initialProfileData = {
-  name: 'John Doe',
-  phoneNumber: '123-456-7890',
-  bio: 'Lover of coffee and code.',
-  searchStatus: 'LOOKING',
-  lifestyleHashtags: '#earlybird,#nightowl',
-  isSmoker: false,
-  hasPets: true,
-};
+import { getProfile, updateProfile } from '../../services/profile.service';
+import type { ProfileData, UpdateProfileDto } from '../../types/profile';
 
 const EditProfilePage: React.FC = () => {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState(initialProfileData);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await getProfile();
+        setProfile(response.data);
+        setError(null);
+      } catch (err) {
+        setError('Failed to fetch profile data.');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -23,20 +34,54 @@ const EditProfilePage: React.FC = () => {
     >,
   ) => {
     const { name, value } = e.target;
-    setProfile((prev) => ({ ...prev, [name]: value }));
+    if (name === 'lifestyleHashtags') {
+      setProfile((prev) =>
+        prev
+          ? { ...prev, [name]: value.split(',').map((s) => s.trim()) }
+          : null,
+      );
+    } else {
+      setProfile((prev) => (prev ? { ...prev, [name]: value } : null));
+    }
   };
 
   const handleToggleChange = (name: string, enabled: boolean) => {
-    setProfile((prev) => ({ ...prev, [name]: enabled }));
+    setProfile((prev) => (prev ? { ...prev, [name]: enabled } : null));
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, you'd send this data to your backend API
-    console.log('Saving profile:', profile);
-    // Potentially navigate away or show a success message
-    navigate('/profile');
+    if (!profile) return;
+
+    const profileToUpdate: UpdateProfileDto = {
+      phoneNumber: profile.phoneNumber,
+      bio: profile.bio,
+      searchStatus: profile.searchStatus,
+      lifestyleHashtags: profile.lifestyleHashtags,
+      isSmoker: profile.isSmoker,
+      hasPets: profile.hasPets,
+    };
+
+    try {
+      await updateProfile(profileToUpdate);
+      navigate('/profile');
+    } catch (err) {
+      setError('Failed to update profile.');
+      console.error(err);
+    }
   };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div className='text-red-500'>{error}</div>;
+  }
+
+  if (!profile) {
+    return <div>No profile data found.</div>;
+  }
 
   return (
     <div className='min-h-screen bg-gray-100 py-12'>
@@ -49,23 +94,22 @@ const EditProfilePage: React.FC = () => {
             Edit Profile
           </h2>
           <div className='mt-8 space-y-6'>
-            {/* Name */}
+            {/* Username */}
             <div>
               <label
-                htmlFor='name'
+                htmlFor='username'
                 className='block text-sm font-medium text-gray-700'
               >
-                Name
+                Username
               </label>
               <div className='mt-1'>
                 <input
-                  id='name'
-                  name='name'
+                  id='username'
+                  name='username'
                   type='text'
-                  autoComplete='name'
-                  value={profile.name}
-                  onChange={handleInputChange}
-                  className='w-full rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm'
+                  value={profile.username}
+                  readOnly
+                  className='w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm'
                 />
               </div>
             </div>
@@ -84,7 +128,7 @@ const EditProfilePage: React.FC = () => {
                   name='phoneNumber'
                   type='tel'
                   autoComplete='tel'
-                  value={profile.phoneNumber}
+                  value={profile.phoneNumber || ''}
                   onChange={handleInputChange}
                   className='w-full rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm'
                 />
@@ -104,7 +148,7 @@ const EditProfilePage: React.FC = () => {
                   id='bio'
                   name='bio'
                   rows={3}
-                  value={profile.bio}
+                  value={profile.bio || ''}
                   onChange={handleInputChange}
                   className='w-full rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm'
                   placeholder='Tell us a little about yourself'
@@ -123,7 +167,7 @@ const EditProfilePage: React.FC = () => {
               <select
                 id='searchStatus'
                 name='searchStatus'
-                value={profile.searchStatus}
+                value={profile.searchStatus || 'LOOKING'}
                 onChange={handleInputChange}
                 className='mt-1 block w-full rounded-md border-gray-300 py-2 pr-10 pl-3 text-base focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm'
               >
@@ -146,7 +190,11 @@ const EditProfilePage: React.FC = () => {
                   id='lifestyleHashtags'
                   name='lifestyleHashtags'
                   type='text'
-                  value={profile.lifestyleHashtags}
+                  value={
+                    Array.isArray(profile.lifestyleHashtags)
+                      ? profile.lifestyleHashtags.join(', ')
+                      : profile.lifestyleHashtags || ''
+                  }
                   onChange={handleInputChange}
                   className='w-full rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm'
                   placeholder='e.g., #earlybird, #nightowl'
@@ -158,12 +206,12 @@ const EditProfilePage: React.FC = () => {
             <div className='space-y-4'>
               <ToggleSwitch
                 label='Do you smoke?'
-                enabled={profile.isSmoker}
+                enabled={profile.isSmoker || false}
                 onChange={(enabled) => handleToggleChange('isSmoker', enabled)}
               />
               <ToggleSwitch
                 label='Do you have pets?'
-                enabled={profile.hasPets}
+                enabled={profile.hasPets || false}
                 onChange={(enabled) => handleToggleChange('hasPets', enabled)}
               />
             </div>

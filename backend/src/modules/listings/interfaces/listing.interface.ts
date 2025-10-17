@@ -1,14 +1,14 @@
 export interface Listing {
-    listingID: string;
-    userID: string;
-    title: string;
-    description: string;
-    pricing: number;
-    location: string;
-    media: string[];
-    status: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
-    viewCount: number;
-    createdAt: Date;
+  listingID: string;
+  userID: string;
+  title: string;
+  description: string;
+  pricing: number;
+  location: string;
+  media: string[] | null;
+  status: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+  viewCount: number;
+  createdAt: Date;
 }
 export type ListingStatus = 'ACTIVE' | 'ARCHIVED' | 'RESOLVED';
 
@@ -20,7 +20,7 @@ export interface CreateListingBody {
   title: string;
   user: string;
   description: string;
-  price: number;        // cents
+  price: number; // cents
   location: string;
   mediaUrls: string[];
   status?: ListingStatus;
@@ -54,17 +54,16 @@ export interface ListingResponse {
   viewCount: number;
 
   moveInStart: string | null; // "YYYY-MM-DD"
-  moveInEnd: string | null;   // "YYYY-MM-DD"
+  moveInEnd: string | null; // "YYYY-MM-DD"
 
-  createdAt: string;    // ISO
-  updatedAt: string;    // ISO
+  createdAt: string; // ISO
+  updatedAt: string; // ISO
 }
 
 /** Envelope for the create use case (helps future-proof). */
 export interface CreateListingResult {
   listing: ListingResponse;
 }
-
 
 export interface SaveListingBody {
   username: string; // e.g. Supabase user_metadata.username; OR provided directly

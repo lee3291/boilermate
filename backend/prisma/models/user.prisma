@@ -9,7 +9,7 @@ model User {
   isVerified    Boolean       @default(false)
   status        UserStatus?   @default(ACTIVE)
   searchStatus  SearchStatus? @default(LOOKING)
-  preferences   Preference[]
+  preference    Preference?
   listings      Listing[]
 
   // 1. Chat Participant (Role A) - Opposite of Chat.userA
