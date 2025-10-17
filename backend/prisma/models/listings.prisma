@@ -30,7 +30,7 @@ model Listing {
   saves       Saved[]
 
   userId      String?
-  userrel     User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user_reference     User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([status])
   @@index([location])

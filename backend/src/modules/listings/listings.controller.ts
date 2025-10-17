@@ -213,5 +213,10 @@ export class ListingsController {
     legacyRemove(@Param('id') id: string) {
         return this.listingsService.remove(id);
     }
+
+    @Get()
+    findAll() {
+        return this.listingsService.findAll();
+    }
 }
 

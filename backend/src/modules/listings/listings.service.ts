@@ -288,34 +288,6 @@ export class ListingsService {
         return { username, listings, page, pageSize, total };
     }
 
-    /**
-     * Legacy: Extract 3 attributes to show in the GG map.
-     * Returns { title, location, pricing } where `pricing` is taken from:
-     *   - listing.pricing if present
-     *   - otherwise listing.price
-     */
-    async findAll() {
-        const rows = await this.prisma.listing.findMany({
-            select: {
-                title: true,
-                location: true,
-                pricing: true,
-                price: true,
-            },
-        });
-        // normalize to expected { title, location, pricing }
-        return rows.map((r) => ({
-            title: r.title,
-            location: r.location,
-            pricing:
-                typeof r.pricing === 'number'
-                    ? r.pricing
-                    : typeof r.price === 'number'
-                    ? r.price
-                    : null,
-        }));
-    }
-
     /** Legacy: findOne by "listingID" (maps to `id`) */
     async findOne(listingID: string): Promise<ListingResponse> {
         const listing = await this.prisma.listing.findUnique({
@@ -376,6 +348,18 @@ export class ListingsService {
             where: { id: listingID },
         });
         return this.toListingResponse(deleted);
+    }
+
+    async findAll() {
+        //Extract 3 attributes to show in the gg map
+        const listings = await this.prisma.listing.findMany({
+            select: {
+                title: true,
+                location: true,
+                price: true,
+            },
+        });
+        return listings;
     }
 }
 

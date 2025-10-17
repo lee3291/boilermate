@@ -159,6 +159,12 @@ export default function Listings() {
                             Saved Listings
                         </a>
 
+                        <a
+                            className="mt-2 h-12 w-60 hover:bg-maingray border rounded-[100px] font-sans bg-black text-white transition cursor-pointer text-center pt-[11px]"
+                            href="/listing-map">
+                            Listings Map
+                        </a>
+
                         <h1 className="pt-5 font-extralight font-sourceserif4-18pt-regular tracking-[-0.02em] text-[40px] text-maingray">
                             Search
                         </h1>
