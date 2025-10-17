@@ -2,6 +2,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './style.css'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import BugReportPage from './pages/bug-report/BugReportPage';
+
 import ListingDetails from './pages/user/listings/ListingDetails.tsx';
 
 // Import all top-level views/components
@@ -47,6 +49,8 @@ const router = createBrowserRouter([
   //{},
   // For reset password
   {
+  path: '/bug-report',
+  element: <BugReportPage />,
     path: "/otp-request",
     element: <OTPRequestPage />,
   },

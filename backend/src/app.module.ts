@@ -6,6 +6,7 @@ import { PrismaModule } from '@core/database/prisma.module';
 import { DogsModule } from '@modules/dogs/dogs.module';
 import { ChatsModule } from '@modules/chats/chats.module';
 import { UploadsModule } from '@modules/uploads/uploads.module';
+import { BugReportModule } from './modules/bug-report/bug-report.module';
 import { OTPModule } from './modules/otp/otp.module';
 import { ListingModule } from './modules/listings/listing.module';
 import { ListingsModule } from '@modules/listings/listings.module'
@@ -27,7 +28,7 @@ import { EmailVerificationModule } from './modules/email-verification/email-veri
     OTPModule,
     ListingModule,
     ListingsModule,
-    
+    BugReportModule,
   ],
   controllers: [AppController],
   providers: [AppService],
