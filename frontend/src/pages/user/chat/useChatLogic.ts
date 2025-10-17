@@ -434,20 +434,43 @@ export default function useChatLogic(initialUserId: string) {
     try {
       await apiInviteParticipant(chatId, { creatorId: currentUserId, userId });
       // Note: Member will be in PENDING status until they accept
+      // Refetch chats to update the participants list in the sidebar
+      await fetchChats(currentUserId);
     } catch (err: any) {
       setError(err?.message ?? 'Failed to add member');
     }
-  }, [currentUserId]);
+  }, [currentUserId, fetchChats]);
 
   // Remove member from group (admin only)
   const handleRemoveMember = useCallback(async (chatId: string, userId: string) => {
     if (!currentUserId) return;
     try {
       await apiRemoveParticipant(chatId, userId, { creatorId: currentUserId });
+      // Refetch chats to update the participants list in the sidebar
+      await fetchChats(currentUserId);
     } catch (err: any) {
       setError(err?.message ?? 'Failed to remove member');
     }
-  }, [currentUserId]);
+  }, [currentUserId, fetchChats]);
+
+  // Delete entire group chat (creator only)
+  const handleDeleteGroup = useCallback(async (chatId: string) => {
+    if (!currentUserId) return;
+    try {
+      const { deleteGroupChat } = await import('@/services/groupChatService');
+      await deleteGroupChat(chatId, { creatorId: currentUserId });
+      // Remove chat from conversations list
+      setConversations(prev => prev.filter(c => c.id !== chatId));
+      // Clear selected chat if it was deleted
+      if (selectedChatId === chatId) {
+        setSelectedChatId(null);
+        setMessages([]);
+      }
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to delete group');
+      throw err; // Re-throw so UI can handle the error
+    }
+  }, [currentUserId, selectedChatId]);
 
   // Fetch invitations when user changes
   useEffect(() => {
@@ -503,5 +526,6 @@ export default function useChatLogic(initialUserId: string) {
     handleSearchUsersForGroup,
     handleAddMember,
     handleRemoveMember,
+    handleDeleteGroup,
   };
 }

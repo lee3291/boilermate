@@ -1,15 +1,34 @@
-import { Exclude, Expose, plainToInstance } from 'class-transformer';
-import { ChatDetails } from '../interfaces';
+import { Exclude, Expose, plainToInstance, Type } from 'class-transformer';
+import { ChatDetails, ParticipantDetails } from '../interfaces';
 
 /**
  * Chat response DTOs (shared between DM and Group chats)
  */
 
 @Exclude()
+export class ParticipantDto {
+  @Expose()
+  id: string; // userId
+
+  @Expose()
+  email: string;
+
+  @Expose()
+  status: string; // ACCEPTED, PENDING, DECLINED
+
+  // TODO: Add username, firstName, lastName when available
+
+  static fromInterface(rawParticipant: ParticipantDetails): ParticipantDto {
+    return plainToInstance(ParticipantDto, rawParticipant, { excludeExtraneousValues: true });
+  }
+}
+
+@Exclude()
 export class ChatDto {
   @Expose()
   id: string; // this is chatId
 
+  // OLD - commented out for group chat support
   // @Expose()
   // userAId: string;
   // @Expose()
@@ -29,6 +48,10 @@ export class ChatDto {
   
   @Expose()
   latestMessageAt: Date;
+
+  @Expose()
+  @Type(() => ParticipantDto) // Transform nested array of participants
+  participants?: ParticipantDto[];
 
   static fromInterface(rawChatDetails: ChatDetails): ChatDto {
     return plainToInstance(ChatDto, rawChatDetails, { excludeExtraneousValues: true });

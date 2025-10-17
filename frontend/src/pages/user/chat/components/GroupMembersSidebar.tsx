@@ -1,10 +1,11 @@
-import { X, UserPlus, UserMinus } from 'lucide-react';
+import { X, UserPlus, UserMinus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 // import { Crown } from 'lucide-react'; // TODO: Re-enable when we can identify creator
 
 interface Member {
   id: string;
   email: string; // Using email for now, will be name later
+  status?: string; // ACCEPTED, PENDING, DECLINED
   // name: string; // OLD - will be available later
   // avatarURL?: string; // OLD - will be available later
 }
@@ -16,7 +17,8 @@ interface GroupMembersSidebarProps {
   onClose: () => void;
   onAddMembers: () => void; // Opens AddMembersModal
   onRemoveMember?: (memberId: string) => Promise<void>;
-  members?: Member[]; // MOCK - you will fetch real members later, optional for now
+  onDeleteGroup?: () => Promise<void>; // Delete entire group chat (creator only)
+  members?: Member[]; // Optional, pass participants from selectedConversation
 }
 
 export default function GroupMembersSidebar({
@@ -27,8 +29,10 @@ export default function GroupMembersSidebar({
   members = [], // Default to empty array if not provided
   onAddMembers,
   onRemoveMember,
+  onDeleteGroup,
 }: GroupMembersSidebarProps) {
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [isDeletingGroup, setIsDeletingGroup] = useState(false);
 
   const handleRemove = async (memberId: string, memberEmail: string) => {
     if (!confirm(`Remove ${memberEmail} from the group?`)) return;
@@ -41,6 +45,20 @@ export default function GroupMembersSidebar({
       alert('Failed to remove member');
     } finally {
       setRemovingId(null);
+    }
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!confirm('Are you sure you want to delete this group? This action cannot be undone and will remove all messages.')) return;
+
+    setIsDeletingGroup(true);
+    try {
+      await onDeleteGroup?.();
+    } catch (error) {
+      console.error('Delete group error:', error);
+      alert('Failed to delete group');
+    } finally {
+      setIsDeletingGroup(false);
     }
   };
 
@@ -109,6 +127,16 @@ export default function GroupMembersSidebar({
                       {isCurrentUser && (
                         <span className="text-xs text-gray-500">(You)</span>
                       )}
+                      {/* Show status badge if not ACCEPTED */}
+                      {member.status && member.status !== 'ACCEPTED' && (
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          member.status === 'PENDING' 
+                            ? 'bg-yellow-100 text-yellow-700' 
+                            : 'bg-red-100 text-red-700'
+                        }`}>
+                          {member.status}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -134,6 +162,20 @@ export default function GroupMembersSidebar({
           </div>
         )}
       </div>
+
+      {/* Delete Group Button (Admin only) - At the bottom */}
+      {isAdmin && onDeleteGroup && (
+        <div className="p-4 border-t">
+          <button
+            onClick={handleDeleteGroup}
+            disabled={isDeletingGroup}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Trash2 size={18} />
+            {isDeletingGroup ? 'Deleting...' : 'Delete Group'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

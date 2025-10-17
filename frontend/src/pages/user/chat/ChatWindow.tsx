@@ -24,6 +24,7 @@ export default function ChatWindow({
   onToggleGroupMembersSidebar,
   onAddMembersClick,
   onRemoveMember,
+  onDeleteGroup,
 }: {
   chatId?: string | null;
   currentUserId?: string;
@@ -44,6 +45,7 @@ export default function ChatWindow({
   onToggleGroupMembersSidebar?: () => void;
   onAddMembersClick?: () => void;
   onRemoveMember?: (chatId: string, userId: string) => Promise<void>;
+  onDeleteGroup?: (chatId: string) => Promise<void>;
 }) {
   // placeholder when no chat is selected
   if (!chatId) {
@@ -135,6 +137,16 @@ export default function ChatWindow({
               await onRemoveMember(chatId ?? '', memberId);
             }
           }}
+          onDeleteGroup={async () => {
+            if (onDeleteGroup) {
+              await onDeleteGroup(chatId ?? '');
+            }
+          }}
+          members={selectedConversation?.participants?.map(p => ({
+            id: p.id,
+            email: p.email,
+            status: p.status,
+          }))}
         />
       )}
     </div>

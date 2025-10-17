@@ -61,6 +61,7 @@ export class ChatsService {
 
       // NEW CODE - Using ChatParticipant to support both DM and group chats
       // Find all chats where user is a participant with ACCEPTED status
+      // Include participants list with user details
       const chats = await client.chat.findMany({
         where: {
           participants: {
@@ -70,11 +71,42 @@ export class ChatsService {
             }
           }
         },
+        include: {
+          participants: {
+            select: {
+              userId: true,
+              status: true,
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  // TODO: Add username, firstName, lastName when available
+                }
+              }
+            }
+          }
+        },
         orderBy: { latestMessageAt: 'desc' }
       });
 
+      // Transform the data to flatten participant details
+      const transformedChats = chats.map((chat: any) => ({
+        id: chat.id,
+        isGroup: chat.isGroup,
+        name: chat.name,
+        groupIcon: chat.groupIcon,
+        creatorId: chat.creatorId,
+        latestMessageAt: chat.latestMessageAt,
+        participants: chat.participants.map((p: any) => ({
+          id: p.user.id,
+          email: p.user.email,
+          status: p.status,
+          // TODO: Add username, firstName, lastName when available
+        }))
+      }));
+
       return {
-        chats: chats as ChatDetails[] // could be empty array
+        chats: transformedChats as ChatDetails[] // could be empty array
       }
 
     } catch (error) {

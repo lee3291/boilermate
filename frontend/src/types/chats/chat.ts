@@ -12,6 +12,14 @@ export interface MessageWithStatus {
   isDeletedForYou?: boolean // this is a merge between the message with the message status table to form 1 single object for performance boost
 }
 
+// Participant details for chat members
+export interface Participant {
+  id: string; // userId
+  email: string; // user email
+  status: string; // ACCEPTED, PENDING, DECLINED
+  // TODO: Add username, firstName, lastName when available
+}
+
 // OLD: DM-only chat interface
 // export interface Chat {
 //   id: string;
@@ -28,7 +36,8 @@ export interface Chat {
   groupIcon?: string; // optional icon URL for group chats
   creatorId?: string; // creator's userId for group chats (null for DMs)
   latestMessageAt: Date;
-  // NOTE: userAId and userBId no longer exist - use ChatParticipant for members
+  participants?: Participant[]; // NEW - list of all participants with their details
+  // NOTE: userAId and userBId no longer exist - use participants for members
 }
 
 //* This section is reserved for api interfaces
