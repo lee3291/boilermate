@@ -7,6 +7,7 @@ import BugReportPage from './pages/bug-report/BugReportPage';
 import ListingDetails from './pages/user/listings/ListingDetails.tsx';
 
 // Import all top-level views/components
+import ChatPage from './pages/user/chat/ChatPage.tsx';
 
 // Components used for protected areas
 import App from './App.tsx'
@@ -97,6 +98,11 @@ const router = createBrowserRouter([
     children: [{}]
   },
 
+
+  {
+    path: '/messages',
+    element: <ChatPage />
+  }
 
   // NOTES: you can just do a similar setup to test the page you created
 ])
