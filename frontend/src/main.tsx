@@ -18,8 +18,6 @@ import ListingMap from './pages/listing/ListingMap.tsx';
 import ListingForm from './pages/listing/ListingForm.tsx';
 import Listings from './pages/user/listings/Listings.tsx'
 import TempAccount from './pages/user/listings/temp/TempAccount.tsx';
-import { UserProvider } from './pages/user/listings/temp/UserContext.tsx';
-// import ListingsCreateTest from './pages/user/ListingsTest.tsx';
 
 const router = createBrowserRouter([
   {
@@ -48,12 +46,6 @@ const router = createBrowserRouter([
   // user role here, page related to user role in here
   //{},
   // For reset password
-  {
-  path: '/bug-report',
-  element: <BugReportPage />,
-    path: "/otp-request",
-    element: <OTPRequestPage />,
-  },
   {
     path: "/verify-otp",
     element: <VerifyOTPPage />,
@@ -109,8 +101,6 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-      <UserProvider>
-          <RouterProvider router={router} />
-      </UserProvider>
+    <RouterProvider router={router} />
   </StrictMode>,
 );

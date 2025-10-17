@@ -36,6 +36,8 @@ export class ChatsService {
     const client: any = this.prisma as any;
     const { userId } = getChatsDetails;
 
+    Logger.log("user id:", userId);
+
     try {
       // test if user exists
       const user = await client.user.findUnique({

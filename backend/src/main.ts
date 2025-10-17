@@ -16,13 +16,6 @@ async function bootstrap() {
   // enable interceptor globally
   app.useGlobalInterceptors(new LoggingInterceptor());
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
 
   await app.listen(process.env.PORT ?? 3000);
 }

@@ -21,6 +21,7 @@ export class ChatsController {
   @Get()
   @HttpCode(200)
   async getChats(@Query() dto: GetChatsDto) {
+    Logger.log("wtf is happening");
     const result = await this.chatsService.getChats(dto as any);
     return getChatsResponseDto.fromChats(result.chats);
   }
