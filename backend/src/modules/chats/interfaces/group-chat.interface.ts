@@ -54,3 +54,11 @@ export interface RemoveParticipantDetails {
 export interface DeleteGroupChatDetails {
   creatorId: string;
 }
+
+export interface UserDetails { // technically will have to fetch from user modules
+  userId: string;
+  // will probably need for field to look nicer
+}
+export interface AddMembersQueryResults {
+  users: UserDetails[];
+}

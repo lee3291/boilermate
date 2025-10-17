@@ -19,6 +19,7 @@ import {
   DeleteGroupChatDto,
   GroupChatResponseDto,
   InvitationResponseDto,
+  SearchUsersResponseDto,
 } from './dto';
 
 /**
@@ -152,5 +153,31 @@ export class ChatsController {
     @Body() dto: DeleteGroupChatDto
   ) {
     await this.groupChatsService.deleteGroupChat(chatId, dto as any);
+  }
+
+  /**
+   * Search users for creating a new group chat
+   * Query param: q (search query string)
+   */
+  @Get('users/search')
+  @HttpCode(200)
+  async searchUsersForGroupCreation(@Query('q') searchQuery: string) {
+    const result = await this.groupChatsService.searchUsersForGroupCreation(searchQuery);
+    return SearchUsersResponseDto.fromResult(result);
+  }
+
+  /**
+   * Search users to add to an existing group chat
+   * Excludes users already in the group
+   * Query param: q (search query string)
+   */
+  @Get(':chatId/users/search')
+  @HttpCode(200)
+  async searchUsersForAddingToGroup(
+    @Param('chatId') chatId: string, 
+    @Query('q') searchQuery: string
+  ) {
+    const result = await this.groupChatsService.searchUsersForAddingToGroup(chatId, searchQuery);
+    return SearchUsersResponseDto.fromResult(result);
   }
 }

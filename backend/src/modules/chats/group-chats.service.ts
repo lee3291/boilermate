@@ -366,4 +366,103 @@ export class GroupChatsService {
       throw new InternalServerErrorException('Failed to delete group chat');
     }
   }
+
+  /**
+   * Search users for creating a new group chat
+   * Returns users matching the query string (searches by userId for now)
+   */
+  async searchUsersForGroupCreation(searchQuery: string): Promise<any> {
+    const client: any = this.prisma as any;
+
+    try {
+      // Search by userId substring match (case-insensitive)
+      // TODO: Will search by username/name when those fields are added to User model
+      const users = await client.user.findMany({
+        where: {
+          id: {
+            contains: searchQuery,
+            mode: 'insensitive',
+          },
+        },
+        select: {
+          id: true,
+          email: true,
+          // TODO: Add username, firstName, lastName when available
+        },
+        take: 20, // Limit results to 20 users
+      });
+
+      return {
+        users,
+      };
+    } catch (error) {
+      Logger.error('searchUsersForGroupCreation error', error);
+      throw new InternalServerErrorException('Failed to search users');
+    }
+  }
+
+  /**
+   * Search users to add to an existing group chat
+   * Excludes users who are already participants (ACCEPTED or PENDING)
+   */
+  async searchUsersForAddingToGroup(chatId: string, searchQuery: string): Promise<any> {
+    const client: any = this.prisma as any;
+
+    try {
+      // Verify chat exists and is a group
+      const chat = await client.chat.findUnique({
+        where: { id: chatId },
+      });
+
+      if (!chat) {
+        throw new NotFoundException('Group chat not found');
+      }
+
+      if (!chat.isGroup) {
+        throw new BadRequestException('This is not a group chat');
+      }
+
+      // Get all existing participants (ACCEPTED, PENDING, or DECLINED)
+      const existingParticipants = await client.chatParticipant.findMany({
+        where: { chatId },
+        select: { userId: true },
+      });
+
+      const existingUserIds = existingParticipants.map((p: any) => p.userId);
+
+      // Search by userId substring match, excluding existing participants
+      // TODO: Will search by username/name when those fields are added to User model
+      const users = await client.user.findMany({
+        where: {
+          AND: [
+            {
+              id: {
+                contains: searchQuery,
+                mode: 'insensitive',
+              },
+            },
+            {
+              id: {
+                notIn: existingUserIds, // Exclude users already in the group
+              },
+            },
+          ],
+        },
+        select: {
+          id: true,
+          email: true,
+          // TODO: Add username, firstName, lastName when available
+        },
+        take: 20, // Limit results to 20 users
+      });
+
+      return {
+        users,
+      };
+    } catch (error) {
+      Logger.error('searchUsersForAddingToGroup error', error);
+      if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
+      throw new InternalServerErrorException('Failed to search users');
+    }
+  }
 }

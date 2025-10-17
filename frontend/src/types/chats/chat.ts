@@ -12,11 +12,23 @@ export interface MessageWithStatus {
   isDeletedForYou?: boolean // this is a merge between the message with the message status table to form 1 single object for performance boost
 }
 
+// OLD: DM-only chat interface
+// export interface Chat {
+//   id: string;
+//   userAId: string;
+//   userBId: string;
+//   latestMessageAt: Date;
+// }
+
+// NEW: Updated to support both DM and Group chats
 export interface Chat {
   id: string;
-  userAId: string;
-  userBId: string;
+  isGroup: boolean; // true for group chats, false for DMs
+  name?: string; // optional name for group chats (null for DMs)
+  groupIcon?: string; // optional icon URL for group chats
+  creatorId?: string; // creator's userId for group chats (null for DMs)
   latestMessageAt: Date;
+  // NOTE: userAId and userBId no longer exist - use ChatParticipant for members
 }
 
 //* This section is reserved for api interfaces
