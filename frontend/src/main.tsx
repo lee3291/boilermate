@@ -27,6 +27,7 @@ import SavedListings from './pages/user/listings/SavedListings';
 
 import ProtectedRoute from './components/ProtectedRoute';
 import UserProfilePage from './pages/user/UserProfilePage';
+import EditProfilePage from './pages/user/EditProfilePage';
 
 const router = createBrowserRouter([
   // Public routes
@@ -63,6 +64,10 @@ const router = createBrowserRouter([
       {
         path: '/profile',
         element: <UserProfilePage />,
+      },
+      {
+        path: '/profile/edit',
+        element: <EditProfilePage />,
       },
       {
         path: '/bug-report',

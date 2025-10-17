@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 const UserProfilePage = () => {
@@ -19,6 +20,12 @@ const UserProfilePage = () => {
             >
               Logout
             </button>
+            <Link
+              to='/profile/edit'
+              className='ml-4 rounded-lg bg-indigo-500 px-6 py-2 text-white hover:bg-indigo-600'
+            >
+              Edit Profile
+            </Link>
           </>
         ) : (
           <p className='mb-8 text-lg text-gray-600'>You are not signed in.</p>
