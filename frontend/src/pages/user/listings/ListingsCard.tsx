@@ -12,6 +12,7 @@ type ListingsCardProps = {
     title: string;
     author: string;
     price: string;
+    roommates: string;
     body: string;
     location: string;
     moveInStart: string;
@@ -23,6 +24,7 @@ export default function ListingsCard({
     title,
     author,
     price,
+    roommates,
     body,
     location,
     moveInStart,
@@ -118,6 +120,7 @@ export default function ListingsCard({
                     </div>
 
                     <h1 className="pt-2 text-gray-500 font-roboto-italic text-lg">Created by {author}</h1>
+                    <h1 className="pt-2 text-gray-500 font-roboto-italic text-lg">Looking for {roommates} roommates(s)</h1>
                     <h1 className="text-gray-500 font-roboto-bold text-lg">{price}</h1>
                     <h1 className="pt-2 font-roboto-light text-lg text-wrap">{body}</h1>
 
@@ -131,7 +134,7 @@ export default function ListingsCard({
 
                         <Link
                             to={`/listings/${id}`}
-                            state={{ id, title, author, price, body, location, moveInStart, moveInEnd }}
+                            state={{ id, title, author, price, body, location, moveInStart, moveInEnd, roommates }}
                             rel="noopener noreferrer"
                             className="ml-2 mt-13 hover:underline-offset-4 hover:underline font-roboto-light text-gray-500 cursor-pointer"
                         >

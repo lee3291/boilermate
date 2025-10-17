@@ -100,6 +100,31 @@ const router = createBrowserRouter([
     path: '/messages',
     element: <ChatPage />
   },
+  {
+    path: "/otp-request",
+    element: <OTPRequestPage />,
+  },
+  {
+    path: "/verify-otp",
+    element: <VerifyOTPPage />,
+  },
+  {
+    path: "/reset-password",
+    element: <ResetPasswordPage />,
+  },
+  // Dashboard
+  // Map
+  {
+    path: "/listing-map",
+    element: <ListingMap />,
+  },
+  {
+    path: "/listing-form",
+    element: <ListingForm
+        isOpen={true}
+        onClose={() => console.log('closed')}
+    />,
+  },
   // NOTES: you can just do a similar setup to test the page you created
 ])
 
@@ -109,4 +134,4 @@ createRoot(document.getElementById('root')!).render(
           <RouterProvider router={router} />
       </UserProvider>
   </StrictMode>,
-);
+)

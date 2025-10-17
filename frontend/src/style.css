@@ -1,6 +1,10 @@
 @import 'tailwindcss';
+<<<<<<< HEAD
 @import "tw-animate-css";
+=======
+>>>>>>> merge/listings
 @import "./fonts.css";
+@import "tw-animate-css";
 
 @theme {
     --color-maingray: #433C35;
