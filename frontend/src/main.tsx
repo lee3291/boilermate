@@ -19,6 +19,7 @@ import ListingForm from './pages/listing/ListingForm.tsx';
 import Listings from './pages/user/listings/Listings.tsx'
 import TempAccount from './pages/user/listings/temp/TempAccount.tsx';
 import { UserProvider } from './pages/user/listings/temp/UserContext.tsx';
+import SavedListings from './pages/user/listings/SavedListings';
 // import ListingsCreateTest from './pages/user/ListingsTest.tsx';
 
 const router = createBrowserRouter([
@@ -86,10 +87,8 @@ const router = createBrowserRouter([
     element: <ListingDetails />
   },
   {
-  },
-  {
-    path: '/listings/:id',
-    element: <ListingDetails />
+    path: '/saved',
+    element: <SavedListings/>
   },
   {
     path: '/temp-account/',
@@ -97,13 +96,10 @@ const router = createBrowserRouter([
     errorElement: <div>404 Page Not Found</div>,
     children: [{}]
   },
-
-
   {
     path: '/messages',
     element: <ChatPage />
-  }
-
+  },
   // NOTES: you can just do a similar setup to test the page you created
 ])
 

@@ -12,7 +12,7 @@ async function bootstrap() {
     methods: ['GET','POST','PUT','DELETE','OPTIONS'],
     credentials: true,
   });
-  
+
   // enable interceptor globally
   app.useGlobalInterceptors(new LoggingInterceptor());
 

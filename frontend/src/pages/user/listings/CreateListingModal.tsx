@@ -17,6 +17,8 @@ export default function CreateListingModal({ open, onClose, onCreated }: CreateL
     const [mediaUrlsCsv, setMediaUrlsCsv] = useState<string>("");
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [moveInStart, setMoveInStart] = useState('');
+    const [moveInEnd, setMoveInEnd] = useState('');
 
     const initialInputRef = useRef<HTMLInputElement | null>(null);
     const dialogRef = useRef<HTMLDivElement | null>(null);
@@ -47,6 +49,11 @@ export default function CreateListingModal({ open, onClose, onCreated }: CreateL
         if (e.target === e.currentTarget) onClose();
     };
 
+    const toISODateOrNull = (s: string) => {
+        const t = s.trim();
+        return t ? new Date(`${t}T00:00:00.000Z`).toISOString() : null;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
@@ -64,6 +71,8 @@ export default function CreateListingModal({ open, onClose, onCreated }: CreateL
                 description: description.trim(),
                 price: Math.round(Number(price || 0) * 100), // cents
                 location: location.trim(),                   // REQUIRED by validator
+                moveInStart: toISODateOrNull(moveInStart),
+                moveInEnd: toISODateOrNull(moveInEnd),
                 // creatorId: username.trim(),
                 mediaUrls,                                   // REQUIRED array (can be [])
                 // status: optional (DB defaults to ACTIVE)
@@ -102,6 +111,8 @@ export default function CreateListingModal({ open, onClose, onCreated }: CreateL
             setDescription("");
             setLocation("");
             setMediaUrlsCsv("");
+            setMoveInStart('');
+            setMoveInEnd('');
             onClose();
         } catch (err: any) {
             setError(err?.message || "Something went wrong.");
@@ -198,6 +209,30 @@ export default function CreateListingModal({ open, onClose, onCreated }: CreateL
                                 className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-gray-900"
                                 placeholder="Tell potential roomates more about your listing..."
                                 />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div>
+                                <label className="block text-sm font-medium">Move-in Start</label>
+                                <input
+                                    type="date"
+                                    value={moveInStart}
+                                    onChange={(e) => setMoveInStart(e.target.value)}
+                                    className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2"
+                                    required
+                                    />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium">Move-in End</label>
+                                <input
+                                    type="date"
+                                    value={moveInEnd}
+                                    onChange={(e) => setMoveInEnd(e.target.value)}
+                                    className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2"
+                                    required
+                                    />
+                            </div>
                         </div>
 
                         <div className="space-y-1">

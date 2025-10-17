@@ -1,10 +1,25 @@
-import { BadRequestException, Body, Controller, Post, Req, Get } from '@nestjs/common';
+import {
+    BadRequestException,
+    Body,
+    Controller,
+    Post,
+    Get,
+    Param,
+    Delete,
+    Query,
+} from '@nestjs/common';
 import { ListingsService } from './listings.service';
 import {
     CreateListingBody,
     CreateListingDetails,
     CreateListingResult,
     ListingStatus,
+    SaveListingBody,
+    SaveListingResult,
+    UnsaveListingResult,
+    SaveCountResult,
+    SavedByResult,
+    SavedListingsResult,
 } from './interfaces';
 
 const STATUSES: ListingStatus[] = ['ACTIVE', 'ARCHIVED', 'RESOLVED'];
@@ -67,6 +82,18 @@ function assertCreateBody(body: any): asserts body is CreateListingBody {
     }
 }
 
+function assertSaveBody(body: any): asserts body is SaveListingBody {
+    const errors: Record<string, string> = {};
+    if (typeof body?.username !== 'string' || body.username.trim().length === 0) {
+        errors.username = 'username is required';
+    } else if (body.username.trim().length > 120) {
+        errors.username = 'username must be ≤ 120 chars';
+    }
+    if (Object.keys(errors).length) {
+        throw new BadRequestException({ message: 'Validation failed', errors });
+    }
+}
+
 @Controller('listings')
 export class ListingsController {
     constructor(private readonly listingsService: ListingsService) {}
@@ -77,14 +104,11 @@ export class ListingsController {
     }
 
     @Post()
-    async create(
-        @Body() rawBody: any,
-        // @Req() req: any,
-    ): Promise<CreateListingResult> {
+    async create(@Body() rawBody: any): Promise<CreateListingResult> {
         // 1) validate minimal fields
         assertCreateBody(rawBody);
 
-        // 2) normalize and inject auth (creatorId)
+        // 2) normalize (inject auth here if needed)
         const body: CreateListingBody = {
             title: rawBody.title.trim(),
             user: rawBody.user.trim(),
@@ -94,20 +118,71 @@ export class ListingsController {
             moveInStart: rawBody.moveInStart?.trim() || undefined,
             moveInEnd: rawBody.moveInEnd?.trim() || undefined,
             mediaUrls: rawBody.mediaUrls,
-            status: rawBody.status, // optional (DB defaults to ACTIVE)
+            status: rawBody.status,
         };
 
-        const input: CreateListingDetails = {
-            ...body,
-        //     creatorId: req.user?.id, // ensure your auth guard sets req.user
-        };
-
-        // if (!input.creatorId) {
-        //     throw new BadRequestException('creatorId missing from auth context');
-        // }
+        const input: CreateListingDetails = { ...body };
 
         // 3) delegate to service
         return this.listingsService.create(input);
+    }
+
+    // ====== SAVES API ======
+
+    /** Save a listing for a username — POST /listings/:id/save */
+    @Post(':id/save')
+    async saveListing(
+        @Param('id') listingId: string,
+        @Body() rawBody: any,
+    ): Promise<SaveListingResult> {
+        assertSaveBody(rawBody);
+        const username = rawBody.username.trim();
+        return this.listingsService.saveListing({ listingId, username });
+    }
+
+    /** Unsave a listing for a username — DELETE /listings/:id/save */
+    @Delete(':id/save')
+    async unsaveListing(
+        @Param('id') listingId: string,
+        @Body() rawBody: any,
+    ): Promise<UnsaveListingResult> {
+        assertSaveBody(rawBody);
+        const username = rawBody.username.trim();
+        return this.listingsService.unsaveListing({ listingId, username });
+    }
+
+    /** Count saves for a listing — GET /listings/:id/saves/count */
+    @Get(':id/saves/count')
+    async countSaves(@Param('id') listingId: string): Promise<SaveCountResult> {
+        return this.listingsService.countSaves(listingId);
+    }
+
+    /** List usernames who saved a listing — GET /listings/:id/saves?page=&pageSize= */
+    @Get(':id/saves')
+    async savedBy(
+        @Param('id') listingId: string,
+        @Query('page') page = '1',
+        @Query('pageSize') pageSize = '20',
+    ): Promise<SavedByResult> {
+        const p = Math.max(parseInt(String(page), 10) || 1, 1);
+        const s = Math.min(Math.max(parseInt(String(pageSize), 10) || 20, 1), 100);
+        return this.listingsService.listSavedBy({ listingId, page: p, pageSize: s });
+    }
+
+    /** Listings saved by a user — GET /listings/users/:username/saved?page=&pageSize= */
+    @Get('users/:username/saved')
+    async listingsSavedByUser(
+        @Param('username') username: string,
+        @Query('page') page = '1',
+        @Query('pageSize') pageSize = '20',
+    ): Promise<SavedListingsResult> {
+        const p = Math.max(parseInt(String(page), 10) || 1, 1);
+        const s = Math.min(Math.max(parseInt(String(pageSize), 10) || 20, 1), 100);
+        return this.listingsService.listingsSavedByUser({
+            username: username.trim(),
+            page: p,
+            pageSize: s,
+        });
     }
 }
 
