@@ -6,7 +6,7 @@ export class CreateListingDto {
     price!: number;
     location!: string;
     mediaUrls!: string[];
-    status?: 'ACTIVE' | 'ARCHIVED' | 'RESOLVED';
+    status?: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
     moveInStart?: string;
     moveInEnd?: string;
 }

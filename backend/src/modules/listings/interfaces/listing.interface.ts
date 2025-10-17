@@ -1,4 +1,4 @@
-export type ListingStatus = 'ACTIVE' | 'ARCHIVED' | 'RESOLVED';
+export type ListingStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 
 /**
  * What the client sends in the HTTP request body for creating a listing.
@@ -97,15 +97,15 @@ export interface SavedListingsResult {
   total: number; // total rows matching
 }
 
-// export interface Listing {
-//     listingID: string;
-//     userID: string;
-//     title: string;
-//     description: string;
-//     pricing: number;
-//     location: string;
-//     media: string[];
-//     status: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
-//     viewCount: number;
-//     createdAt: Date;
-// }
+export interface Listing {
+    listingID: string;
+    userID: string;
+    title: string;
+    description: string;
+    pricing: number;
+    location: string;
+    media: string[];
+    status: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+    viewCount: number;
+    createdAt: Date;
+}

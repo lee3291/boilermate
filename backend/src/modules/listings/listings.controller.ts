@@ -6,24 +6,30 @@ import {
     Get,
     Param,
     Delete,
+    Patch,
     Query,
 } from '@nestjs/common';
 import { ListingsService } from './listings.service';
-import {
-    CreateListingBody,
-    CreateListingDetails,
-    CreateListingResult,
-    ListingStatus,
-    SaveListingBody,
-    SaveListingResult,
-    UnsaveListingResult,
-    SaveCountResult,
-    SavedByResult,
-    SavedListingsResult,
-} from './interfaces';
 
-const STATUSES: ListingStatus[] = ['ACTIVE', 'ARCHIVED', 'RESOLVED'];
+// ---- Types mirrored from your second controller, but kept local for brevity ----
+type ListingStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+const STATUSES: ListingStatus[] = ['ACTIVE', 'INACTIVE', 'ARCHIVED'];
 
+type CreateListingBody = {
+    title: string;
+    user: string;
+    description: string;
+    price: number; // integer (e.g., cents) for the strict path
+    location: string;
+    moveInStart?: string;
+    moveInEnd?: string;
+    mediaUrls: string[];
+    status?: ListingStatus;
+};
+
+type SaveListingBody = { username: string };
+
+// ---------- Strict validators for the /listings POST path ----------
 function assertCreateBody(body: any): asserts body is CreateListingBody {
     const errors: Record<string, string> = {};
 
@@ -46,7 +52,7 @@ function assertCreateBody(body: any): asserts body is CreateListingBody {
     }
 
     if (typeof body?.price !== 'number' || !Number.isInteger(body.price) || body.price < 0) {
-        errors.price = 'price must be an integer ≥ 0 (in cents)';
+        errors.price = 'price must be an integer ≥ 0';
     }
 
     if (typeof body?.location !== 'string' || body.location.trim().length === 0) {
@@ -55,16 +61,11 @@ function assertCreateBody(body: any): asserts body is CreateListingBody {
         errors.location = 'location must be ≤ 140 chars';
     }
 
-    if (typeof body?.moveInStart !== 'string' || body.moveInStart.trim().length === 0) {
-        errors.moveInStart = 'moveInStart is required';
-    } else if (body.moveInStart.trim().length > 140) {
-        errors.moveInStart = 'moveInStart must be ≤ 140 chars';
+    if (body?.moveInStart !== undefined) {
+        if (typeof body.moveInStart !== 'string') errors.moveInStart = 'moveInStart must be a string (YYYY-MM-DD)';
     }
-
-    if (typeof body?.moveInEnd !== 'string' || body.moveInEnd.trim().length === 0) {
-        errors.moveInEnd = 'moveInEnd is required';
-    } else if (body.moveInEnd.trim().length > 140) {
-        errors.moveInEnd = 'moveInEnd must be ≤ 140 chars';
+    if (body?.moveInEnd !== undefined) {
+        if (typeof body.moveInEnd !== 'string') errors.moveInEnd = 'moveInEnd must be a string (YYYY-MM-DD)';
     }
 
     if (!Array.isArray(body?.mediaUrls)) {
@@ -94,21 +95,28 @@ function assertSaveBody(body: any): asserts body is SaveListingBody {
     }
 }
 
-@Controller('listings')
+/**
+ * Single controller that serves BOTH:
+ *  - Legacy routes under /listing
+ *  - Newer routes under /listings
+ */
+@Controller(['listing', 'listings'])
 export class ListingsController {
     constructor(private readonly listingsService: ListingsService) {}
+
+    // ===================== Newer API (kept intact) =====================
 
     @Get('active')
     getActive() {
         return this.listingsService.findActive();
     }
 
+    /** Strict create: POST /listings */
     @Post()
-    async create(@Body() rawBody: any): Promise<CreateListingResult> {
-        // 1) validate minimal fields
+    async createStrict(@Body() rawBody: any) {
+        // Only validate when hitting /listings (strict path)
         assertCreateBody(rawBody);
 
-        // 2) normalize (inject auth here if needed)
         const body: CreateListingBody = {
             title: rawBody.title.trim(),
             user: rawBody.user.trim(),
@@ -121,20 +129,12 @@ export class ListingsController {
             status: rawBody.status,
         };
 
-        const input: CreateListingDetails = { ...body };
-
-        // 3) delegate to service
-        return this.listingsService.create(input);
+        return this.listingsService.create(body);
     }
-
-    // ====== SAVES API ======
 
     /** Save a listing for a username — POST /listings/:id/save */
     @Post(':id/save')
-    async saveListing(
-        @Param('id') listingId: string,
-        @Body() rawBody: any,
-    ): Promise<SaveListingResult> {
+    async saveListing(@Param('id') listingId: string, @Body() rawBody: any) {
         assertSaveBody(rawBody);
         const username = rawBody.username.trim();
         return this.listingsService.saveListing({ listingId, username });
@@ -142,40 +142,37 @@ export class ListingsController {
 
     /** Unsave a listing for a username — DELETE /listings/:id/save */
     @Delete(':id/save')
-    async unsaveListing(
-        @Param('id') listingId: string,
-        @Body() rawBody: any,
-    ): Promise<UnsaveListingResult> {
+    async unsaveListing(@Param('id') listingId: string, @Body() rawBody: any) {
         assertSaveBody(rawBody);
         const username = rawBody.username.trim();
         return this.listingsService.unsaveListing({ listingId, username });
     }
 
-    /** Count saves for a listing — GET /listings/:id/saves/count */
+    /** Count saves — GET /listings/:id/saves/count */
     @Get(':id/saves/count')
-    async countSaves(@Param('id') listingId: string): Promise<SaveCountResult> {
+    countSaves(@Param('id') listingId: string) {
         return this.listingsService.countSaves(listingId);
     }
 
-    /** List usernames who saved a listing — GET /listings/:id/saves?page=&pageSize= */
+    /** List usernames who saved — GET /listings/:id/saves?page=&pageSize= */
     @Get(':id/saves')
-    async savedBy(
+    savedBy(
         @Param('id') listingId: string,
         @Query('page') page = '1',
         @Query('pageSize') pageSize = '20',
-    ): Promise<SavedByResult> {
+    ) {
         const p = Math.max(parseInt(String(page), 10) || 1, 1);
         const s = Math.min(Math.max(parseInt(String(pageSize), 10) || 20, 1), 100);
         return this.listingsService.listSavedBy({ listingId, page: p, pageSize: s });
     }
 
-    /** Listings saved by a user — GET /listings/users/:username/saved?page=&pageSize= */
+    /** Listings saved by a user — GET /listings/users/:username/saved */
     @Get('users/:username/saved')
-    async listingsSavedByUser(
+    listingsSavedByUser(
         @Param('username') username: string,
         @Query('page') page = '1',
         @Query('pageSize') pageSize = '20',
-    ): Promise<SavedListingsResult> {
+    ) {
         const p = Math.max(parseInt(String(page), 10) || 1, 1);
         const s = Math.min(Math.max(parseInt(String(pageSize), 10) || 20, 1), 100);
         return this.listingsService.listingsSavedByUser({
@@ -183,6 +180,39 @@ export class ListingsController {
             page: p,
             pageSize: s,
         });
+    }
+
+    // ===================== Legacy API (minimal compatibility) =====================
+
+    /** Legacy create: POST /listing/create (accepts legacy body, e.g. { pricing: number }) */
+    @Post('create')
+    legacyCreate(@Body() body: any) {
+        // No strict validation; the service handles dual-schema normalization.
+        return this.listingsService.create(body);
+    }
+
+    /** Legacy find all: GET /listing (returns {title, location, pricing}) */
+    @Get()
+    legacyFindAll() {
+        return this.listingsService.findAll();
+    }
+
+    /** Legacy find one: GET /listing/:id */
+    @Get(':id')
+    legacyFindOne(@Param('id') id: string) {
+        return this.listingsService.findOne(id);
+    }
+
+    /** Legacy update: PATCH /listing/:id */
+    @Patch(':id')
+    legacyUpdate(@Param('id') id: string, @Body() dto: any) {
+        return this.listingsService.update(id, dto);
+    }
+
+    /** Legacy remove: DELETE /listing/:id */
+    @Delete(':id')
+    legacyRemove(@Param('id') id: string) {
+        return this.listingsService.remove(id);
     }
 }
 
