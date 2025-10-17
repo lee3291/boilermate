@@ -32,6 +32,7 @@ export class ChatsService {
    * Send all chats with other users, find all the current chatId that contains userId and
    * return those chatId with recipient id to the backend
    */
+  //TODO: HAVE TO MODIFY THIS APIS TO ACCOUNT FOR GROUP CHATS
   async getChats(getChatsDetails: getChatsDetails): Promise<getChatsResults> {
     const client: any = this.prisma as any;
     const { userId } = getChatsDetails;

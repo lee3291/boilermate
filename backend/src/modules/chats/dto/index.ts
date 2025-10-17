@@ -1,7 +1,10 @@
-// this used to simply the exporting process
-export * from './delete-message.dto'
-export * from './send-message.dto'
-export * from './edit-message.dto'
+// Consolidated DTO exports
+// Request DTOs
+export * from './message.dto'
+export * from './chat.dto'
+export * from './group-chat.dto'
+
+// Response DTOs
 export * from './message-response.dto'
-export * from './get-messages'
-export * from './get-chats.dto'
+export * from './chat-response.dto'
+export * from './group-chat-response.dto'

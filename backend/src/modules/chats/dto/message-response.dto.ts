@@ -44,45 +44,12 @@ export class MessageWithStatusDto {
   }
 }
 
-@Exclude()
-export class ChatDto {
-  @Expose()
-  id: string; // this is chatId
-
-  @Expose()
-  userAId: string;
-  
-  @Expose()
-  userBId: string;
-  
-  @Expose()
-  latestMessageAt: Date;
-
-  static fromInterface(rawChatDetails: ChatDetails): ChatDto {
-    return plainToInstance(ChatDto, rawChatDetails, { excludeExtraneousValues: true });
-  }
-}
-
 //* This section is used for specific response (get, post, ...)
-
-export class getChatsResponseDto {
-  message: string;
-  chats: ChatDto[];
-
-  static fromChats(rawChats: ChatDetails[]): getChatsResponseDto {
-    const transformedList = rawChats.map(ChatDto.fromInterface);
-
-    return {
-      message: 'All chats of user retrieved sucessfully',
-      chats: transformedList
-    }
-  }
-}
 
 export class sendMessageResponseDto {
   idk: string; // this is basically a tracking message if you want it. technically unncessary
   message: MessageWithStatusDto;
-  chat?: ChatDto;
+  chat?: any; // ChatDto from chat-response
 
   static fromResult(
     MessageWithStatusDetails: MessageWithStatusDetails,
@@ -95,6 +62,8 @@ export class sendMessageResponseDto {
     };
 
     if (chatCreated && chatDetails) {
+      // Import ChatDto from chat-response dynamically to avoid circular dependency
+      const { ChatDto } = require('./chat-response.dto');
       response.chat = ChatDto.fromInterface(chatDetails);
     }
 

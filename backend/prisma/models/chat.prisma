@@ -1,21 +1,44 @@
+// An enum to manage the status of an invitation.
+enum ChatParticipantStatus {
+  PENDING   // The user has been invited but has not responded.
+  ACCEPTED  // The user has accepted the invitation and is a member.
+  DECLINED  // The user has declined the invitation.
+}
+
+// Represents a single conversation, which can be a 1-on-1 DM or a group chat.
 model Chat {
-  id String @id @default(uuid()) // id of the chatbox itself
-  userAId String // id of the first user who interact
-  userBId String // id of the second user who interact
+  id        String   @id @default(uuid()) // id of the chatbox itself
+  isGroup   Boolean  @default(false)     // True if this is a group chat, false for DMs.
+  name      String?                     // Optional name for group chats.
+  groupIcon String?                     // Optional URL for a group chat's icon.
+  creatorId String?                     // The user ID of the person who created the group. Null for DMs.
   latestMessageAt DateTime // time of the latest message, this is used to sort user conversation
 
-  // Relations: Links to the two users involved
-  userA            User        @relation("ChatUserA", fields: [userAId], references: [id])
-  userB            User        @relation("ChatUserB", fields: [userBId], references: [id])
-  messages         Message[] 
-
-  // Ensures only ONE chat thread exists between any two users, regardless of who started it.
-  // Prisma will automatically handle sorting the IDs to enforce uniqueness (A,B) or (B,A).
-  @@unique([userAId, userBId]) 
+  // RELATIONS
+  messages     Message[]        // A chat has many messages.
+  participants ChatParticipant[]  // A chat has many participants (members).
+  creator      User?            @relation(fields: [creatorId], references: [id])
   
   // Index for fast sorting of the user's conversation list
   @@index([latestMessageAt])
 }
+
+// This is the "join table" that connects Users to Chats.
+// It holds information about a user's membership in a specific chat.
+model ChatParticipant {
+  id        String                @id @default(uuid())
+  chatId    String
+  userId    String
+  status    ChatParticipantStatus @default(PENDING) // Status of the user's invitation/membership.
+  
+  // RELATIONS
+  chat      Chat                  @relation(fields: [chatId], references: [id])
+  user      User                  @relation(fields: [userId], references: [id])
+
+  // Ensures a user can only be a participant in a given chat once.
+  @@unique([userId, chatId])
+}
+
 
 model Message {
   id               String      @id @default(uuid())
@@ -30,7 +53,7 @@ model Message {
   
   // Relations
   chat             Chat        @relation(fields: [chatId], references: [id])
-  sender           User        @relation("MessageSender", fields: [senderId], references: [id])
+  sender           User        @relation(fields: [senderId], references: [id])
   statuses         UserMessageStatus[] // Link to per-user statuses
   image            Image?      @relation(fields: [imageId], references: [id]) // link image id to image object
   
