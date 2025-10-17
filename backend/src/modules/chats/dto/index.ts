@@ -1,4 +1,3 @@
-// Consolidated DTO exports
 // Request DTOs
 export * from './message.dto'
 export * from './chat.dto'

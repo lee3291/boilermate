@@ -28,7 +28,7 @@ export class MessageWithStatusDto {
   isEdited: boolean; // Global edit status
 
   @Expose()
-  isDeleted: boolean;
+  isDeleted: boolean; // Global delete status
 
   @Expose()
   createdAt: Date;

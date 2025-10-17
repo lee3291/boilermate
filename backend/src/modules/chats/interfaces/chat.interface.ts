@@ -10,8 +10,12 @@ export interface MessageWithStatusDetails extends MessageDetails {
 
 export interface ChatDetails {
   id: string;
-  userAId: string;
-  userBId: string;
+  //userAId: string;
+  //userBId: string;
+  isGroup: boolean; // needed so frontend can tell the difference
+  name?: string; // name of group chat
+  groupIcon?: string // url to the group icon -> this is basically reach ??? maybe not now
+  creatorId?: string // owner of the group chat, will be NULL if it is just between 2 people
   latestMessageAt: Date;
 }
 
@@ -41,7 +45,7 @@ export interface getChatsResults {
 export interface sendMessageDetails {
   chatId?: string;
   senderId: string;
-  recipientId: string;
+  recipientId?: string; // this now could be optional as we create a group chat, still need this to create chat between 2 users
   content?: string;
   imageUrl?: string; // need this to update the database
   imageKey?: string; // this is a special location of the image on the bucket

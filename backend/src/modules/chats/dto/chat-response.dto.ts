@@ -10,11 +10,22 @@ export class ChatDto {
   @Expose()
   id: string; // this is chatId
 
+  // @Expose()
+  // userAId: string;
+  // @Expose()
+  // userBId: string;
+
   @Expose()
-  userAId: string;
-  
+  isGroup: boolean;
+
   @Expose()
-  userBId: string;
+  name?: string;
+
+  @Expose()
+  groupIcon?: string
+
+  @Expose()
+  creatorId?: string
   
   @Expose()
   latestMessageAt: Date;

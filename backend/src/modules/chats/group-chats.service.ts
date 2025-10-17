@@ -51,7 +51,7 @@ export class GroupChatsService {
         const groupChat = await tx.chat.create({
           data: {
             isGroup: true,
-            name,
+            name, // uhh what if this is null
             groupIcon: groupIcon || null,
             creatorId,
             latestMessageAt: new Date(),
@@ -106,6 +106,7 @@ export class GroupChatsService {
           userId,
           status: 'PENDING',
         },
+        //TODO: MAY NEED TO CHECK FOR NULL ERROR
         include: {
           chat: {
             select: {
@@ -289,7 +290,7 @@ export class GroupChatsService {
 
       const participant = await client.chatParticipant.findUnique({
         where: {
-          userId_chatId: {
+          userId_chatId: { // prisma shorthand for and
             userId,
             chatId,
           },
