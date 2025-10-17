@@ -1,7 +1,7 @@
 enum ListingStatus {
   ACTIVE
+  INACTIVE
   ARCHIVED
-  RESOLVED
 }
 
 // ---------------- Core: Listing ----------------
@@ -14,7 +14,9 @@ model Listing {
   user        String        @default("Anonymous")
   description String        @db.Text
   price       Int
+  pricing     Float         @default(0)
   location    String
+  roommates   Int           @default(1)
 
   mediaUrls   String[]
   status      ListingStatus @default(ACTIVE)
@@ -25,8 +27,26 @@ model Listing {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
+  saves       Saved[]
+
+  userId      String?
+  user_reference     User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([status])
   @@index([location])
   @@index([price])
 }
 
+model Saved {
+  username   String
+  listingId  String
+
+  listing    Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime      @default(now())
+
+  @@id([username, listingId])
+
+  @@index([username])
+  @@index([listingId])
+}

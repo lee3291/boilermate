@@ -1,0 +1,53 @@
+model Chat {
+  id String @id @default(uuid()) // id of the chatbox itself
+  userAId String // id of the first user who interact
+  userBId String // id of the second user who interact
+  latestMessageAt DateTime // time of the latest message, this is used to sort user conversation
+
+  // Relations: Links to the two users involved
+  userA            User        @relation("ChatUserA", fields: [userAId], references: [id])
+  userB            User        @relation("ChatUserB", fields: [userBId], references: [id])
+  messages         Message[]
+
+  // Ensures only ONE chat thread exists between any two users, regardless of who started it.
+  // Prisma will automatically handle sorting the IDs to enforce uniqueness (A,B) or (B,A).
+  @@unique([userAId, userBId])
+
+  // Index for fast sorting of the user's conversation list
+  @@index([latestMessageAt])
+}
+
+model Message {
+  id               String      @id @default(uuid())
+  chatId           String
+  senderId         String
+  content          String?     @db.Text
+  imageId          String?
+  isEdited         Boolean     @default(false)
+  isDeleted        Boolean     @default(false) // delete message for everyone
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt // Timestamp of the last edit
+  // Relations
+  chat             Chat        @relation(fields: [chatId], references: [id])
+  sender           User        @relation("MessageSender", fields: [senderId], references: [id])
+  statuses         UserMessageStatus[] // Link to per-user statuses
+  image            Image?      @relation(fields: [imageId], references: [id]) // link image id to image object
+
+  // Index for fast retrieval and sorting within a single chat thread
+  @@index([chatId, createdAt])
+}
+
+model UserMessageStatus {
+  id               String      @id @default(uuid())
+  userId           String
+  messageId        String
+
+  isDeleted        Boolean     @default(true)
+  // have this for an easier to integrate workflow => technically doesn't need it but good for more flexibility
+
+  user             User        @relation(fields: [userId], references: [id])
+  message          Message     @relation(fields: [messageId], references: [id])
+
+  @@unique([userId, messageId])
+}
+

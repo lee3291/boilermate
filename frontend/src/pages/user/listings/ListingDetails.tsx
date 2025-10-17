@@ -3,12 +3,12 @@ import Navbar from "../components/Navbar";
 
 export default function ListingDetails() {
     const { state } = useLocation() as {
-        state?: { id: string; title: string; author: string; price: string; body: string, location: string };
+        state?: { id: string; title: string; author: string; price: string; body: string, location: string, moveInStart: string, moveInEnd: string, roommate: string };
     };
 
     if (!state) return <div>Open this page via the card.</div>;
 
-    const { title, author, price, body, id, location } = state;
+    const { title, author, price, body, id, location, moveInStart, moveInEnd } = state;
 
     return (
         <div className="w-full h-400">
@@ -33,13 +33,15 @@ export default function ListingDetails() {
                 </div>
 
                 <div className="flex gap-10">
-                    <p className="text-gray-500 text-[30px] font-roboto-italic tracking-[-0.02em] ">Created by {author}</p>
-                    <p className="-mt-[1px] text-gray-400 font-sourceserif4-18pt-italic text-[30px]">{price}</p>
+                    <p className="text-gray-500 text-[20px] font-roboto-italic tracking-[-0.02em] ">Created by {author}</p>
+                    <p className="-mt-[1px] text-gray-400 font-sourceserif4-18pt-italic text-[20px]">{price}</p>
                 </div>
-                <p className="font-roboto-italic text-[25px] text-gray-600 ">Location: {location}</p>
-                <p className="mt-4 font-roboto-light text-[25px] tracking-[-0.02em]">{body}</p>
-                <p className="mt-6 text-sm text-gray-400">Listing ID: {id}</p>
+                <p className="font-roboto-italic text-[20px] text-gray-600 ">Location: {location}</p>
+                <p className="font-roboto-italic text-[20px] text-gray-600 ">Move in Date: {moveInStart} - {moveInEnd}</p>
+                <h2 className="mt-10 font-sourceserif4-18pt-regular text-[40px] tracking-[-0.02em] text-maingray">Description</h2>
+                <p className="mt-1 font-roboto-light text-[20px] tracking-[-0.02em]">{body}</p>
 
+                <p className="mt-6 text-sm font-roboto-light text-gray-400">Listing ID: {id}</p>
             </div>
         </div>
     );

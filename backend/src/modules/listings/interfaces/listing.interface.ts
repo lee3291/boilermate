@@ -1,16 +1,4 @@
-export interface Listing {
-    listingID: string;
-    userID: string;
-    title: string;
-    description: string;
-    pricing: number;
-    location: string;
-    media: string[];
-    status: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
-    viewCount: number;
-    createdAt: Date;
-}
-export type ListingStatus = 'ACTIVE' | 'ARCHIVED' | 'RESOLVED';
+export type ListingStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 
 /**
  * What the client sends in the HTTP request body for creating a listing.
@@ -22,6 +10,7 @@ export interface CreateListingBody {
   description: string;
   price: number;        // cents
   location: string;
+  roommates: number;
   mediaUrls: string[];
   status?: ListingStatus;
   moveInStart?: string;
@@ -48,6 +37,7 @@ export interface ListingResponse {
   description: string;
   price: number;
   location: string;
+  roommates: number;
   mediaUrls: string[];
 
   status: ListingStatus;
@@ -63,4 +53,62 @@ export interface ListingResponse {
 /** Envelope for the create use case (helps future-proof). */
 export interface CreateListingResult {
   listing: ListingResponse;
+}
+
+
+export interface SaveListingBody {
+  username: string;
+}
+
+/** Result of a save action */
+export interface SaveListingResult {
+  listingId: string;
+  username: string;
+  isSaved: true;
+  createdAt: string;
+}
+
+/** Result of an unsave action */
+export interface UnsaveListingResult {
+  listingId: string;
+  username: string;
+  isSaved: false;
+}
+
+/** Count of saves for a listing */
+export interface SaveCountResult {
+  listingId: string;
+  count: number;
+}
+
+/** Who saved a listing (usernames only) */
+export interface SavedByResult {
+  listingId: string;
+  usernames: string[];
+  page: number;
+  pageSize: number;
+  total: number; // total rows
+}
+
+/** Listings saved by a specific user */
+export interface SavedListingsResult {
+  username: string;
+  listings: ListingResponse[];
+  page: number;
+  pageSize: number;
+  total: number; // total rows matching
+}
+
+export interface Listing {
+    listingID: string;
+    userID: string;
+    title: string;
+    description: string;
+    pricing: number;
+    roommates: number;
+    location: string;
+    media: string[];
+    status: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+    viewCount: number;
+    createdAt: Date;
 }
