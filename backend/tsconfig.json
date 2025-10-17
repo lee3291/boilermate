@@ -21,6 +21,7 @@
     "strictBindCallApply": true,
     "noFallthroughCasesInSwitch": true,
     
+    
     // Set the base directory for path resolution
     "baseUrl": "./src", 
     // Define alias for quick access

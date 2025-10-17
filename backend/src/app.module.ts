@@ -3,9 +3,14 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from '@core/database/prisma.module';
-import { DogsModule } from '@modules/dogs/dogs.module'
+import { DogsModule } from '@modules/dogs/dogs.module';
 import { ChatsModule } from '@modules/chats/chats.module';
 import { UploadsModule } from '@modules/uploads/uploads.module';
+import { OTPModule } from './modules/otp/otp.module';
+import { ListingModule } from './modules/listings/listing.module';
+import { ListingsModule } from '@modules/listings/listings.module'
+import { AuthModule } from './modules/auth/auth.module';
+import { EmailVerificationModule } from './modules/email-verification/email-verification.module';
 
 @Module({
   imports: [
@@ -17,6 +22,12 @@ import { UploadsModule } from '@modules/uploads/uploads.module';
     DogsModule, // Dogs feature module
     ChatsModule, // Chat feature module
     UploadsModule, // Image upload module
+    AuthModule,
+    EmailVerificationModule,
+    OTPModule,
+    ListingModule,
+    ListingsModule,
+    
   ],
   controllers: [AppController],
   providers: [AppService],
