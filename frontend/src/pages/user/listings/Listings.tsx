@@ -148,13 +148,13 @@ export default function Listings() {
                     <div className="flex flex-col">
                         <button
                             onClick={() => setOpenCreate(true)}
-                            className="h-12 w-60 bg-white border border-black rounded-[100px] font-sans hover:bg-black hover:text-white transition cursor-pointer"
+                            className="h-12 w-60 bg-white border border-black rounded-[100px] font-sans hover:bg-gray-100 transition cursor-pointer"
                         >
                             Create a Listing
                         </button>
 
                         <a
-                            className="mt-2 h-12 w-60 hover:bg-white border hover:text-black hover:border-black rounded-[100px] font-sans bg-black text-white transition cursor-pointer text-center pt-[11px]"
+                            className="mt-2 h-12 w-60 hover:bg-maingray border rounded-[100px] font-sans bg-black text-white transition cursor-pointer text-center pt-[11px]"
                             href="/saved">
                             Saved Listings
                         </a>
