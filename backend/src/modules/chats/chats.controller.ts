@@ -16,6 +16,7 @@ import {
   DeclineInvitationDto,
   InviteParticipantDto,
   RemoveParticipantDto,
+  LeaveGroupChatDto,
   DeleteGroupChatDto,
   GroupChatResponseDto,
   InvitationResponseDto,
@@ -141,6 +142,19 @@ export class ChatsController {
     @Body() dto: RemoveParticipantDto
   ) {
     await this.groupChatsService.removeParticipant(chatId, userId, dto as any);
+  }
+
+  /**
+   * Leave a group chat (any member can leave)
+   * If the leaving user is the creator, ownership transfers to the first remaining member
+   */
+  @Post(':chatId/leave')
+  @HttpCode(204)
+  async leaveGroupChat(
+    @Param('chatId') chatId: string,
+    @Body() dto: LeaveGroupChatDto
+  ) {
+    await this.groupChatsService.leaveGroupChat(chatId, dto as any);
   }
 
   /**

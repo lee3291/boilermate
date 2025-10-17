@@ -31,6 +31,10 @@ export class RemoveParticipantDto {
   creatorId: string; // For authorization check
 }
 
+export class LeaveGroupChatDto {
+  userId: string; // User who wants to leave
+}
+
 export class DeleteGroupChatDto {
   creatorId: string; // For authorization check
 }

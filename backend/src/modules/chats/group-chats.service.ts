@@ -9,6 +9,7 @@ import {
   DeclineInvitationDetails,
   InviteParticipantDetails,
   RemoveParticipantDetails,
+  LeaveGroupChatDetails,
   DeleteGroupChatDetails,
   GroupChatDetails,
   InvitationDetails,
@@ -308,6 +309,93 @@ export class GroupChatsService {
       Logger.error('removeParticipant error', error);
       if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException('Failed to remove participant');
+    }
+  }
+
+  /**
+   * Leave a group chat
+   * If the leaving user is the creator, transfer ownership to the first remaining ACCEPTED member
+   */
+  async leaveGroupChat(chatId: string, leaveGroupChatDetails: LeaveGroupChatDetails): Promise<void> {
+    const client: any = this.prisma as any;
+    const { userId } = leaveGroupChatDetails;
+
+    try {
+      // check if the chat is valid
+      const chat = await client.chat.findUnique({
+        where: { id: chatId },
+        include: {
+          participants: {
+            where: { status: 'ACCEPTED' },
+            include: { user: true }
+          }
+        }
+      });
+
+      if (!chat) {
+        throw new NotFoundException('Group chat not found');
+      }
+
+      if (!chat.isGroup) {
+        throw new BadRequestException('This is not a group chat');
+      }
+
+      // Check if user is a participant
+      const userParticipant = chat.participants.find((p: any) => p.userId === userId);
+      if (!userParticipant) {
+        throw new BadRequestException('User is not a member of this group');
+      }
+
+      const isCreator = chat.creatorId === userId;
+      const remainingMembers = chat.participants.filter((p: any) => p.userId !== userId);
+
+      await client.$transaction(async (tx: any) => {
+        // Remove the user's participant record
+        await tx.chatParticipant.delete({
+          where: {
+            userId_chatId: {
+              userId,
+              chatId,
+            }
+          }
+        });
+
+        // If user was the creator and there are remaining members, transfer ownership
+        if (isCreator && remainingMembers.length > 0) {
+          const newCreatorId = remainingMembers[0].userId;
+          await tx.chat.update({
+            where: { id: chatId },
+            data: { creatorId: newCreatorId }
+          });
+          Logger.log(`Transferred group ownership from ${userId} to ${newCreatorId} in chat ${chatId}`);
+        } else if (isCreator && remainingMembers.length === 0) {
+          // If creator is leaving and no one else is left, delete the group
+          Logger.log(`Last member leaving, deleting group chat ${chatId}`);
+          
+          // Delete all message statuses
+          await tx.userMessageStatus.deleteMany({
+            where: {
+              message: {
+                chatId,
+              },
+            },
+          });
+
+          // Delete all messages
+          await tx.message.deleteMany({
+            where: { chatId },
+          });
+
+          // Delete the chat
+          await tx.chat.delete({
+            where: { id: chatId },
+          });
+        }
+      });
+    } catch (error) {
+      Logger.error('leaveGroupChat error', error);
+      if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
+      throw new InternalServerErrorException('Failed to leave group chat');
     }
   }
 

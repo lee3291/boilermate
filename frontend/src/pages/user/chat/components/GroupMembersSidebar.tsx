@@ -17,6 +17,7 @@ interface GroupMembersSidebarProps {
   onClose: () => void;
   onAddMembers: () => void; // Opens AddMembersModal
   onRemoveMember?: (memberId: string) => Promise<void>;
+  onLeaveGroup?: () => Promise<void>; // Leave group chat (any member)
   onDeleteGroup?: () => Promise<void>; // Delete entire group chat (creator only)
   members?: Member[]; // Optional, pass participants from selectedConversation
 }
@@ -29,9 +30,11 @@ export default function GroupMembersSidebar({
   members = [], // Default to empty array if not provided
   onAddMembers,
   onRemoveMember,
+  onLeaveGroup,
   onDeleteGroup,
 }: GroupMembersSidebarProps) {
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [isLeavingGroup, setIsLeavingGroup] = useState(false);
   const [isDeletingGroup, setIsDeletingGroup] = useState(false);
 
   const handleRemove = async (memberId: string, memberEmail: string) => {
@@ -45,6 +48,24 @@ export default function GroupMembersSidebar({
       alert('Failed to remove member');
     } finally {
       setRemovingId(null);
+    }
+  };
+
+  const handleLeaveGroup = async () => {
+    const confirmMessage = isAdmin 
+      ? 'Are you sure you want to leave this group? Admin rights will be transferred to the first remaining member. You will need to be re-invited to join again.'
+      : 'Are you sure you want to leave this group? You will need to be re-invited to join again.';
+    
+    if (!confirm(confirmMessage)) return;
+
+    setIsLeavingGroup(true);
+    try {
+      await onLeaveGroup?.();
+    } catch (error) {
+      console.error('Leave group error:', error);
+      alert('Failed to leave group');
+    } finally {
+      setIsLeavingGroup(false);
     }
   };
 
@@ -163,17 +184,30 @@ export default function GroupMembersSidebar({
         )}
       </div>
 
-      {/* Delete Group Button (Admin only) - At the bottom */}
-      {isAdmin && onDeleteGroup && (
-        <div className="p-4 border-t">
+      {/* Action Buttons - At the bottom */}
+      {onLeaveGroup && (
+        <div className="p-4 border-t space-y-2">
+          {/* Leave Group Button (All members including admin) */}
           <button
-            onClick={handleDeleteGroup}
-            disabled={isDeletingGroup}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleLeaveGroup}
+            disabled={isLeavingGroup}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Trash2 size={18} />
-            {isDeletingGroup ? 'Deleting...' : 'Delete Group'}
+            <X size={18} />
+            {isLeavingGroup ? 'Leaving...' : isAdmin ? 'Leave Group (Transfer Ownership)' : 'Leave Group'}
           </button>
+          
+          {/* Delete Group Button (Admin only) */}
+          {isAdmin && onDeleteGroup && (
+            <button
+              onClick={handleDeleteGroup}
+              disabled={isDeletingGroup}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Trash2 size={18} />
+              {isDeletingGroup ? 'Deleting...' : 'Delete Group'}
+            </button>
+          )}
         </div>
       )}
     </div>

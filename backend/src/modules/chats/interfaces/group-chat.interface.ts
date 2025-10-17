@@ -51,6 +51,10 @@ export interface RemoveParticipantDetails {
   creatorId: string;
 }
 
+export interface LeaveGroupChatDetails {
+  userId: string; // User who wants to leave
+}
+
 export interface DeleteGroupChatDetails {
   creatorId: string;
 }

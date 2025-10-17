@@ -24,6 +24,7 @@ export default function ChatWindow({
   onToggleGroupMembersSidebar,
   onAddMembersClick,
   onRemoveMember,
+  onLeaveGroup,
   onDeleteGroup,
 }: {
   chatId?: string | null;
@@ -45,6 +46,7 @@ export default function ChatWindow({
   onToggleGroupMembersSidebar?: () => void;
   onAddMembersClick?: () => void;
   onRemoveMember?: (chatId: string, userId: string) => Promise<void>;
+  onLeaveGroup?: (chatId: string) => Promise<void>;
   onDeleteGroup?: (chatId: string) => Promise<void>;
 }) {
   // placeholder when no chat is selected
@@ -135,6 +137,11 @@ export default function ChatWindow({
           onRemoveMember={async (memberId) => {
             if (onRemoveMember) {
               await onRemoveMember(chatId ?? '', memberId);
+            }
+          }}
+          onLeaveGroup={async () => {
+            if (onLeaveGroup) {
+              await onLeaveGroup(chatId ?? '');
             }
           }}
           onDeleteGroup={async () => {

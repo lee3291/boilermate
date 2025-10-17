@@ -17,6 +17,7 @@ import {
   createGroupChat as apiCreateGroupChat,
   inviteParticipant as apiInviteParticipant,
   removeParticipant as apiRemoveParticipant,
+  leaveGroupChat as apiLeaveGroupChat,
   searchUsersForGroupCreation as apiSearchUsersForGroupCreation,
   searchUsersForAddingToGroup as apiSearchUsersForAddingToGroup,
 } from '@/services/groupChatService';
@@ -472,6 +473,24 @@ export default function useChatLogic(initialUserId: string) {
     }
   }, [currentUserId, selectedChatId]);
 
+  // Leave group chat (any member can leave)
+  const handleLeaveGroup = useCallback(async (chatId: string) => {
+    if (!currentUserId) return;
+    try {
+      await apiLeaveGroupChat(chatId, { userId: currentUserId });
+      // Remove chat from conversations list
+      setConversations(prev => prev.filter(c => c.id !== chatId));
+      // Clear selected chat if it was the one we left
+      if (selectedChatId === chatId) {
+        setSelectedChatId(null);
+        setMessages([]);
+      }
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to leave group');
+      throw err; // Re-throw so UI can handle the error
+    }
+  }, [currentUserId, selectedChatId]);
+
   // Fetch invitations when user changes
   useEffect(() => {
     if (currentUserId) {
@@ -526,6 +545,7 @@ export default function useChatLogic(initialUserId: string) {
     handleSearchUsersForGroup,
     handleAddMember,
     handleRemoveMember,
+    handleLeaveGroup,
     handleDeleteGroup,
   };
 }

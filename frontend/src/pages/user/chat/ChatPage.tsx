@@ -55,6 +55,7 @@ export default function ChatPage() {
             onToggleGroupMembersSidebar={() => logic.setShowGroupMembersSidebar(!logic.showGroupMembersSidebar)}
             onAddMembersClick={() => logic.setShowAddMembersModal(true)}
             onRemoveMember={logic.handleRemoveMember}
+            onLeaveGroup={logic.handleLeaveGroup}
             onDeleteGroup={logic.handleDeleteGroup}
           />
         </div>

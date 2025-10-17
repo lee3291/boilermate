@@ -85,6 +85,18 @@ export async function removeParticipant(chatId: string, userId: string, request:
   }
 }
 
+// Leave a group chat (any member can leave)
+export async function leaveGroupChat(chatId: string, request: {
+  userId: string;
+}): Promise<void> {
+  try {
+    const res = await api.post(`/chats/${encodeURIComponent(chatId)}/leave`, request);
+    console.log('leave group chat', res);
+  } catch (error: any) {
+    throw error.response?.data ?? error;
+  }
+}
+
 // Delete the entire group chat (creator only)
 export async function deleteGroupChat(chatId: string, request: {
   creatorId: string;
@@ -139,6 +151,7 @@ export default {
   declineInvitation,
   inviteParticipant,
   removeParticipant,
+  leaveGroupChat,
   deleteGroupChat,
   searchUsersForGroupCreation,
   searchUsersForAddingToGroup,
