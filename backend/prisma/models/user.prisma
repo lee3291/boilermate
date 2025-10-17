@@ -1,6 +1,27 @@
 model User {
-  id               String      @id @default(uuid())
-  email            String      @unique
-  hashedPassword   String
-  isVerified       Boolean     @default(false)
+  id            String        @id @default(uuid())
+  email         String        @unique
+  passwordHash  String
+  profileInfo   Json?
+  avatarURL     String?
+  phoneNumber   String?
+  bio           String?
+  isVerified    Boolean       @default(false)
+  status        UserStatus?   @default(ACTIVE)
+  searchStatus  SearchStatus? @default(LOOKING)
+  preferences   Preference[]
+  listings      Listing[]
+  preferences   Preference[]
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum SearchStatus {
+  LOOKING
+  NOT_LOOKING
+  HIDDEN
 }
