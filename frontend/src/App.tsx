@@ -1,10 +1,10 @@
 import React from 'react';
-import SignUpPage from './pages/public/SignUpPage';
+import { Outlet } from 'react-router-dom';
 
 export default function App() {
-    return (
-        <>
-          <SignUpPage></SignUpPage>
-        </>
-    )
+  return (
+    <>
+      <Outlet />
+    </>
+  );
 }

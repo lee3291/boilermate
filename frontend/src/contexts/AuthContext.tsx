@@ -3,7 +3,7 @@ import {
   useContext,
   useState,
   useEffect,
-  ReactNode,
+  type ReactNode,
 } from 'react';
 import { jwtDecode } from 'jwt-decode';
 
@@ -12,16 +12,16 @@ interface User {
   email: string;
 }
 
-interface UserContextType {
+interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (token: string) => void;
   logout: () => void;
 }
 
-const UserContext = createContext<UserContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const UserProvider = ({ children }: { children: ReactNode }) => {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(() =>
     localStorage.getItem('token'),
@@ -53,16 +53,16 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <UserContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, token, login, logout }}>
       {children}
-    </UserContext.Provider>
+    </AuthContext.Provider>
   );
 };
 
-export const useUser = () => {
-  const context = useContext(UserContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useUser must be used within a UserProvider');
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };

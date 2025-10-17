@@ -1,6 +1,6 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './style.css'
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import './style.css';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import BugReportPage from './pages/bug-report/BugReportPage';
 
@@ -9,104 +9,107 @@ import ListingDetails from './pages/user/listings/ListingDetails.tsx';
 // Import all top-level views/components
 import ChatPage from './pages/user/chat/ChatPage.tsx';
 
-// Components used for protected areas
-import App from './App.tsx'
-import OTPRequestPage from "./pages/resetpassword/OTPRequestPage.tsx";
+// Auth pages
+import LandingPage from './pages/public/LandingPage';
+import SignInPage from './pages/public/SignInPage';
+import SignUpPage from './pages/public/SignUpPage';
+
+import OTPRequestPage from './pages/resetpassword/OTPRequestPage.tsx';
 import ResetPasswordPage from './pages/resetpassword/ResetPasswordPage.tsx';
 import VerifyOTPPage from './pages/resetpassword/VerifyOTPPage.tsx';
 import ListingMap from './pages/listing/ListingMap.tsx';
 import ListingForm from './pages/listing/ListingForm.tsx';
-import Listings from './pages/user/listings/Listings.tsx'
+import Listings from './pages/user/listings/Listings.tsx';
 import TempAccount from './pages/user/listings/temp/TempAccount.tsx';
 import { UserProvider } from './pages/user/listings/temp/UserContext.tsx';
 import SavedListings from './pages/user/listings/SavedListings';
 // import ListingsCreateTest from './pages/user/ListingsTest.tsx';
 
+import UserProfilePage from './pages/user/UserProfilePage';
+
 const router = createBrowserRouter([
+  // Auth Routes
   {
     path: '/',
-    element: <App />, // layout for the homepage
+    element: <LandingPage />,
     errorElement: <div>404 Page Not Found</div>,
-    children: [
-      {
-        index: true, // true means default contents of the page
-        path: 'idk', // enter path you want
-        element: <App /> // should be <Home/>
-      },
-      // you can add other public page here (About, ...)
-    ]
-
+  },
+  {
+    path: '/signin',
+    element: <SignInPage />,
+  },
+  {
+    path: '/signup',
+    element: <SignUpPage />,
+  },
+  {
+    path: '/profile',
+    element: <UserProfilePage />,
   },
 
-  // login page
-  //{},
-  // signup page
-  //{},
-
-  // admin role here, page related to admin role in here
- // {},
-
-  // user role here, page related to user role in here
-  //{},
-  // For reset password
+  // Existing App Routes
   {
-  path: '/bug-report',
-  element: <BugReportPage />,
-    path: "/otp-request",
+    path: '/bug-report',
+    element: <BugReportPage />,
+  },
+  {
+    path: '/otp-request',
     element: <OTPRequestPage />,
   },
   {
-    path: "/verify-otp",
+    path: '/verify-otp',
     element: <VerifyOTPPage />,
   },
   {
-    path: "/reset-password",
+    path: '/reset-password',
     element: <ResetPasswordPage />,
   },
   // Dashboard
   // Map
   {
-    path: "/listing-map",
+    path: '/listing-map',
     element: <ListingMap />,
   },
   {
-    path: "/listing-form",
-    element: <ListingForm
-        isOpen={true}
-        onClose={() => console.log('closed')}
-    />,
+    path: '/listing-form',
+    element: (
+      <ListingForm isOpen={true} onClose={() => console.log('closed')} />
+    ),
   },
-      {
+  {
     path: '/listings/',
-    element: <Listings/>,
+    element: <Listings />,
     errorElement: <div>404 Page Not Found</div>,
-    children: [{}]
+    children: [{}],
   },
   {
     path: '/listings/:id',
-    element: <ListingDetails />
+    element: <ListingDetails />,
   },
   {
     path: '/saved',
-    element: <SavedListings/>
+    element: <SavedListings />,
   },
   {
     path: '/temp-account/',
-    element: <TempAccount/>,
+    element: <TempAccount />,
     errorElement: <div>404 Page Not Found</div>,
-    children: [{}]
+    children: [{}],
   },
   {
     path: '/messages',
-    element: <ChatPage />
+    element: <ChatPage />,
   },
-  // NOTES: you can just do a similar setup to test the page you created
-])
+]);
 
+import { AuthProvider } from './contexts/AuthContext';
+// ...existing code...
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-      <UserProvider>
-          <RouterProvider router={router} />
-      </UserProvider>
+    <UserProvider>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </UserProvider>
   </StrictMode>,
 );
