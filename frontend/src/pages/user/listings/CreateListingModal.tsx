@@ -11,14 +11,14 @@ type CreateListingModalProps = {
 };
 
 export default function CreateListingModal({
-                                               open,
-                                               onClose,
-                                               onCreated,
-                                           }: CreateListingModalProps) {
+    open,
+    onClose,
+    onCreated,
+}: CreateListingModalProps) {
     const { username } = useUser();
     const [title, setTitle] = useState("");
     const [price, setPrice] = useState<string>("");
-    const [roommates, setRoommates] = useState<string>("");
+    const [roommates, setRoommates] = useState<string>("1");
     const [description, setDescription] = useState("");
     const [location, setLocation] = useState("");
     const [submitting, setSubmitting] = useState(false);
@@ -88,17 +88,24 @@ export default function CreateListingModal({
             return;
         }
 
+        const roommatesInt = Number.parseInt(roommates || "1", 10);
+        if (!Number.isFinite(roommatesInt) || roommatesInt < 1) {
+            setError("Roommates must be a whole number of at least 1.");
+            setSubmitting(false);
+            return;
+        }
+
         try {
             const payload = {
                 title: title.trim(),
                 user: username.trim(),
                 description: description.trim(),
-                price: Math.round(Number(price || 0) * 100),
-                roommates: Number(roommates || 0),
+                price: Math.round(Number(price || 0) * 100), // cents, matches Int in schema
                 location: location.trim(),
                 moveInStart: toISODateOrNull(moveInStart),
                 moveInEnd: toISODateOrNull(moveInEnd),
                 status: "ACTIVE",
+                roommates: roommatesInt,
             };
 
             const res = await fetch(`${API_BASE}/listings`, {
@@ -116,7 +123,7 @@ export default function CreateListingModal({
 
             setTitle("");
             setPrice("");
-            setRoommates("");
+            setRoommates("1");
             setDescription("");
             setLocation("");
             setMoveInStart("");
@@ -143,7 +150,7 @@ export default function CreateListingModal({
         >
             <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]" />
             <div className="absolute inset-0 flex items-center justify-center p-4">
-                <div className="w-full max-w-xl h-[76vh] max-h-[80vh] overflow-y-auto rounded-xl bg-white shadow-lg ring-1 ring-black/5">
+                <div className="w-full max-w-xl h-[78vh] max-h-[80vh] overflow-y-auto rounded-xl bg-white shadow-lg ring-1 ring-black/5">
                     <div className="px-4 pt-4 flex justify-between items-center pb-2">
                         <h2 id="create-listing-title" className="text-[35px] font-sourceserif4-18pt-regular text-maingray">
                             Create a Listing
@@ -171,27 +178,10 @@ export default function CreateListingModal({
                                 maxLength={120}
                                 className="w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-black"
                                 placeholder="e.g., Cozy Apartment in West Lafayette"
-                            />
+                                />
                         </div>
 
-                        <div className="space-y-1">
-                            <label htmlFor="title" className="font-roboto-regular text-gray-700">
-                                Number of Roommates Needed
-                            </label>
-                            <input
-                                ref={initialInputRef}
-                                id="rommates"
-                                type="number"
-                                step="1"
-                                value={roommates}
-                                onChange={(e) => setRoommates(e.target.value)}
-                                required
-                                maxLength={120}
-                                className="w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-black"
-                                placeholder="e.g. 2"
-                            />
-                        </div>
-
+                        {/* Price + Location */}
                         <div className="grid grid-cols-1 gap-3">
                             <div className="space-y-1">
                                 <label htmlFor="price" className="font-roboto-regular text-gray-700">
@@ -207,7 +197,7 @@ export default function CreateListingModal({
                                     required
                                     className="w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-black"
                                     placeholder="1200.00"
-                                />
+                                    />
                             </div>
 
                             <div className="space-y-1">
@@ -222,8 +212,37 @@ export default function CreateListingModal({
                                     required
                                     className="w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-black"
                                     placeholder="123 Main St, West Lafayette, IN"
-                                />
+                                    />
                             </div>
+                        </div>
+
+                        {/* Roommates + (optional) anything else */}
+                        <div className="grid grid-cols-1 gap-3">
+                            <div className="space-y-1">
+                                <label htmlFor="roommates" className="font-roboto-regular text-gray-700">
+                                    Number of Roomates Needed
+                                </label>
+                                <input
+                                    id="roommates"
+                                    type="number"
+                                    inputMode="numeric"
+                                    min={1}
+                                    step={1}
+                                    value={roommates}
+                                    onChange={(e) => {
+                                        // keep it numeric-only; allow blank for editing
+                                        const v = e.target.value;
+                                        if (v === "") return setRoommates("");
+                                        if (/^\d+$/.test(v)) setRoommates(v);
+                                    }}
+                                    required
+                                    className="w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-black"
+                                    placeholder="1"
+                                    />
+                            </div>
+
+                            {/* spacer, or you could add another field later */}
+                            <div />
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
@@ -235,7 +254,7 @@ export default function CreateListingModal({
                                     onChange={(e) => setMoveInStart(e.target.value)}
                                     className="w-full rounded-md border border-gray-300 px-3 py-2"
                                     required
-                                />
+                                    />
                             </div>
                             <div className="space-y-1">
                                 <label className="font-roboto-regular text-gray-700">Move-in End</label>
@@ -245,7 +264,7 @@ export default function CreateListingModal({
                                     onChange={(e) => setMoveInEnd(e.target.value)}
                                     className="w-full rounded-md border border-gray-300 px-3 py-2"
                                     required
-                                />
+                                    />
                             </div>
                         </div>
 
@@ -261,7 +280,7 @@ export default function CreateListingModal({
                                 required
                                 className="w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-black resize-none"
                                 placeholder="Briefly describe your listing..."
-                            />
+                                />
                         </div>
 
                         <div className="space-y-2">
@@ -274,15 +293,13 @@ export default function CreateListingModal({
                                     multiple
                                     onChange={handleImageUpload}
                                     className="hidden"
-                                />
+                                    />
                                 <label
                                     htmlFor="images"
                                     className="cursor-pointer flex flex-col items-center gap-1"
                                 >
                                     <Upload className="w-6 h-6 text-gray-400" />
-                                    <span className="text-xs text-gray-500">
-                    Click to upload images
-                  </span>
+                                    <span className="text-xs text-gray-500">Click to upload images</span>
                                 </label>
                             </div>
 
@@ -294,7 +311,7 @@ export default function CreateListingModal({
                                                 src={preview || "/placeholder.svg"}
                                                 alt={`Preview ${index + 1}`}
                                                 className="w-full h-24 object-cover rounded-md"
-                                            />
+                                                />
                                             <button
                                                 type="button"
                                                 onClick={() => removeImage(index)}
@@ -333,3 +350,4 @@ export default function CreateListingModal({
         </div>
     );
 }
+

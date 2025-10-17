@@ -113,13 +113,18 @@ export class ListingsService {
         const parseMaybeDate = (v: any) =>
             v == null ? null : typeof v === 'string' ? new Date(v) : (v as Date);
 
+        const roommates =
+            Number.isInteger((input as any).roommates) && (input as any).roommates >= 1
+                ? (input as any).roommates
+                : undefined;
+
         return {
             title: (input as any).title,
             user: (input as any).user ?? 'Anonymous',
             description: (input as any).description ?? null,
             price,      // int (nullable)
             pricing,    // float (nullable)
-            roommates: (input as any).roommates ?? null,
+            roommates,
             location: (input as any).location ?? null,
             mediaUrls: (input as any).mediaUrls ?? [],
             status: (input as any).status ?? 'ACTIVE',

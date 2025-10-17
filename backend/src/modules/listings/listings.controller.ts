@@ -18,6 +18,7 @@ type CreateListingBody = {
     title: string;
     user: string;
     description: string;
+    roommates: number;
     price: number; // integer (e.g., cents) for the strict path
     location: string;
     moveInStart?: string;
@@ -36,6 +37,10 @@ function assertCreateBody(body: any): asserts body is CreateListingBody {
         errors.title = 'title is required';
     } else if (body.title.trim().length > 120) {
         errors.title = 'title must be ≤ 120 chars';
+    }
+
+    if (typeof body?.roommates !== 'number' || !Number.isInteger(body.roommates) || body.roommates < 1) {
+        errors.roommates = 'roommates must be an integer ≥ 1';
     }
 
     if (typeof body?.user !== 'string' || body.user.trim().length === 0) {
@@ -114,13 +119,13 @@ export class ListingsController {
     @Post()
     async createStrict(@Body() rawBody: any) {
         // Only validate when hitting /listings (strict path)
-        // assertCreateBody(rawBody);
 
         const body: CreateListingBody = {
             title: rawBody.title.trim(),
             user: rawBody.user.trim(),
             description: rawBody.description.trim(),
             price: rawBody.price,
+            roommates: rawBody.roommates,
             location: rawBody.location.trim(),
             moveInStart: rawBody.moveInStart?.trim() || undefined,
             moveInEnd: rawBody.moveInEnd?.trim() || undefined,

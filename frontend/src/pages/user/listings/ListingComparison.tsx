@@ -17,7 +17,6 @@ type ListingComparisonProps = {
 };
 
 export default function ListingComparison({ listings, onClose }: ListingComparisonProps) {
-    // Close on ESC for accessibility
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (e.key === "Escape") onClose();
