@@ -16,7 +16,7 @@ model Listing {
   price       Int
   pricing     Float         @default(0)
   location    String
-  roommates    Int           @default(1)
+  roommates   Int           @default(1)
 
   mediaUrls   String[]
   status      ListingStatus @default(ACTIVE)

@@ -288,6 +288,7 @@ export class ListingsService {
         return { username, listings, page, pageSize, total };
     }
 
+
     /** Legacy: findOne by "listingID" (maps to `id`) */
     async findOne(listingID: string): Promise<ListingResponse> {
         const listing = await this.prisma.listing.findUnique({
@@ -349,7 +350,9 @@ export class ListingsService {
         });
         return this.toListingResponse(deleted);
     }
-
+     /**
+     * Get all listings
+     */
     async findAll() {
         //Extract 3 attributes to show in the gg map
         const listings = await this.prisma.listing.findMany({

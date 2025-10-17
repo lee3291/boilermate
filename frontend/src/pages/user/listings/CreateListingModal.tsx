@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useUser } from "./temp/UserContext";
 import { X, Upload } from "lucide-react";
+
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 type CreateListingModalProps = {
@@ -63,6 +64,7 @@ export default function CreateListingModal({
             reader.readAsDataURL(file);
         });
     };
+
     const toISODateOrNull = (s: string) => {
         const t = s.trim();
         return t ? new Date(`${t}T00:00:00.000Z`).toISOString() : null;
@@ -77,6 +79,15 @@ export default function CreateListingModal({
         e.preventDefault();
         setError(null);
         setSubmitting(true);
+
+        // ✅ Address validation
+        const addressPattern = /^.+,\s*[A-Za-z\s]+,\s*[A-Z]{2}$/;
+        if (!addressPattern.test(location.trim())) {
+            setError("Please enter a valid address (e.g., '123 Main St, West Lafayette, IN').");
+            setSubmitting(false);
+            return;
+        }
+
         try {
             const payload = {
                 title: title.trim(),
@@ -132,10 +143,7 @@ export default function CreateListingModal({
             <div className="absolute inset-0 flex items-center justify-center p-4">
                 <div className="w-full max-w-md max-h-[80vh] overflow-y-auto rounded-xl bg-white shadow-lg ring-1 ring-black/5">
                     <div className="px-4 pt-4 flex justify-between items-center border-b pb-2">
-                        <h2
-                            id="create-listing-title"
-                            className="text-xl font-semibold text-gray-900"
-                        >
+                        <h2 id="create-listing-title" className="text-xl font-semibold text-gray-900">
                             Create a Listing
                         </h2>
                         <button
@@ -193,16 +201,14 @@ export default function CreateListingModal({
                                     onChange={(e) => setLocation(e.target.value)}
                                     required
                                     className="w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-black"
-                                    placeholder="West Lafayette, IN"
+                                    placeholder="123 Main St, West Lafayette, IN"
                                 />
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1">
-                                <label className="font-medium text-gray-700">
-                                    Move-in Start
-                                </label>
+                                <label className="font-medium text-gray-700">Move-in Start</label>
                                 <input
                                     type="date"
                                     value={moveInStart}
@@ -224,10 +230,7 @@ export default function CreateListingModal({
                         </div>
 
                         <div className="space-y-1">
-                            <label
-                                htmlFor="description"
-                                className="font-medium text-gray-700"
-                            >
+                            <label htmlFor="description" className="font-medium text-gray-700">
                                 Description
                             </label>
                             <textarea

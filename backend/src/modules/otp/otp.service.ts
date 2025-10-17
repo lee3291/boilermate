@@ -70,7 +70,7 @@ export class OTPService {
         await this.findUser(email); // ensure it exists
         return this.prisma.user.update({
             where: { email },
-            data: {hashedPassword: newPassword},
+            data: { passwordHash: newPassword},
         });
     }
 }
