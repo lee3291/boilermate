@@ -9,13 +9,40 @@ import * as bcrypt from 'bcrypt';
 import { EmailVerificationService } from '@modules/email-verification/email-verification.service';
 import { RequestCodeDto } from './dto/request-code.dto';
 import { VerifyCodeDto } from './dto/verify-code.dto';
+import { JwtService } from '@nestjs/jwt';
+import { SignInDto } from './dto/signin.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly emailVerificationService: EmailVerificationService,
+    private readonly jwtService: JwtService,
   ) {}
+
+  async signIn(dto: SignInDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      dto.password,
+      user.passwordHash,
+    );
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const payload = { sub: user.id, email: user.email };
+    return {
+      access_token: await this.jwtService.signAsync(payload),
+    };
+  }
 
   async requestCode(dto: RequestCodeDto) {
     const { email } = dto;
