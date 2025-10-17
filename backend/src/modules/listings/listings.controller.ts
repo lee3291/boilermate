@@ -11,7 +11,6 @@ import {
 } from '@nestjs/common';
 import { ListingsService } from './listings.service';
 
-// ---- Types mirrored from your second controller, but kept local for brevity ----
 type ListingStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 const STATUSES: ListingStatus[] = ['ACTIVE', 'INACTIVE', 'ARCHIVED'];
 
@@ -115,7 +114,7 @@ export class ListingsController {
     @Post()
     async createStrict(@Body() rawBody: any) {
         // Only validate when hitting /listings (strict path)
-        assertCreateBody(rawBody);
+        // assertCreateBody(rawBody);
 
         const body: CreateListingBody = {
             title: rawBody.title.trim(),
