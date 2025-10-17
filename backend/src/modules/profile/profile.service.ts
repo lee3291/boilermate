@@ -45,6 +45,47 @@ export class ProfileService {
     };
   }
 
+  async getPublicProfile(username: string) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        email: {
+          startsWith: `${username}@`,
+        },
+      },
+      include: {
+        preference: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const { id, email, bio, searchStatus, preference } = user;
+
+    const flatPreferences =
+      preference && preference.preferences
+        ? Object.entries(
+            preference.preferences as {
+              [key: string]: { value: any; visibility: string };
+            },
+          )
+            .filter(([, { visibility }]) => visibility === 'PUBLIC')
+            .reduce((acc: { [key: string]: any }, [key, { value }]) => {
+              acc[key] = value;
+              return acc;
+            }, {})
+        : {};
+
+    return {
+      id,
+      username: email.split('@')[0],
+      bio,
+      searchStatus,
+      ...flatPreferences,
+    };
+  }
+
   async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
     const {
       phoneNumber,

@@ -29,6 +29,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import UserProfilePage from './pages/user/UserProfilePage';
 import EditProfilePage from './pages/user/EditProfilePage';
 
+import PublicProfilePage from './pages/user/PublicProfilePage';
+
 const router = createBrowserRouter([
   // Public routes
   {
@@ -70,8 +72,8 @@ const router = createBrowserRouter([
         element: <EditProfilePage />,
       },
       {
-        path: '/bug-report',
-        element: <BugReportPage />,
+        path: '/profile/:username',
+        element: <PublicProfilePage />,
       },
       {
         path: '/listing-map',

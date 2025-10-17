@@ -1,4 +1,12 @@
-import { Controller, Get, Patch, Body, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Body,
+  UseGuards,
+  Req,
+  Param,
+} from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -17,15 +25,21 @@ export class ProfileController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get()
-  getProfile(@Req() req: AuthenticatedRequest) {
-    // req.user is populated by the JWT strategy
+  @UseGuards(AuthGuard('jwt'))
+  async getProfile(@Req() req: any) {
+    // The user's ID is attached to the request by the JwtAuthGuard
     return this.profileService.getProfile(req.user.userId);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @Get(':username')
+  async getPublicProfile(@Param('username') username: string) {
+    return this.profileService.getPublicProfile(username);
+  }
+
   @Patch()
-  updateProfile(
-    @Req() req: AuthenticatedRequest,
+  @UseGuards(AuthGuard('jwt'))
+  async updateProfile(
+    @Req() req: any,
     @Body() updateProfileDto: UpdateProfileDto,
   ) {
     return this.profileService.updateProfile(req.user.userId, updateProfileDto);
