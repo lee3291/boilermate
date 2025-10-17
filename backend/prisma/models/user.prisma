@@ -1,7 +1,39 @@
 model User {
-  id               String      @id @default(uuid())
-  email            String      @unique
-  hashedPassword   String
-  isVerified       Boolean     @default(false)
-  listings         Listing[]
+  id            String        @id @default(uuid())
+  email         String        @unique
+  passwordHash  String
+  profileInfo   Json?
+  avatarURL     String?
+  phoneNumber   String?
+  bio           String?
+  isVerified    Boolean       @default(false)
+  status        UserStatus?   @default(ACTIVE)
+  searchStatus  SearchStatus? @default(LOOKING)
+  preferences   Preference[]
+  listings      Listing[]
+
+  // 1. Chat Participant (Role A) - Opposite of Chat.userA
+  chatsA           Chat[]      @relation("ChatUserA")
+
+  // 2. Chat Participant (Role B) - Opposite of Chat.userB
+  chatsB           Chat[]      @relation("ChatUserB")
+
+  // 3. Message Sender - Opposite of Message.sender
+  messagesSent     Message[]   @relation("MessageSender")
+  messageStatuses  UserMessageStatus[]
+
+  // 4. Image owner - Opposite of Image.user
+  images           Image[]
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum SearchStatus {
+  LOOKING
+  NOT_LOOKING
+  HIDDEN
 }

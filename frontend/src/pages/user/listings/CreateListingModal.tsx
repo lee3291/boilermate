@@ -18,13 +18,14 @@ export default function CreateListingModal({
     const { username } = useUser();
     const [title, setTitle] = useState("");
     const [price, setPrice] = useState<string>("");
+    const [roommates, setRoommates] = useState<string>("");
     const [description, setDescription] = useState("");
     const [location, setLocation] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [moveInStart, setMoveInStart] = useState("");
     const [moveInEnd, setMoveInEnd] = useState("");
-    const [selectedImages, setSelectedImages] = useState<File[]>([]);
+    const [, setSelectedImages] = useState<File[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
     const initialInputRef = useRef<HTMLInputElement | null>(null);
@@ -80,7 +81,6 @@ export default function CreateListingModal({
         setError(null);
         setSubmitting(true);
 
-        // ✅ Address validation
         const addressPattern = /^.+,\s*[A-Za-z\s]+,\s*[A-Z]{2}$/;
         if (!addressPattern.test(location.trim())) {
             setError("Please enter a valid address (e.g., '123 Main St, West Lafayette, IN').");
@@ -94,6 +94,7 @@ export default function CreateListingModal({
                 user: username.trim(),
                 description: description.trim(),
                 price: Math.round(Number(price || 0) * 100),
+                roommates: Number(roommates || 0),
                 location: location.trim(),
                 moveInStart: toISODateOrNull(moveInStart),
                 moveInEnd: toISODateOrNull(moveInEnd),
@@ -115,6 +116,7 @@ export default function CreateListingModal({
 
             setTitle("");
             setPrice("");
+            setRoommates("");
             setDescription("");
             setLocation("");
             setMoveInStart("");
@@ -141,9 +143,9 @@ export default function CreateListingModal({
         >
             <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]" />
             <div className="absolute inset-0 flex items-center justify-center p-4">
-                <div className="w-full max-w-md max-h-[80vh] overflow-y-auto rounded-xl bg-white shadow-lg ring-1 ring-black/5">
-                    <div className="px-4 pt-4 flex justify-between items-center border-b pb-2">
-                        <h2 id="create-listing-title" className="text-xl font-semibold text-gray-900">
+                <div className="w-full max-w-xl h-[76vh] max-h-[80vh] overflow-y-auto rounded-xl bg-white shadow-lg ring-1 ring-black/5">
+                    <div className="px-4 pt-4 flex justify-between items-center pb-2">
+                        <h2 id="create-listing-title" className="text-[35px] font-sourceserif4-18pt-regular text-maingray">
                             Create a Listing
                         </h2>
                         <button
@@ -156,7 +158,7 @@ export default function CreateListingModal({
 
                     <form onSubmit={handleSubmit} className="px-4 py-3 space-y-3 text-sm">
                         <div className="space-y-1">
-                            <label htmlFor="title" className="font-medium text-gray-700">
+                            <label htmlFor="title" className="font-roboto-regular text-gray-700">
                                 Title
                             </label>
                             <input
@@ -172,9 +174,27 @@ export default function CreateListingModal({
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                            <label htmlFor="title" className="font-roboto-regular text-gray-700">
+                                Number of Roommates Needed
+                            </label>
+                            <input
+                                ref={initialInputRef}
+                                id="rommates"
+                                type="number"
+                                step="1"
+                                value={roommates}
+                                onChange={(e) => setRoommates(e.target.value)}
+                                required
+                                maxLength={120}
+                                className="w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-black"
+                                placeholder="e.g. 2"
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-3">
                             <div className="space-y-1">
-                                <label htmlFor="price" className="font-medium text-gray-700">
+                                <label htmlFor="price" className="font-roboto-regular text-gray-700">
                                     Price (USD)
                                 </label>
                                 <input
@@ -191,7 +211,7 @@ export default function CreateListingModal({
                             </div>
 
                             <div className="space-y-1">
-                                <label htmlFor="location" className="font-medium text-gray-700">
+                                <label htmlFor="location" className="font-roboto-regular text-gray-700">
                                     Location
                                 </label>
                                 <input
@@ -208,7 +228,7 @@ export default function CreateListingModal({
 
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1">
-                                <label className="font-medium text-gray-700">Move-in Start</label>
+                                <label className="font-roboto-regular text-gray-700">Move-in Start</label>
                                 <input
                                     type="date"
                                     value={moveInStart}
@@ -218,7 +238,7 @@ export default function CreateListingModal({
                                 />
                             </div>
                             <div className="space-y-1">
-                                <label className="font-medium text-gray-700">Move-in End</label>
+                                <label className="font-roboto-regular text-gray-700">Move-in End</label>
                                 <input
                                     type="date"
                                     value={moveInEnd}
@@ -230,7 +250,7 @@ export default function CreateListingModal({
                         </div>
 
                         <div className="space-y-1">
-                            <label htmlFor="description" className="font-medium text-gray-700">
+                            <label htmlFor="description" className="font-roboto-regular text-gray-700">
                                 Description
                             </label>
                             <textarea
@@ -245,7 +265,7 @@ export default function CreateListingModal({
                         </div>
 
                         <div className="space-y-2">
-                            <label className="block font-medium text-gray-700">Photos</label>
+                            <label className="block font-roboto-regular text-gray-700">Photos</label>
                             <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center hover:border-gray-400 transition-colors">
                                 <input
                                     type="file"
@@ -301,7 +321,7 @@ export default function CreateListingModal({
                             </button>
                             <button
                                 type="submit"
-                                className="rounded-full bg-black px-4 py-1.5 text-sm font-medium text-white disabled:opacity-50 cursor-pointer"
+                                className="rounded-full bg-black px-4 py-1.5 text-sm font-roboto-regular text-white disabled:opacity-50 cursor-pointer"
                                 disabled={submitting}
                             >
                                 {submitting ? "Submitting…" : "Submit"}
