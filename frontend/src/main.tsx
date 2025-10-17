@@ -4,9 +4,11 @@ import './style.css'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 
+
 import ListingDetails from './pages/user/listings/ListingDetails.tsx';
 
 // Import all top-level views/components
+import ChatPage from './pages/user/chat/ChatPage.tsx';
 
 // Components used for protected areas
 import App from './App.tsx'
@@ -18,6 +20,7 @@ import ListingForm from './pages/listing/ListingForm.tsx';
 import Listings from './pages/user/listings/Listings.tsx'
 import TempAccount from './pages/user/listings/temp/TempAccount.tsx';
 import { UserProvider } from './pages/user/listings/temp/UserContext.tsx';
+import SavedListings from './pages/user/listings/SavedListings';
 import UserReportsDashboard from './pages/admin/UserReportsDashboard.tsx';
 import BugReportsDashboard from './pages/admin/BugReportDashboard.tsx';
 import BugReportPage from './pages/bug-report/BugReportPage.tsx';
@@ -53,11 +56,29 @@ const router = createBrowserRouter([
   //{},
   // For reset password
   {
-  //*path: '/bug-report',
-  //element: <BugReportPage />,
-  //  path: "/otp-request",
-   // element: <OTPRequestPage />,
-  //},
+        path: '/bug-report',
+        element: <BugReportPage />,
+  },
+
+    {
+    path: '/report',
+    element: <ReportPage />,
+  },
+
+
+  {
+    path: '/reporttest',
+    element: <ReportTestPage/>,
+  },
+
+  {
+    path: '/user-reports',
+    element: <UserReportsDashboard />,
+  },
+  {
+    path: '/bug-reports',
+    element: <BugReportsDashboard />,
+  },
   {
     path: "/verify-otp",
     element: <VerifyOTPPage />,
@@ -90,10 +111,8 @@ const router = createBrowserRouter([
     element: <ListingDetails />
   },
   {
-  },
-  {
-    path: '/listings/:id',
-    element: <ListingDetails />
+    path: '/saved',
+    element: <SavedListings/>
   },
   {
     path: '/temp-account/',
@@ -101,33 +120,35 @@ const router = createBrowserRouter([
     errorElement: <div>404 Page Not Found</div>,
     children: [{}]
   },
-
-    {
-  path: '/bug-report',
-  element: <BugReportPage />,
-  },
-
   {
-    path: '/report',
-    element: <ReportPage />,
-  },
-
-
-  {
-    path: '/reporttest',
-    element: <ReportTestPage/>,
-  },
-
-  {
-    path: '/user-reports',
-    element: <UserReportsDashboard />,
+    path: '/messages',
+    element: <ChatPage />
   },
   {
-    path: '/bug-reports',
-    element: <BugReportsDashboard />,
+    path: "/otp-request",
+    element: <OTPRequestPage />,
   },
-
-
+  {
+    path: "/verify-otp",
+    element: <VerifyOTPPage />,
+  },
+  {
+    path: "/reset-password",
+    element: <ResetPasswordPage />,
+  },
+  // Dashboard
+  // Map
+  {
+    path: "/listing-map",
+    element: <ListingMap />,
+  },
+  {
+    path: "/listing-form",
+    element: <ListingForm
+        isOpen={true}
+        onClose={() => console.log('closed')}
+    />,
+  },
   // NOTES: you can just do a similar setup to test the page you created
 ])
 
@@ -137,4 +158,4 @@ createRoot(document.getElementById('root')!).render(
           <RouterProvider router={router} />
       </UserProvider>
   </StrictMode>,
-);
+)
