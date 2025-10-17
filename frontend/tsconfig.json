@@ -5,7 +5,16 @@
         { "path": "./tsconfig.node.json" }
     ],
     "compilerOptions": {
-        "types": ["node"],
-        "lib": ["dom", "dom.iterable", "esnext"]
-    }
+        "baseUrl": ".",
+        "paths": {
+      "@/*": ["src/*"]
+    },
+    "types": ["node", "google.maps"],
+    "lib": ["dom", "dom.iterable", "esnext"]
+  }
 }
+
+// "compilerOptions": {
+//     "types": ["node"],
+//     "lib": ["dom", "dom.iterable", "esnext"]
+// }

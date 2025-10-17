@@ -7,12 +7,17 @@ import ListingDetails from './pages/user/listings/ListingDetails.tsx';
 // Import all top-level views/components
 
 // Components used for protected areas
-import App from './App.tsx'
 import Listings from './pages/user/listings/Listings.tsx'
 import TempAccount from './pages/user/listings/temp/TempAccount.tsx';
 import { UserProvider } from './pages/user/listings/temp/UserContext.tsx';
 import SavedListings from './pages/user/listings/SavedListings';
 // import ListingsCreateTest from './pages/user/ListingsTest.tsx';
+import App from './App.tsx'
+import OTPRequestPage from "./pages/resetpassword/OTPRequestPage.tsx";
+import ResetPasswordPage from './pages/resetpassword/ResetPasswordPage.tsx';
+import VerifyOTPPage from './pages/resetpassword/VerifyOTPPage.tsx';
+import ListingMap from './pages/listing/ListingMap.tsx';
+import ListingForm from './pages/listing/ListingForm.tsx';
 
 const router = createBrowserRouter([
   {
@@ -25,24 +30,22 @@ const router = createBrowserRouter([
         path: 'idk', // enter path you want
         element: <App /> // should be <Home/>
       },
-      {
-        // do similar for other page
-      }
       // you can add other public page here (About, ...)
     ]
+
   },
 
   // login page
-  {},
+  //{},
   // signup page
-  {},
+  //{},
 
   // admin role here, page related to admin role in here
-  {
-
-  },
+ // {},
 
   // user role here, page related to user role in here
+  //{},
+  // For reset password
   {
     path: '/listings/',
     element: <Listings/>,
@@ -64,8 +67,31 @@ const router = createBrowserRouter([
     children: [{}]
   },
 
-
-
+  {
+    path: "/otp-request",
+    element: <OTPRequestPage />,
+  },
+  {
+    path: "/verify-otp",
+    element: <VerifyOTPPage />,
+  },
+  {
+    path: "/reset-password",
+    element: <ResetPasswordPage />,
+  },
+  // Dashboard
+  // Map
+  {
+    path: "/listing-map",
+    element: <ListingMap />,
+  },
+  {
+    path: "/listing-form",
+    element: <ListingForm
+        isOpen={true}
+        onClose={() => console.log('closed')}
+    />,
+  },
   // NOTES: you can just do a similar setup to test the page you created
 ])
 
