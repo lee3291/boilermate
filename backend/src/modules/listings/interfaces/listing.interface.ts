@@ -10,6 +10,7 @@ export interface CreateListingBody {
   description: string;
   price: number;        // cents
   location: string;
+  roommates: number;
   mediaUrls: string[];
   status?: ListingStatus;
   moveInStart?: string;
@@ -36,6 +37,7 @@ export interface ListingResponse {
   description: string;
   price: number;
   location: string;
+  roommates: number;
   mediaUrls: string[];
 
   status: ListingStatus;
@@ -55,7 +57,7 @@ export interface CreateListingResult {
 
 
 export interface SaveListingBody {
-  username: string; // e.g. Supabase user_metadata.username; OR provided directly
+  username: string;
 }
 
 /** Result of a save action */
@@ -63,7 +65,7 @@ export interface SaveListingResult {
   listingId: string;
   username: string;
   isSaved: true;
-  createdAt: string; // ISO
+  createdAt: string;
 }
 
 /** Result of an unsave action */
@@ -103,6 +105,7 @@ export interface Listing {
     title: string;
     description: string;
     pricing: number;
+    roommates: number;
     location: string;
     media: string[];
     status: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';

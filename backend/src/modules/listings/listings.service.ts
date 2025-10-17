@@ -5,13 +5,12 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../core/database/prisma.service';
 
-// ======= Shared types (loose on purpose for compatibility) =======
-
 type LegacyCreateListingDto = {
     // FIRST SERVICE DTO (loosely typed; we normalize below)
     title: string;
     user?: string;
     description?: string;
+    roommates?: number;
     pricing?: number; // legacy float
     price?: number;   // new int
     location?: string;
@@ -26,6 +25,7 @@ type CreateListingDetails = {
     title: string;
     user?: string;
     description?: string;
+    roommates?: number;
     price?: number;   // preferred (int)
     location?: string;
     mediaUrls?: string[];
@@ -41,6 +41,7 @@ type ListingResponse = {
     description: string | null;
     // expose BOTH for compatibility (frontends can pick whichever they use)
     price: number | null;
+    roommates: number | null;
     pricing: number | null;
     location: string | null;
     mediaUrls: string[];
@@ -76,6 +77,7 @@ export class ListingsService {
             description: l.description,
             // expose both price & pricing for dual-schema compatibility
             price: typeof l.price === 'number' ? l.price : null,
+            roommates: typeof l.roommates === 'number' ? l.roommates : null,
             pricing: typeof l.pricing === 'number' ? l.pricing : null,
             location: l.location,
             mediaUrls: Array.isArray(l.mediaUrls) ? l.mediaUrls : [],
@@ -117,6 +119,7 @@ export class ListingsService {
             description: (input as any).description ?? null,
             price,      // int (nullable)
             pricing,    // float (nullable)
+            roommates: (input as any).roommates ?? null,
             location: (input as any).location ?? null,
             mediaUrls: (input as any).mediaUrls ?? [],
             status: (input as any).status ?? 'ACTIVE',
@@ -284,10 +287,6 @@ export class ListingsService {
 
         return { username, listings, page, pageSize, total };
     }
-
-    // =========================================================
-    // "FIRST SERVICE" compatibility surface (minimally functional)
-    // =========================================================
 
     /**
      * Legacy: Extract 3 attributes to show in the GG map.

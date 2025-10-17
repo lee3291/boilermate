@@ -13,6 +13,9 @@ export class UpdateListingDto {
     @IsNumber()
     pricing: number;
 
+    @IsNumber()
+    roommates: number;
+
     @IsString()
     location: string;
 

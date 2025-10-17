@@ -4,6 +4,7 @@ export class CreateListingDto {
     creatorId!: string;
     description!: string;
     price!: number;
+    roommates!: number;
     location!: string;
     mediaUrls!: string[];
     status?: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';

@@ -325,6 +325,7 @@ export default function Listings() {
                                 title={l.title}
                                 author={l.user ?? 'Unknown'}
                                 price={`$${(l.price / 100).toFixed(2)}`}
+                                roommates={l.roommates}
                                 body={l.description}
                                 moveInEnd={l.moveInEnd}
                                 moveInStart={l.moveInStart}
