@@ -3,8 +3,9 @@ import { useState } from 'react';
 
 interface User {
   id: string;
-  name: string;
-  avatarURL?: string;
+  email: string; // Using email since username not available yet
+  // name: string; // OLD - will be available later
+  // avatarURL?: string; // OLD - will be available later
 }
 
 interface AddMembersModalProps {
@@ -12,7 +13,7 @@ interface AddMembersModalProps {
   onClose: () => void;
   currentUserId: string;
   chatId: string;
-  onSearchUsers: (query: string) => Promise<User[]>; // MOCK FUNCTION - you will implement later
+  onSearchUsers: (query: string) => Promise<User[]>; // Search function for adding to group
   onAddMember: (chatId: string, userId: string) => Promise<void>;
 }
 
@@ -57,7 +58,7 @@ export default function AddMembersModal({
       await onAddMember(chatId, user.id);
       // Remove from search results after adding
       setSearchResults(searchResults.filter((u) => u.id !== user.id));
-      alert(`${user.name} has been invited to the group`);
+      alert(`${user.email} has been invited to the group`);
     } catch (error) {
       console.error('Add member error:', error);
       alert('Failed to add member');
@@ -67,8 +68,8 @@ export default function AddMembersModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+      <div className="bg-white rounded-lg shadow-2xl border border-gray-200 w-full max-w-md mx-4 max-h-[90vh] flex flex-col pointer-events-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-xl font-semibold">Add Members</h2>
@@ -112,9 +113,9 @@ export default function AddMembersModal({
                       >
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-sm font-medium">
-                            {user.name[0].toUpperCase()}
+                            {user.email[0].toUpperCase()}
                           </div>
-                          <span className="text-sm">{user.name}</span>
+                          <span className="text-sm">{user.email}</span>
                         </div>
                         <button
                           onClick={() => handleAddUser(user)}

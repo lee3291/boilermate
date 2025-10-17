@@ -1,44 +1,41 @@
-import { X, UserPlus, UserMinus, Crown } from 'lucide-react';
+import { X, UserPlus, UserMinus } from 'lucide-react';
 import { useState } from 'react';
+// import { Crown } from 'lucide-react'; // TODO: Re-enable when we can identify creator
 
 interface Member {
   id: string;
-  name: string;
-  avatarURL?: string;
+  email: string; // Using email for now, will be name later
+  // name: string; // OLD - will be available later
+  // avatarURL?: string; // OLD - will be available later
 }
 
 interface GroupMembersSidebarProps {
-  isOpen: boolean;
-  onClose: () => void;
-  members: Member[]; // MOCK - you will fetch real members later
-  creatorId: string;
-  currentUserId: string;
   chatId: string;
-  onAddMember: () => void; // Opens AddMembersModal
-  onRemoveMember: (memberId: string) => Promise<void>;
+  currentUserId: string;
+  isAdmin: boolean; // Pass this directly from parent
+  onClose: () => void;
+  onAddMembers: () => void; // Opens AddMembersModal
+  onRemoveMember?: (memberId: string) => Promise<void>;
+  members?: Member[]; // MOCK - you will fetch real members later, optional for now
 }
 
 export default function GroupMembersSidebar({
-  isOpen,
-  onClose,
-  members,
-  creatorId,
-  currentUserId,
   // chatId, // Not used yet but keeping for future use
-  onAddMember,
+  currentUserId,
+  isAdmin,
+  onClose,
+  members = [], // Default to empty array if not provided
+  onAddMembers,
   onRemoveMember,
 }: GroupMembersSidebarProps) {
-  const isAdmin = currentUserId === creatorId;
   const [removingId, setRemovingId] = useState<string | null>(null);
 
-  if (!isOpen) return null;
-
-  const handleRemove = async (memberId: string, memberName: string) => {
-    if (!confirm(`Remove ${memberName} from the group?`)) return;
+  const handleRemove = async (memberId: string, memberEmail: string) => {
+    if (!confirm(`Remove ${memberEmail} from the group?`)) return;
 
     setRemovingId(memberId);
     try {
-      await onRemoveMember(memberId);
+      await onRemoveMember?.(memberId);
     } catch (error) {
       console.error('Remove member error:', error);
       alert('Failed to remove member');
@@ -66,7 +63,7 @@ export default function GroupMembersSidebar({
       {isAdmin && (
         <div className="p-4 border-b">
           <button
-            onClick={onAddMember}
+            onClick={onAddMembers}
             className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
           >
             <UserPlus size={18} />
@@ -77,11 +74,16 @@ export default function GroupMembersSidebar({
 
       {/* Members List */}
       <div className="flex-1 overflow-y-auto p-4">
-        <div className="space-y-2">
-          {members.map((member) => {
-            const isMemberCreator = member.id === creatorId;
-            const isCurrentUser = member.id === currentUserId;
-            const canRemove = isAdmin && !isMemberCreator && !isCurrentUser;
+        {members.length === 0 ? (
+          <div className="text-center text-gray-500 py-8">
+            No members to display yet
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {members.map((member) => {
+              // NOTE: We don't have creatorId in member data yet, so canRemove logic is simplified
+              const isCurrentUser = member.id === currentUserId;
+              const canRemove = isAdmin && !isCurrentUser; // TODO: Add !isMemberCreator when we have creator data
 
             return (
               <div
@@ -91,18 +93,19 @@ export default function GroupMembersSidebar({
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   {/* Avatar */}
                   <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0">
-                    {member.name[0].toUpperCase()}
+                    {member.email[0].toUpperCase()}
                   </div>
 
-                  {/* Name and Role */}
+                  {/* Email and Role */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-gray-900 truncate">
-                        {member.name}
+                        {member.email}
                       </span>
-                      {isMemberCreator && (
+                      {/* TODO: Add crown icon when we can identify creator */}
+                      {/* {isMemberCreator && (
                         <Crown size={14} className="text-yellow-500 flex-shrink-0" />
-                      )}
+                      )} */}
                       {isCurrentUser && (
                         <span className="text-xs text-gray-500">(You)</span>
                       )}
@@ -113,7 +116,7 @@ export default function GroupMembersSidebar({
                 {/* Remove Button (Admin only) */}
                 {canRemove && (
                   <button
-                    onClick={() => handleRemove(member.id, member.name)}
+                    onClick={() => handleRemove(member.id, member.email)}
                     disabled={removingId === member.id}
                     className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                     title="Remove member"
@@ -128,7 +131,8 @@ export default function GroupMembersSidebar({
               </div>
             );
           })}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
