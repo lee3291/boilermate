@@ -4,9 +4,9 @@ import { ListingsService } from './listings.service';
 import { PrismaModule } from '../../core/database/prisma.module';
 
 @Module({
-    imports: [PrismaModule],            // gives ListingsService access to PrismaService
-    controllers: [ListingsController],  // your minimal create endpoint lives here
-    providers: [ListingsService],       // business logic + Prisma calls
-    exports: [ListingsService],         // export if other modules might reuse it
+    imports: [PrismaModule],
+    controllers: [ListingsController],
+    providers: [ListingsService],
+    exports: [ListingsService],
 })
 export class ListingsModule {}

@@ -2,7 +2,8 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './style.css';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import BugReportPage from './pages/bug-report/BugReportPage';
+
+
 
 import ListingDetails from './pages/user/listings/ListingDetails.tsx';
 
@@ -23,6 +24,11 @@ import Listings from './pages/user/listings/Listings.tsx';
 import TempAccount from './pages/user/listings/temp/TempAccount.tsx';
 import { UserProvider } from './pages/user/listings/temp/UserContext.tsx';
 import SavedListings from './pages/user/listings/SavedListings';
+import UserReportsDashboard from './pages/admin/UserReportsDashboard.tsx';
+import BugReportsDashboard from './pages/admin/BugReportDashboard.tsx';
+import BugReportPage from './pages/bug-report/BugReportPage.tsx';
+import ReportPage from './pages/report/ReportPage.tsx';
+import ReportTestPage from './pages/report/ReportTestPage.tsx';
 // import ListingsCreateTest from './pages/user/ListingsTest.tsx';
 
 import ProtectedRoute from './components/ProtectedRoute';
@@ -98,6 +104,22 @@ const router = createBrowserRouter([
         path: '/messages',
         element: <ChatPage />,
       },
+      {
+        path: '/report',
+        element: <ReportPage />,
+      },
+      {
+        path: '/reporttest',
+        element: <ReportTestPage/>,
+      },
+      {
+        path: '/user-reports',
+        element: <UserReportsDashboard />,
+      },
+      {
+        path: '/bug-reports',
+        element: <BugReportsDashboard />,
+      },
     ],
   },
 ]);
@@ -112,4 +134,4 @@ createRoot(document.getElementById('root')!).render(
       </AuthProvider>
     </UserProvider>
   </StrictMode>,
-);
+)

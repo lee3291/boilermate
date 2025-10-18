@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import "tw-animate-css";
 @import "./fonts.css";
+@import "tw-animate-css";
 
 @theme {
     --color-maingray: #433C35;

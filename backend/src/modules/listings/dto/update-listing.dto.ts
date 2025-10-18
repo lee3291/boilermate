@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsUUID} from 'class-validator';
+import { IsString, IsNumber, IsUUID } from 'class-validator';
 
 export class UpdateListingDto {
     @IsUUID()
@@ -12,6 +12,9 @@ export class UpdateListingDto {
 
     @IsNumber()
     pricing: number;
+
+    @IsNumber()
+    roommates: number;
 
     @IsString()
     location: string;
