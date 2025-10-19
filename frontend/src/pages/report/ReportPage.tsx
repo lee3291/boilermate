@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function ReportPage() {
   const [reporterId, setReporterId] = useState('');
@@ -7,6 +7,12 @@ export default function ReportPage() {
   const [comments, setComments] = useState('');
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
+
+  // Auto-fill reporterId from localStorage (assume it's saved during login)
+  useEffect(() => {
+    const id = localStorage.getItem('userId');
+    if (id) setReporterId(id);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,7 +24,7 @@ export default function ReportPage() {
     }
 
     try {
-      const res = await fetch('http://localhost:3000/report', {
+      const res = await fetch('http://localhost:3000/reports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -31,7 +37,6 @@ export default function ReportPage() {
 
       if (res.ok) {
         setMessage('Report submitted successfully!');
-        setReporterId('');
         setReportedUserId('');
         setReason('');
         setComments('');
@@ -52,15 +57,7 @@ export default function ReportPage() {
       >
         <h2 className="text-2xl font-semibold text-center">Submit a Report</h2>
 
-        <input
-          type="number"
-          placeholder="Reporter ID"
-          value={reporterId}
-          onChange={(e) => setReporterId(e.target.value)}
-          className="w-full p-2 border rounded"
-          required
-        />
-
+        {/* Reported user ID field */}
         <input
           type="number"
           placeholder="Reported User ID"

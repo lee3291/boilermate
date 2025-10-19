@@ -3,10 +3,13 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from '@core/database/prisma.module';
-import { ChatsModule } from '@modules/chats/chats.module';
-import { UploadsModule } from '@modules/uploads/uploads.module';
+import { OTPModule } from './modules/otp/otp.module';
+import { ListingsModule } from '@modules/listings/listings.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { EmailVerificationModule } from './modules/email-verification/email-verification.module';
+import { ChatsModule } from '@modules/chats/chats.module';
+import { UploadsModule } from '@modules/uploads/uploads.module';
+import { BugReportModule } from './modules/bug-report/bug-report.module';
 
 @Module({
   imports: [
@@ -19,6 +22,9 @@ import { EmailVerificationModule } from './modules/email-verification/email-veri
     UploadsModule, // Image upload module
     AuthModule,
     EmailVerificationModule,
+    OTPModule,
+    ListingsModule,
+    BugReportModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -50,25 +50,24 @@ model Message {
   isDeleted        Boolean     @default(false) // delete message for everyone
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt // Timestamp of the last edit
-  
   // Relations
   chat             Chat        @relation(fields: [chatId], references: [id])
   sender           User        @relation(fields: [senderId], references: [id])
   statuses         UserMessageStatus[] // Link to per-user statuses
   image            Image?      @relation(fields: [imageId], references: [id]) // link image id to image object
-  
+
   // Index for fast retrieval and sorting within a single chat thread
-  @@index([chatId, createdAt]) 
+  @@index([chatId, createdAt])
 }
 
 model UserMessageStatus {
   id               String      @id @default(uuid())
   userId           String
   messageId        String
-  
-  isDeleted        Boolean     @default(true) 
+
+  isDeleted        Boolean     @default(true)
   // have this for an easier to integrate workflow => technically doesn't need it but good for more flexibility
-  
+
   user             User        @relation(fields: [userId], references: [id])
   message          Message     @relation(fields: [messageId], references: [id])
 

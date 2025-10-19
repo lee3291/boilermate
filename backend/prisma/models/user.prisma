@@ -12,15 +12,14 @@ model User {
   preferences   Preference[]
   listings      Listing[]
 
-  // RELATIONS for the new chat system
-  // Connects the user to all the chats they are a member or invitee of.
-  participatedChats ChatParticipant[]
+  // 1. Chat Participant (Role A) - Opposite of Chat.userA
+  chatsA           Chat[]      @relation("ChatUserA")
 
-  // Connects the user to all the group chats they have created.
-  createdChats     Chat[]
+  // 2. Chat Participant (Role B) - Opposite of Chat.userB
+  chatsB           Chat[]      @relation("ChatUserB")
 
   // 3. Message Sender - Opposite of Message.sender
-  messagesSent     Message[]
+  messagesSent     Message[]   @relation("MessageSender")
   messageStatuses  UserMessageStatus[]
 
   // 4. Image owner - Opposite of Image.user
