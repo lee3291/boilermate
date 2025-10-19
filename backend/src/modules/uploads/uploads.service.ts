@@ -1,6 +1,6 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { imageRequestDetails, imageRequestResult } from './interfaces/image.interface';
 import { ConfigService } from '@nestjs/config';
@@ -47,14 +47,19 @@ export class UploadsService {
     });
 
     // Generate the pre-signed URL, valid for 5 minutes
-    const preSignedUrl = await getSignedUrl(this.s3Client, command, {
-      expiresIn: 300, // URL expires in 5 minutes
-    });
+    try {
+      const preSignedUrl = await getSignedUrl(this.s3Client, command, {
+        expiresIn: 300, // URL expires in 5 minutes
+      });
 
-    // Return both the URL for uploading and the key for saving later
-    return { 
-      preSignedUrl,
-      key 
-    };
+      // Return both the URL for uploading and the key for saving later
+      return { 
+        preSignedUrl,
+        key 
+      };
+    } catch (error) {
+      Logger.error(error);
+      throw new InternalServerErrorException(error);
+    }
   }
 }
