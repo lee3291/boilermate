@@ -1,10 +1,15 @@
 import React, { useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import InputField from '../../components/InputField';
 import { requestCode, verifyCode, register } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
+import { signIn } from '../../services/auth.service';
 
 type Step = 1 | 2 | 3;
 
 const SignUpPage = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const [step, setStep] = useState<Step>(1);
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -62,12 +67,10 @@ const SignUpPage = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await register(email, password);
-      alert(
-        `Success! Account created for ${res.data.email}. You can now log in.`,
-      );
-      // Optionally, redirect to login page
-      // history.push('/login');
+      await register(email, password);
+      const data = await signIn({ email, password });
+      login(data.access_token);
+      navigate('/profile');
     } catch (err) {
       handleApiError(err);
     } finally {
@@ -110,7 +113,7 @@ const SignUpPage = () => {
               type='text'
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              placeholder='123456'
+              placeholder='xxxxxx'
               required
             />
             <button

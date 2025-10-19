@@ -4,10 +4,28 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from '@core/database/prisma.module';
 import { OTPModule } from './modules/otp/otp.module';
-import { ListingsModule } from './modules/listings/listings.module';
+import { ListingsModule } from '@modules/listings/listings.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { EmailVerificationModule } from './modules/email-verification/email-verification.module';
+import { ChatsModule } from '@modules/chats/chats.module';
+import { UploadsModule } from '@modules/uploads/uploads.module';
+import { BugReportModule } from './modules/bug-report/bug-report.module';
 
 @Module({
-  imports: [PrismaModule, OTPModule, ListingsModule],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true, // Make config available globally
+      envFilePath: '.env', // Load environment variables
+    }),
+    PrismaModule, // Database module
+    ChatsModule, // Chat feature module
+    UploadsModule, // Image upload module
+    AuthModule,
+    EmailVerificationModule,
+    OTPModule,
+    ListingsModule,
+    BugReportModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
