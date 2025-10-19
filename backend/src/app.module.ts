@@ -10,6 +10,7 @@ import { EmailVerificationModule } from './modules/email-verification/email-veri
 import { ChatsModule } from '@modules/chats/chats.module';
 import { UploadsModule } from '@modules/uploads/uploads.module';
 import { BugReportModule } from './modules/bug-report/bug-report.module';
+import { ReportModule } from '@modules/report/report.module';
 
 @Module({
   imports: [
