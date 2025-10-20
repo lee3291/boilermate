@@ -1,4 +1,5 @@
 name: CI
+
 on:
   pull_request:
     branches: [main]
@@ -40,6 +41,13 @@ jobs:
         working-directory: ./backend
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      # - Clear the npm cache between backend and frontend installs.
+      #   This prevents the frontend install from using a potentially incompatible
+      #   native binding (like @swc/core) that was cached by the backend install,
+      #   which was causing the build to fail.
+      - name: Clear npm cache
+        run: npm cache clean --force
 
       # - This step was also split before (install, build).
       #   Same reason as the backend. Combining 'npm ci' and 'npm run build'
