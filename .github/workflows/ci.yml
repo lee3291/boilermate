@@ -1,5 +1,4 @@
 name: CI
-
 on:
   pull_request:
     branches: [main]
@@ -23,12 +22,19 @@ jobs:
           cache-dependency-path: |
             backend/package-lock.json
             frontend/package-lock.json
+
+      # - name: Install backend dependencies
+      #   run: npm install
+      #   working-directory: ./backend
       - name: Install backend dependencies
-        run: npm install
+        run: npm ci # Use 'npm ci' for clean, reproducible installs in CI
         working-directory: ./backend
 
+      # - name: Install frontend dependencies
+      #   run: npm install
+      #   working-directory: ./frontend
       - name: Install frontend dependencies
-        run: npm install
+        run: npm ci # 'npm ci' is faster and safer for CI environments
         working-directory: ./frontend
 
       - name: Validate Prisma schema and generate client
@@ -36,16 +42,12 @@ jobs:
         working-directory: ./backend
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          # Add other secrets your app needs here
-          # ANOTHER_SECRET: ${{ secrets.ANOTHER_SECRET }}
 
       - name: Build backend
         run: npm run build
         working-directory: ./backend
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          # Add other secrets your app needs here
-          # ANOTHER_SECRET: ${{ secrets.ANOTHER_SECRET }}
 
       - name: Build frontend
         run: npm run build
