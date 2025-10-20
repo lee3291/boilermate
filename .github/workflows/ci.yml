@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+      - name: Install backend dependencies
+        run: npm install
+        working-directory: ./backend
+
+      - name: Install frontend dependencies
+        run: npm install
+        working-directory: ./frontend
+
+      - name: Validate Prisma schema and generate client
+        run: npx prisma validate && npm run prisma:generate
+        working-directory: ./backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Add other secrets your app needs here
+          # ANOTHER_SECRET: ${{ secrets.ANOTHER_SECRET }}
+
+      - name: Build backend
+        run: npm run build
+        working-directory: ./backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Add other secrets your app needs here
+          # ANOTHER_SECRET: ${{ secrets.ANOTHER_SECRET }}
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: ./frontend
