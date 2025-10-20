@@ -15,7 +15,7 @@ export default function CreateListingModal({
     onClose,
     onCreated,
 }: CreateListingModalProps) {
-    const { username } = useUser();
+    const { user } = useUser();
     const [title, setTitle] = useState("");
     const [price, setPrice] = useState<string>("");
     const [roommates, setRoommates] = useState<string>("1");
@@ -98,7 +98,7 @@ export default function CreateListingModal({
         try {
             const payload = {
                 title: title.trim(),
-                user: username.trim(),
+                user: user?.username.trim(),
                 description: description.trim(),
                 price: Math.round(Number(price || 0) * 100), // cents, matches Int in schema
                 location: location.trim(),
