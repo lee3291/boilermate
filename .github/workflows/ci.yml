@@ -23,32 +23,29 @@ jobs:
             backend/package-lock.json
             frontend/package-lock.json
 
-      # - name: Install backend dependencies
-      #   run: npm install
-      #   working-directory: ./backend
-      - name: Install backend dependencies
-        run: npm ci # Use 'npm ci' for clean, reproducible installs in CI
-        working-directory: ./backend
-
-      # - name: Install frontend dependencies
-      #   run: npm install
-      #   working-directory: ./frontend
-      - name: Install frontend dependencies
-        run: npm ci # 'npm ci' is faster and safer for CI environments
-        working-directory: ./frontend
-
-      - name: Validate Prisma schema and generate client
-        run: npx prisma validate && npm run prisma:generate
+      # - This step was split into multiple steps before (install, generate, build).
+      #   Combining them into one step ensures the build uses the exact 'node_modules'
+      #   that were just installed. This fixes the "@swc/core" native binding error, which
+      #   happens when the build step runs in a slightly different environment than the install step.
+      #
+      # - Switched 'npm install' to 'npm ci'.
+      #   'npm ci' stands for "Clean Install" and is the recommended command for CI/CD.
+      #   It performs a faster, more reliable install directly from the 'package-lock.json'
+      #   file, guaranteeing a consistent build every time.
+      - name: Install, Generate, and Build backend
+        run: |
+          npm ci
+          npx prisma validate && npm run prisma:generate
+          npm run build
         working-directory: ./backend
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Build backend
-        run: npm run build
-        working-directory: ./backend
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Build frontend
-        run: npm run build
+      # - This step was also split before (install, build).
+      #   Same reason as the backend. Combining 'npm ci' and 'npm run build'
+      #   ensures the build environment is consistent and prevents the native binding error.
+      - name: Install and Build frontend
+        run: |
+          npm ci
+          npm run build
         working-directory: ./frontend
