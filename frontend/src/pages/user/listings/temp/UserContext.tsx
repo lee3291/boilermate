@@ -10,6 +10,7 @@ import { jwtDecode } from 'jwt-decode';
 interface User {
   id: string;
   email: string;
+  username: string;
 }
 
 interface UserContextType {
@@ -30,8 +31,13 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (token) {
       try {
-        const decoded: { sub: string; email: string } = jwtDecode(token);
-        setUser({ id: decoded.sub, email: decoded.email });
+        const decoded: { sub: string; email: string; username: string } =
+          jwtDecode(token);
+        setUser({
+          id: decoded.sub,
+          email: decoded.email,
+          username: decoded.username,
+        });
         localStorage.setItem('token', token);
       } catch (error) {
         console.error('Failed to decode token:', error);
