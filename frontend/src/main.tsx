@@ -11,7 +11,8 @@ import ListingDetails from './pages/user/listings/ListingDetails.tsx';
 import ChatPage from './pages/user/chat/ChatPage.tsx';
 
 // Auth pages
-import LandingPage from './pages/public/LandingPage';
+// import LandingPage from './pages/public/LandingPage';
+import Homepage from './pages/home/Homepage.tsx'
 import SignInPage from './pages/public/SignInPage';
 import SignUpPage from './pages/public/SignUpPage';
 
@@ -38,7 +39,7 @@ const router = createBrowserRouter([
   // Public routes
   {
     path: '/',
-    element: <LandingPage />,
+    element: <Homepage />,
     errorElement: <div>404 Page Not Found</div>,
   },
   {
@@ -125,6 +126,7 @@ const router = createBrowserRouter([
 ]);
 
 import { AuthProvider } from './contexts/AuthContext';
+import { Home } from 'lucide-react';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
