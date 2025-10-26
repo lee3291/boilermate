@@ -37,7 +37,7 @@ export default function InvitationsModal({
       <div className="bg-white rounded-lg shadow-2xl border border-gray-200 w-full max-w-md mx-4 max-h-[90vh] flex flex-col pointer-events-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-xl font-semibold">Group Invitations</h2>
+          <h2 className="text-xl font-semibold">Invitations</h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 transition-colors"
@@ -73,7 +73,7 @@ export default function InvitationsModal({
                         {invitation.chat.name || 'Unnamed Group'}
                       </h3>
                       <p className="text-sm text-gray-500 mt-1">
-                        You've been invited to join this group
+                        You've been invited to join this chat.
                       </p>
 
                       {/* Action Buttons */}

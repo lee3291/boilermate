@@ -1,5 +1,6 @@
 import ConversationListItem from './components/ConversationListItem';
 import CreateGroupButton from './components/CreateGroupButton';
+import CreateNormalChatButton from './components/CreateNormalChatButton';
 import InvitationsButton from './components/InvitationsButton';
 import type { Chat } from '@/types/chats/chat';
 
@@ -9,6 +10,7 @@ export default function ChatSideBar({
   onSelect,
   loading,
   error,
+    onCreateNormalChat,
   onCreateGroup,
   onViewInvitations,
   invitationsCount = 0,
@@ -18,6 +20,7 @@ export default function ChatSideBar({
   onSelect?: (id: string) => void;
   loading?: boolean;
   error?: string | null;
+  onCreateNormalChat?: () => void;
   onCreateGroup?: () => void;
   onViewInvitations?: () => void;
   invitationsCount?: number;
@@ -32,6 +35,7 @@ export default function ChatSideBar({
             <InvitationsButton onClick={onViewInvitations} count={invitationsCount} />
           )}
           {onCreateGroup && <CreateGroupButton onClick={onCreateGroup} />}
+          {onCreateNormalChat && <CreateNormalChatButton onClick={onCreateNormalChat} />}
         </div>
       </div>
       <div className="overflow-y-auto p-3 space-y-2">

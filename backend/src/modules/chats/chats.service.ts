@@ -12,6 +12,21 @@ import {
   sendMessageDetails, 
   sendMessageResults,
 } from './interfaces';
+//Assume normal chat is groupchat but isGroup = False
+import {
+  CreateGroupChatDetails,
+  CreateGroupChatResults,
+  GetInvitationsDetails,
+  GetInvitationsResults,
+  AcceptInvitationDetails,
+  DeclineInvitationDetails,
+  InviteParticipantDetails,
+  RemoveParticipantDetails,
+  LeaveGroupChatDetails,
+  DeleteGroupChatDetails,
+  GroupChatDetails,
+  InvitationDetails,
+} from './interfaces/group-chat.interface';
 import { PrismaService } from '@core/database/prisma.service';
 import { ChatGateway } from './chat.gateway';
 
@@ -171,7 +186,7 @@ export class ChatsService {
             data: {
               chatId: chat.id,
               userId: senderId,
-              status: 'ACCEPTED',
+              status: 'PENDING',
             },
           });
 
@@ -180,7 +195,7 @@ export class ChatsService {
             data: {
               chatId: chat.id,
               userId: recipientId,
-              status: 'ACCEPTED',
+              status: 'PENDING',
             },
           });
 
@@ -278,6 +293,160 @@ export class ChatsService {
       if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
       if (error && error.code === 'P2002') throw new ConflictException('Unique constraint violation');
       throw new InternalServerErrorException('Failed to send message');
+    }
+  }
+
+  /**
+   * Create a new 1-1 chat with initial participants
+   */
+  async createNormalChat(createGroupChatDetails: CreateGroupChatDetails): Promise<CreateGroupChatResults> {
+    const client: any = this.prisma as any;
+    const { creatorId, name, groupIcon, participantIds } = createGroupChatDetails;
+
+    try {
+      // Verify creator exists
+      const creator = await client.user.findUnique({
+        where: { id: creatorId }
+      });
+
+      if (!creator) {
+        throw new NotFoundException('Creator user not found');
+      }
+
+      // Verify all participants exist
+      const participants = await client.user.findMany({
+        where: { id: { in: participantIds } }
+      });
+
+      if (participants.length !== participantIds.length) {
+        throw new BadRequestException('One or more participant users not found');
+      }
+
+      const txResult = await client.$transaction(async (tx: any) => {
+        // Create 1-1 chat
+        const chat = await tx.chat.create({
+          data: {
+            isGroup: false,
+            name, // uhh what if this is null
+            groupIcon: null,
+            creatorId,
+            latestMessageAt: new Date(),
+          },
+        });
+
+        // Add creator as ACCEPTED participant
+        await tx.chatParticipant.create({
+          data: {
+            chatId: chat.id,
+            userId: creatorId,
+            status: 'ACCEPTED',
+          },
+        });
+
+        // Add other participants as PENDING
+        for (const participantId of participantIds) {
+          if (participantId !== creatorId) {
+            await tx.chatParticipant.create({
+              data: {
+                chatId: chat.id,
+                userId: participantId,
+                status: 'PENDING',
+              },
+            });
+          }
+        }
+
+        return { chat };
+      });
+
+      return {
+        groupChat: txResult.groupChat as GroupChatDetails,
+      };
+    } catch (error) {
+      Logger.error('createchat error', error);
+      if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
+      throw new InternalServerErrorException('Failed to create 1-1 chat');
+    }
+  }
+
+  /**
+   * Check the chat is 1-1 or groupchat
+   */
+  async checkChatType(chatId: string) {
+    const chat = await this.prisma.chat.findUnique({
+      where: { id: chatId },
+      select: { id: true, isGroup: true },
+    });
+
+    if (!chat) {
+      throw new NotFoundException('Chat not found');
+    }
+
+    return { chatId: chat.id, isGroup: chat.isGroup };
+  }
+
+  /**
+   * Check if the 1-1 chat already exist given senderId and recipentId
+   */
+
+  async findExistingNormalChat(userId: string, receiverId: string) {
+    const chat = await this.prisma.chat.findFirst({
+      where: {
+        isGroup: false,
+        participants: {
+          every: {
+            OR: [
+              { userId: userId },
+              { userId: receiverId },
+            ],
+          },
+        },
+      },
+    });
+
+    return chat ? { exists: true, chatId: chat.id } : { exists: false };
+  }
+
+  /**
+   * Search users for creating a 1-1 chat
+   * If the chat already exists between senderId and recipentId
+   *
+   * Returns users matching the query string (searches by userId for now)
+   */
+  async searchUsersForNormalChatCreation(creatorId: string, searchQuery: string): Promise<any> {
+    const client: any = this.prisma as any;
+
+    try {
+      // Search by userId substring match (case-insensitive)
+      // TODO: Will search by username/name when those fields are added to User model
+      const users = await client.user.findMany({
+        where: {
+          id: {
+            contains: searchQuery,
+            mode: 'insensitive',
+          },
+        },
+        select: {
+          id: true,
+          email: true,
+          // TODO: Add username, firstName, lastName when available
+        },
+        take: 20, // Limit results to 20 users
+      });
+
+      // Filter out users you already have a normal chat with
+      const filteredUsers = [];
+      for (const user of users) {
+        const chatCheck = await this.findExistingNormalChat(creatorId, user.id);
+        if (!chatCheck.exists) {
+          filteredUsers.push(user);
+        }
+      }
+
+      return { users: filteredUsers };
+    } catch (error) {
+      Logger.error('searchUsersForNormalChatCreation error', error);
+      throw new InternalServerErrorException('Failed to search users');
     }
   }
 

@@ -3,6 +3,7 @@ import ChatSideBar from './ChatSideBar';
 import ChatWindow from './ChatWindow';
 import FakeSignIn from './FakeSignIn';
 import CreateGroupModal from './components/CreateGroupModal';
+import CreateNormalChatModal from './components/CreateNormalChatModal';
 import InvitationsModal from './components/InvitationsModal';
 import AddMembersModal from './components/AddMembersModal';
 
@@ -30,6 +31,7 @@ export default function ChatPage() {
             loading={logic.loadingChats}
             error={logic.error}
             onCreateGroup={() => logic.setShowCreateGroupModal(true)}
+            onCreateNormalChat={() => logic.setShowCreateNormalChatModal(true)}
             onViewInvitations={() => logic.setShowInvitationsModal(true)}
             invitationsCount={logic.invitationsCount}
           />
@@ -68,6 +70,14 @@ export default function ChatPage() {
           onSearchUsers={logic.handleSearchUsers}
           onCreateGroup={logic.handleCreateGroup}
         />
+
+          <CreateNormalChatModal
+              isOpen={logic.showCreateNormalChatModal}
+              onClose={() => logic.setShowCreateNormalChatModal(false)}
+              currentUserId={logic.currentUserId}
+              onSearchUsers={logic.handleSearchUsersForNormalChat}
+              onCreateChat={logic.handleCreateNormalChat}
+          />
 
         <InvitationsModal
           isOpen={logic.showInvitationsModal}

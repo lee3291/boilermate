@@ -86,6 +86,16 @@ export class ChatsController {
   }
 
   /**
+   * Create a 1-1 chat
+   */
+  @Post('normal-chat')
+  @HttpCode(201)
+  async createNormalChat(@Body() dto: CreateGroupChatDto) {
+    const result = await this.chatsService.createNormalChat(dto as any);
+    return GroupChatResponseDto.fromGroupChat(result.groupChat);
+  }
+
+  /**
    * Get all pending invitations for the user
    */
   @Get('invitations')
@@ -117,6 +127,25 @@ export class ChatsController {
     @Body() dto: DeclineInvitationDto
   ) {
     await this.groupChatsService.declineInvitation(invitationId, dto as any);
+  }
+
+  /**
+   * Check if it is 1-1 or group chat
+   */
+  @Get(':chatId/type')
+  @HttpCode(201)
+  async getChatType(@Param('chatId') chatId: string) {
+    return this.chatsService.checkChatType(chatId);
+  }
+
+  /**
+   * Check if the 1-1 chat already exist given senderId and recipentId
+   */
+  @Get('check-normal-chat')
+  @HttpCode(201)
+  async checkExistingNormalChat(@Query('userId') userId: string, @Query('receiverId') receiverId: string,
+  ) {
+    return this.chatsService.findExistingNormalChat(userId, receiverId);
   }
 
   /**
@@ -169,6 +198,16 @@ export class ChatsController {
     await this.groupChatsService.deleteGroupChat(chatId, dto as any);
   }
 
+  /**
+   * Search users for creating a 1-1 chat
+   * Query param: q (search query string)
+   */
+  @Get('users/search-normal-chat')
+  @HttpCode(200)
+  async searchUsersForNormalChatCreation(@Query('creatorId') creatorId: string, @Query('q') searchQuery: string) {
+    const result = await this.chatsService.searchUsersForNormalChatCreation(creatorId, searchQuery);
+    return SearchUsersResponseDto.fromResult(result);
+  }
   /**
    * Search users for creating a new group chat
    * Query param: q (search query string)

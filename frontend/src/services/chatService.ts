@@ -65,4 +65,35 @@ export async function deleteMessage(messageId: string, request: deleteMessageReq
   }
 }
 
-export default { getChats, sendMessage, getHistory, editMessage, deleteMessage };
+// Create a new 1-on-1 chat
+export async function createNormalChat(request: {
+  creatorId: string;
+  name: string;
+  groupIcon?: string;
+  participantIds: string[];
+}): Promise<any> {
+  try {
+    const res = await api.post('/chats/normal-chat', request);
+    console.log('create chat', res);
+    return res.data;
+  } catch (error: any) {
+    throw error.response?.data ?? error;
+  }
+}
+
+// Search users for creating a new 1-1 chat
+// Returns a list of users matching the search query
+export async function searchUsersForNormalChatCreation(creatorId: string, searchQuery: string): Promise<{ users: Array<{ id: string; email: string }> }> {
+  try {
+    const res = await api.get('/chats/users/search-normal-chat', {
+      params: { creatorId, q: searchQuery },
+    });
+    console.log('search users for normal chat creation', res);
+    return res.data;
+  } catch (error: any) {
+    throw error.response?.data ?? error;
+  }
+}
+
+export default { getChats, sendMessage, getHistory, editMessage,
+  deleteMessage, createNormalChat, searchUsersForNormalChatCreation};

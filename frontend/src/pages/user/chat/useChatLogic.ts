@@ -5,6 +5,8 @@ import {
   sendMessage as apiSendMessage,
   editMessage as apiEditMessage,
   deleteMessage as apiDeleteMessage,
+    createNormalChat as apiCreateNormalChat,
+  searchUsersForNormalChatCreation as apiSearchUsersForNormalChatCreation,
 } from '@/services/chatService';
 import {
   getPresignedUrl as apiGetPresignedUrl,
@@ -56,6 +58,10 @@ export default function useChatLogic(initialUserId: string) {
   const [showInvitationsModal, setShowInvitationsModal] = useState(false); // control invitations modal visibility
   const [showAddMembersModal, setShowAddMembersModal] = useState(false); // control add members modal visibility
   const [showGroupMembersSidebar, setShowGroupMembersSidebar] = useState(false); // control group members sidebar visibility
+
+  // 1-1 chat
+
+  const [showCreateNormalChatModal, setShowCreateNormalChatModal] = useState(false); // control create 1-1 modal visibility
 
   // fetch all chats for current user
   const fetchChats = useCallback(async (userId?: string) => {
@@ -389,6 +395,25 @@ export default function useChatLogic(initialUserId: string) {
     }
   }, [currentUserId, fetchInvitations]);
 
+  //Create normal chat
+  const handleCreateNormalChat = useCallback(async (recipientId: string, name = "1-1") => {
+    if (!currentUserId) return;
+
+    try {
+      await apiCreateNormalChat({
+        creatorId: currentUserId,
+        name,
+        participantIds: [recipientId],
+      });
+
+      await fetchChats(currentUserId);
+      setShowCreateNormalChatModal(false);
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to create chat');
+    }
+  }, [currentUserId, fetchChats]);
+
+
   // Create a new group chat
   const handleCreateGroup = useCallback(async (name: string, participantIds: string[], groupIcon?: string) => {
     if (!currentUserId) return;
@@ -406,6 +431,23 @@ export default function useChatLogic(initialUserId: string) {
       setError(err?.message ?? 'Failed to create group');
     }
   }, [currentUserId, fetchChats]);
+
+  // Search users for 1-1 creation
+  const handleSearchUsersForNormalChat = useCallback(
+      async (searchQuery: string) => {
+        if (!currentUserId) return [];
+
+        try {
+          const result = await apiSearchUsersForNormalChatCreation(currentUserId, searchQuery);
+          return result.users || [];
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to search users');
+          return [];
+        }
+      },
+      [currentUserId]
+  );
+
 
   // Search users for group creation (mock function for now - you can fill this in)
   const handleSearchUsers = useCallback(async (searchQuery: string) => {
@@ -522,6 +564,10 @@ export default function useChatLogic(initialUserId: string) {
     showGroupMembersSidebar,
     setShowGroupMembersSidebar,
 
+    // normal chat state
+    showCreateNormalChatModal,
+    setShowCreateNormalChatModal,
+
     // status
     loadingChats,
     loadingMessages,
@@ -547,5 +593,9 @@ export default function useChatLogic(initialUserId: string) {
     handleRemoveMember,
     handleLeaveGroup,
     handleDeleteGroup,
+
+    // 1-1 chat
+    handleCreateNormalChat,
+    handleSearchUsersForNormalChat,
   };
 }

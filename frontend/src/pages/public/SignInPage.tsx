@@ -20,7 +20,7 @@ const SignInPage = () => {
     try {
       const data = await signIn({ email, password });
       login(data.access_token);
-      navigate('/profile');
+      navigate('/listings');
     } catch (err) {
       setError('Failed to sign in. Please check your credentials.');
     } finally {

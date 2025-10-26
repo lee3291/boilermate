@@ -2,11 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './style.css';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-
-
-
 import ListingDetails from './pages/user/listings/ListingDetails.tsx';
-
 // Import all top-level views/components
 import ChatPage from './pages/user/chat/ChatPage.tsx';
 
@@ -64,7 +60,7 @@ const router = createBrowserRouter([
 
   // Protected routes
   {
-    element: <ProtectedRoute />,
+    //element: <ProtectedRoute />,
     children: [
       {
         path: '/profile',
