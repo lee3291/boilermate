@@ -25,6 +25,7 @@ export default function ChatPage() {
         <div className="flex flex-1 w-full">
           {/* pass conversations/loading state to sidebar */}
           <ChatSideBar
+              currentUserId={logic.currentUserId}
             conversations={logic.conversations}
             selectedChatId={logic.selectedChatId}
             onSelect={logic.setSelectedChatId}

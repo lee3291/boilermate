@@ -396,13 +396,13 @@ export default function useChatLogic(initialUserId: string) {
   }, [currentUserId, fetchInvitations]);
 
   //Create normal chat
-  const handleCreateNormalChat = useCallback(async (recipientId: string, name = "1-1") => {
+  const handleCreateNormalChat = useCallback(async (recipientId: string) => {
     if (!currentUserId) return;
 
     try {
       await apiCreateNormalChat({
         creatorId: currentUserId,
-        name,
+        name: currentUserId,
         participantIds: [recipientId],
       });
 

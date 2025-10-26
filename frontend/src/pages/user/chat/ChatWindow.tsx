@@ -64,9 +64,10 @@ export default function ChatWindow({
 
   // NEW: Support both DM and Group chats
   const isGroupChat = selectedConversation?.isGroup ?? false;
-  const chatDisplayName = isGroupChat 
-    ? (selectedConversation?.name ?? 'Unnamed Group')
-    : 'DM Chat'; // TODO: Will show other user's name when available
+  const chatDisplayName = isGroupChat
+      ? (selectedConversation?.name ?? 'Unnamed Group')
+      : (selectedConversation?.participants?.find(p => p.id !== currentUserId)?.id ?? 'Unknown User');
+
 
   return (
     <div className="flex-1 flex h-full">

@@ -327,7 +327,7 @@ export class ChatsService {
         const chat = await tx.chat.create({
           data: {
             isGroup: false,
-            name, // uhh what if this is null
+            name:null,
             groupIcon: null,
             creatorId,
             latestMessageAt: new Date(),

@@ -5,6 +5,7 @@ import InvitationsButton from './components/InvitationsButton';
 import type { Chat } from '@/types/chats/chat';
 
 export default function ChatSideBar({
+                                      currentUserId,
   conversations,
   selectedChatId,
   onSelect,
@@ -15,6 +16,7 @@ export default function ChatSideBar({
   onViewInvitations,
   invitationsCount = 0,
 }: {
+  currentUserId?: string;
   conversations?: Chat[];
   selectedChatId?: string | null;
   onSelect?: (id: string) => void;
@@ -44,15 +46,16 @@ export default function ChatSideBar({
         {!loading && !error && (conversations ?? []).length === 0 && (
           <div className="text-sm text-gray-500">No conversations</div>
         )}
-        {(conversations ?? []).map((c) => ( 
-          <ConversationListItem
-            key={c.id}
-            chat={c}
-            currentUserId={conversations && conversations.length > 0 ? undefined : undefined}
-            selected={selectedChatId === c.id}
-            onClick={() => onSelect?.(c.id)}
-          />
+        {(conversations ?? []).map((c) => (
+            <ConversationListItem
+                key={c.id}
+                chat={c}
+                currentUserId={currentUserId} // pass the actual current user
+                selected={selectedChatId === c.id}
+                onClick={() => onSelect?.(c.id)}
+            />
         ))}
+
       </div>
     </aside>
   );
