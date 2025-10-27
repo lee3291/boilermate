@@ -9,7 +9,7 @@ model User {
   isVerified    Boolean       @default(false)
   status        UserStatus?   @default(ACTIVE)
   searchStatus  SearchStatus? @default(LOOKING)
-  preferences   Preference[]
+
   listings      Listing[]
 
   // RELATIONS for the new chat system
@@ -25,6 +25,12 @@ model User {
 
   // 4. Image owner - Opposite of Image.user
   images           Image[]
+
+  // Links to preferences describing this user ("I am...")
+  profilePreferences UserProfilePreference[]
+
+  // Links to preferences this user wants in a roommate ("I want...")
+  roommatePreferences RoommatePreference[]
 }
 
 enum UserStatus {

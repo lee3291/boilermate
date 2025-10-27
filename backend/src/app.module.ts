@@ -11,6 +11,7 @@ import { ChatsModule } from '@modules/chats/chats.module';
 import { UploadsModule } from '@modules/uploads/uploads.module';
 import { BugReportModule } from './modules/bug-report/bug-report.module';
 import { ReportModule } from '@modules/report/report.module';
+import { PreferencesModule } from '@modules/preferences/preferences.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ReportModule } from '@modules/report/report.module';
     PrismaModule, // Database module
     ChatsModule, // Chat feature module
     UploadsModule, // Image upload module
+    PreferencesModule, // Preferences module (I am.../I want...)
     AuthModule,
     EmailVerificationModule,
     OTPModule,

@@ -1,18 +1,65 @@
-model Preference {
-  id          Int         @id @default(autoincrement())
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
-  key         String
-  value       String?
-  importance  Int?        @default(3)
-  mustHave    Boolean?    @default(false)
-  visibility  Visibility? @default(PUBLIC)
-  createdAt   DateTime    @default(now())
+// OLD one => not really good for scaling and doesn't really follow database design principle
+// model Preference {
+//   id          Int         @id @default(autoincrement())
+//   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   userId      String
+//   key         String
+//   value       String?
+//   importance  Int?        @default(3)
+//   mustHave    Boolean?    @default(false)
+//   visibility  Visibility? @default(PUBLIC)
+//   createdAt   DateTime    @default(now())
 
-  @@unique([userId, key])
+//   @@unique([userId, key])
+// }
+
+// better so that can extend easier in the future
+enum Visibility {
+  PUBLIC  // Visible to potential matches
+  PRIVATE // Hidden from potential matches, used only by the matching algorithm
 }
 
-enum Visibility {
-  PUBLIC
-  PRIVATE
+// Master List of All Available Options
+model Preference {
+  id       String   @id @default(uuid())
+  category String   // e.g., "LIFESTYLE", "SOCIAL" -> group preferences together, used to add weight to matching algorithm
+  label    String   // e.g., "Early Bird", "Night Owl"
+  value    String   // e.g., "EARLY_BIRD"
+  mustHave Boolean  @default(false) // Does the app require an answer for this preference?
+
+  // RELATIONS: Connects to both types of user choices
+  userProfilePreferences UserProfilePreference[]
+  roommatePreferences    RoommatePreference[]
+
+  @@unique([category, value])
+}
+
+// --- Describes the User Themselves ("I am...") ---
+model UserProfilePreference {
+  id           String     @id @default(uuid())
+  userId       String
+  preferenceId String
+  importance   Int        @default(3) // How strongly this trait applies (1-5)
+  visibility   Visibility @default(PUBLIC) // Can others see this preference on my profile?
+
+  // RELATIONS
+  user       User       @relation(fields: [userId], references: [id])
+  preference Preference @relation(fields: [preferenceId], references: [id])
+
+  @@unique([userId, preferenceId])
+}
+
+// --- Describes What the User is Looking For ("I want...") ---
+model RoommatePreference {
+  id           String     @id @default(uuid())
+  userId       String
+  preferenceId String
+  importance   Int        @default(3) // How important is this trait in a roommate? (1=Nice-to-have, 5=Deal-breaker)
+  visibility   Visibility @default(PUBLIC) // Can others see that I'm looking for this? (Usually PUBLIC)
+
+  // RELATIONS
+  user       User       @relation(fields: [userId], references: [id])
+  preference Preference @relation(fields: [preferenceId], references: [id])
+
+  @@unique([userId, preferenceId])
 }
