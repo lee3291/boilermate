@@ -3,10 +3,11 @@ import accountIcon from '@/assets/images/account.png';
 export default function Navbar() {
     return (
         <div className='sticky top-0 z-50 w-full pt-3 px-3'>
-            <nav className='relative z-10 mx-auto h-16 w-full rounded-lg border bg-mainbrown px-4 md:px-6'>
+            <nav className='relative z-10 mx-auto h-16 w-full rounded-lg border border-bisonbrown bg-mainbrown px-4 md:px-6'>
                 <div className='flex h-full items-center justify-between gap-4'>
+                    <div />
                     <a
-                        className='cursor-pointer font-sourceserif4-18pt-light scale-x-90 text-[22px] tracking-tight select-none'
+                        className='cursor-pointer font-sourceserif4-18pt-light scale-x-90 text-[30px] tracking-tight select-none'
                         href='/'
                     >
                         BoilerMate
