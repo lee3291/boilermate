@@ -17,4 +17,3 @@ export class BugReportService {
     return this.prisma.bugReport.create({ data: payload });
   }
 }
-

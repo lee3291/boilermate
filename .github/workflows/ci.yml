@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      # - This step was split into multiple steps before (install, generate, build).
+      #   Combining them into one step ensures the build uses the exact 'node_modules'
+      #   that were just installed.
+      #
+      # - Switched 'npm install' to 'npm ci'.
+      #   'npm ci' stands for "Clean Install" and is the recommended command for CI/CD.
+      - name: Install, Generate, and Build backend
+        run: |
+          npm ci
+          npx prisma validate && npm run prisma:generate
+          npm run build
+        working-directory: ./backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      # - Clear the npm cache between backend and frontend installs.
+      #   This is a failsafe to prevent cache poisoning between the two projects.
+      - name: Clear npm cache
+        run: npm cache clean --force
+
+      # - This step was also split before (install, build).
+      #   Same reason as the backend.
+      #
+      # - Added 'npm rebuild @swc/core --force' before the build.
+      #   'npm ci' can fail to run the postinstall script for @swc/core,
+      #   which downloads the native binary. This command manually
+      #   forces that script to run, ensuring the binding exists.
+      - name: Install and Build frontend
+        run: |
+          npm ci
+          npm rebuild @swc/core --force
+          npm run build
+        working-directory: ./frontend

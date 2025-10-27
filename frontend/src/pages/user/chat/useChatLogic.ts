@@ -10,6 +10,17 @@ import {
   getPresignedUrl as apiGetPresignedUrl,
   uploadFileToS3 as apiUploadFileToS3
 } from '@/services/uploadService';
+import {
+  getInvitations as apiGetInvitations,
+  acceptInvitation as apiAcceptInvitation,
+  declineInvitation as apiDeclineInvitation,
+  createGroupChat as apiCreateGroupChat,
+  inviteParticipant as apiInviteParticipant,
+  removeParticipant as apiRemoveParticipant,
+  leaveGroupChat as apiLeaveGroupChat,
+  searchUsersForGroupCreation as apiSearchUsersForGroupCreation,
+  searchUsersForAddingToGroup as apiSearchUsersForAddingToGroup,
+} from '@/services/groupChatService';
 import { compressImage } from '@/utils/imageCompression';
 import config from '@/utils/config';
 import type {
@@ -37,6 +48,14 @@ export default function useChatLogic(initialUserId: string) {
   const [loadingChats, setLoadingChats] = useState(false); // set loading state when fetching all chatIds in side bar
   const [loadingMessages, setLoadingMessages] = useState(false); // set loading state when fetching all the messages in chat window
   const [error, setError] = useState<string | null>(null); // set error state when handling events
+  
+  // Group chat specific states
+  const [invitations, setInvitations] = useState<any[]>([]); // pending group invitations
+  const [invitationsCount, setInvitationsCount] = useState(0); // count of pending invitations
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false); // control create group modal visibility
+  const [showInvitationsModal, setShowInvitationsModal] = useState(false); // control invitations modal visibility
+  const [showAddMembersModal, setShowAddMembersModal] = useState(false); // control add members modal visibility
+  const [showGroupMembersSidebar, setShowGroupMembersSidebar] = useState(false); // control group members sidebar visibility
 
   // fetch all chats for current user
   const fetchChats = useCallback(async (userId?: string) => {
@@ -333,6 +352,152 @@ export default function useChatLogic(initialUserId: string) {
 
   const messagesForSelected = useMemo(() => messages, [messages]);
 
+  // Fetch pending invitations for current user
+  const fetchInvitations = useCallback(async () => {
+    if (!currentUserId) return;
+    try {
+      const result = await apiGetInvitations({ userId: currentUserId });
+      setInvitations(result || []);
+      setInvitationsCount(result?.length || 0);
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to load invitations');
+    }
+  }, [currentUserId]);
+
+  // Accept an invitation
+  const handleAcceptInvitation = useCallback(async (invitationId: string) => {
+    if (!currentUserId) return;
+    try {
+      await apiAcceptInvitation(invitationId, { userId: currentUserId });
+      // Refresh invitations and chats
+      await fetchInvitations();
+      await fetchChats(currentUserId);
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to accept invitation');
+    }
+  }, [currentUserId, fetchInvitations, fetchChats]);
+
+  // Decline an invitation
+  const handleDeclineInvitation = useCallback(async (invitationId: string) => {
+    if (!currentUserId) return;
+    try {
+      await apiDeclineInvitation(invitationId, { userId: currentUserId });
+      // Refresh invitations
+      await fetchInvitations();
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to decline invitation');
+    }
+  }, [currentUserId, fetchInvitations]);
+
+  // Create a new group chat
+  const handleCreateGroup = useCallback(async (name: string, participantIds: string[], groupIcon?: string) => {
+    if (!currentUserId) return;
+    try {
+      await apiCreateGroupChat({
+        creatorId: currentUserId,
+        name,
+        groupIcon,
+        participantIds,
+      });
+      // Refresh chats
+      await fetchChats(currentUserId);
+      setShowCreateGroupModal(false);
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to create group');
+    }
+  }, [currentUserId, fetchChats]);
+
+  // Search users for group creation (mock function for now - you can fill this in)
+  const handleSearchUsers = useCallback(async (searchQuery: string) => {
+    try {
+      const result = await apiSearchUsersForGroupCreation(searchQuery);
+      return result.users || [];
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to search users');
+      return [];
+    }
+  }, []);
+
+  // Search users for adding to group (mock function for now - you can fill this in)
+  const handleSearchUsersForGroup = useCallback(async (chatId: string, searchQuery: string) => {
+    try {
+      const result = await apiSearchUsersForAddingToGroup(chatId, searchQuery);
+      return result.users || [];
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to search users');
+      return [];
+    }
+  }, []);
+
+  // Add member to group (admin only)
+  const handleAddMember = useCallback(async (chatId: string, userId: string) => {
+    if (!currentUserId) return;
+    try {
+      await apiInviteParticipant(chatId, { creatorId: currentUserId, userId });
+      // Note: Member will be in PENDING status until they accept
+      // Refetch chats to update the participants list in the sidebar
+      await fetchChats(currentUserId);
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to add member');
+    }
+  }, [currentUserId, fetchChats]);
+
+  // Remove member from group (admin only)
+  const handleRemoveMember = useCallback(async (chatId: string, userId: string) => {
+    if (!currentUserId) return;
+    try {
+      await apiRemoveParticipant(chatId, userId, { creatorId: currentUserId });
+      // Refetch chats to update the participants list in the sidebar
+      await fetchChats(currentUserId);
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to remove member');
+    }
+  }, [currentUserId, fetchChats]);
+
+  // Delete entire group chat (creator only)
+  const handleDeleteGroup = useCallback(async (chatId: string) => {
+    if (!currentUserId) return;
+    try {
+      const { deleteGroupChat } = await import('@/services/groupChatService');
+      await deleteGroupChat(chatId, { creatorId: currentUserId });
+      // Remove chat from conversations list
+      setConversations(prev => prev.filter(c => c.id !== chatId));
+      // Clear selected chat if it was deleted
+      if (selectedChatId === chatId) {
+        setSelectedChatId(null);
+        setMessages([]);
+      }
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to delete group');
+      throw err; // Re-throw so UI can handle the error
+    }
+  }, [currentUserId, selectedChatId]);
+
+  // Leave group chat (any member can leave)
+  const handleLeaveGroup = useCallback(async (chatId: string) => {
+    if (!currentUserId) return;
+    try {
+      await apiLeaveGroupChat(chatId, { userId: currentUserId });
+      // Remove chat from conversations list
+      setConversations(prev => prev.filter(c => c.id !== chatId));
+      // Clear selected chat if it was the one we left
+      if (selectedChatId === chatId) {
+        setSelectedChatId(null);
+        setMessages([]);
+      }
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to leave group');
+      throw err; // Re-throw so UI can handle the error
+    }
+  }, [currentUserId, selectedChatId]);
+
+  // Fetch invitations when user changes
+  useEffect(() => {
+    if (currentUserId) {
+      fetchInvitations();
+    }
+  }, [currentUserId, fetchInvitations]);
+
   return {
     // state
     currentUserId,
@@ -344,6 +509,18 @@ export default function useChatLogic(initialUserId: string) {
     messageInput,
     selectedFile, // expose selected file for UI display
     isUploadingImage, // expose upload state for UI feedback
+
+    // group chat state
+    invitations,
+    invitationsCount,
+    showCreateGroupModal,
+    setShowCreateGroupModal,
+    showInvitationsModal,
+    setShowInvitationsModal,
+    showAddMembersModal,
+    setShowAddMembersModal,
+    showGroupMembersSidebar,
+    setShowGroupMembersSidebar,
 
     // status
     loadingChats,
@@ -358,5 +535,17 @@ export default function useChatLogic(initialUserId: string) {
     send,
     edit,
     remove,
+
+    // group chat actions
+    fetchInvitations,
+    handleAcceptInvitation,
+    handleDeclineInvitation,
+    handleCreateGroup,
+    handleSearchUsers,
+    handleSearchUsersForGroup,
+    handleAddMember,
+    handleRemoveMember,
+    handleLeaveGroup,
+    handleDeleteGroup,
   };
 }

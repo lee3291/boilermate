@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, HttpCode, Logger, Query } from '@nestjs/common';
 import { ChatsService } from './chats.service';
+import { GroupChatsService } from './group-chats.service';
 import {
   SendMessageDto,
   EditMessageDto,
@@ -9,6 +10,17 @@ import {
   getHistoryResponseDto,
   GetChatsDto,
   getChatsResponseDto,
+  CreateGroupChatDto,
+  GetInvitationsDto,
+  AcceptInvitationDto,
+  DeclineInvitationDto,
+  InviteParticipantDto,
+  RemoveParticipantDto,
+  LeaveGroupChatDto,
+  DeleteGroupChatDto,
+  GroupChatResponseDto,
+  InvitationResponseDto,
+  SearchUsersResponseDto,
 } from './dto';
 
 /**
@@ -16,11 +28,15 @@ import {
  */
 @Controller('chats')
 export class ChatsController {
-  constructor(private readonly chatsService: ChatsService) {}
+  constructor(
+    private readonly chatsService: ChatsService,
+    private readonly groupChatsService: GroupChatsService
+  ) {}
 
   @Get()
   @HttpCode(200)
   async getChats(@Query() dto: GetChatsDto) {
+    //TODO: HAVE TO MODIFY THIS FUNCTION TO ACCOUNT FOR GROUP CHAT
     const result = await this.chatsService.getChats(dto as any);
     return getChatsResponseDto.fromChats(result.chats);
   }
@@ -55,5 +71,127 @@ export class ChatsController {
   @HttpCode(204)
   async deleteMessage(@Param('messageId') messageId: string, @Query() dto: DeleteMessageDto) {
     await this.chatsService.deleteMessage(messageId, dto);
+  }
+
+  //! Group Chat Specific functionality under here
+  
+  /**
+   * Create a new group chat
+   */
+  @Post('groups')
+  @HttpCode(201)
+  async createGroupChat(@Body() dto: CreateGroupChatDto) {
+    const result = await this.groupChatsService.createGroupChat(dto as any);
+    return GroupChatResponseDto.fromGroupChat(result.groupChat);
+  }
+
+  /**
+   * Get all pending invitations for the user
+   */
+  @Get('invitations')
+  @HttpCode(200)
+  async getInvitations(@Query() dto: GetInvitationsDto) {
+    const result = await this.groupChatsService.getInvitations(dto as any);
+    return InvitationResponseDto.fromInvitations(result.invitations);
+  }
+
+  /**
+   * Accept a pending invitation
+   */
+  @Post('invitations/:invitationId/accept')
+  @HttpCode(204)
+  async acceptInvitation(
+    @Param('invitationId') invitationId: string,
+    @Body() dto: AcceptInvitationDto
+  ) {
+    await this.groupChatsService.acceptInvitation(invitationId, dto as any);
+  }
+
+  /**
+   * Decline a pending invitation
+   */
+  @Post('invitations/:invitationId/decline')
+  @HttpCode(204)
+  async declineInvitation(
+    @Param('invitationId') invitationId: string,
+    @Body() dto: DeclineInvitationDto
+  ) {
+    await this.groupChatsService.declineInvitation(invitationId, dto as any);
+  }
+
+  /**
+   * Invite a new user to an existing group (admin only)
+   */
+  @Post(':chatId/participants')
+  @HttpCode(204)
+  async inviteParticipant(
+    @Param('chatId') chatId: string,
+    @Body() dto: InviteParticipantDto
+  ) {
+    await this.groupChatsService.inviteParticipant(chatId, dto as any);
+  }
+
+  /**
+   * Remove/kick a user from a group (admin only)
+   */
+  @Delete(':chatId/participants/:userId')
+  @HttpCode(204)
+  async removeParticipant(
+    @Param('chatId') chatId: string,
+    @Param('userId') userId: string,
+    @Body() dto: RemoveParticipantDto
+  ) {
+    await this.groupChatsService.removeParticipant(chatId, userId, dto as any);
+  }
+
+  /**
+   * Leave a group chat (any member can leave)
+   * If the leaving user is the creator, ownership transfers to the first remaining member
+   */
+  @Post(':chatId/leave')
+  @HttpCode(204)
+  async leaveGroupChat(
+    @Param('chatId') chatId: string,
+    @Body() dto: LeaveGroupChatDto
+  ) {
+    await this.groupChatsService.leaveGroupChat(chatId, dto as any);
+  }
+
+  /**
+   * Delete the entire group chat (creator only)
+   */
+  @Delete(':chatId')
+  @HttpCode(204)
+  async deleteGroupChat(
+    @Param('chatId') chatId: string,
+    @Body() dto: DeleteGroupChatDto
+  ) {
+    await this.groupChatsService.deleteGroupChat(chatId, dto as any);
+  }
+
+  /**
+   * Search users for creating a new group chat
+   * Query param: q (search query string)
+   */
+  @Get('users/search')
+  @HttpCode(200)
+  async searchUsersForGroupCreation(@Query('q') searchQuery: string) {
+    const result = await this.groupChatsService.searchUsersForGroupCreation(searchQuery);
+    return SearchUsersResponseDto.fromResult(result);
+  }
+
+  /**
+   * Search users to add to an existing group chat
+   * Excludes users already in the group
+   * Query param: q (search query string)
+   */
+  @Get(':chatId/users/search')
+  @HttpCode(200)
+  async searchUsersForAddingToGroup(
+    @Param('chatId') chatId: string, 
+    @Query('q') searchQuery: string
+  ) {
+    const result = await this.groupChatsService.searchUsersForAddingToGroup(chatId, searchQuery);
+    return SearchUsersResponseDto.fromResult(result);
   }
 }
