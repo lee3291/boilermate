@@ -1,23 +1,8 @@
-import {
-  Controller,
-  Get,
-  Patch,
-  Body,
-  UseGuards,
-  Req,
-  Param,
-} from '@nestjs/common';
+import { Controller, Get, Patch, Body, UseGuards, Param } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { Request } from 'express';
-
-interface AuthenticatedRequest extends Request {
-  user: {
-    userId: string;
-    email: string;
-  };
-}
+import { User } from '../auth/decorators/user.decorator';
 
 @Controller('profile')
 export class ProfileController {
@@ -25,10 +10,8 @@ export class ProfileController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get()
-  @UseGuards(AuthGuard('jwt'))
-  async getProfile(@Req() req: any) {
-    // The user's ID is attached to the request by the JwtAuthGuard
-    return this.profileService.getProfile(req.user.userId);
+  async getProfile(@User() user: { userId: string }) {
+    return this.profileService.getProfile(user.userId);
   }
 
   @Get(':username')
@@ -36,12 +19,12 @@ export class ProfileController {
     return this.profileService.getPublicProfile(username);
   }
 
-  @Patch()
   @UseGuards(AuthGuard('jwt'))
+  @Patch()
   async updateProfile(
-    @Req() req: any,
+    @User() user: { userId: string },
     @Body() updateProfileDto: UpdateProfileDto,
   ) {
-    return this.profileService.updateProfile(req.user.userId, updateProfileDto);
+    return this.profileService.updateProfile(user.userId, updateProfileDto);
   }
 }
