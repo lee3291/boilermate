@@ -7,7 +7,7 @@ export const fetcher = (path: string, init?: RequestInit) =>
       ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
       ...(init?.headers ?? {}),
     },
-    credentials: 'include',
+    //credentials: 'include',
     ...init,
   }).then(async (res) => {
     if (!res.ok) {

@@ -12,6 +12,7 @@ type ListingsCardProps = {
     title: string;
     author: string;
     price: string;
+    roommates: string;
     body: string;
     location: string;
     moveInStart: string;
@@ -23,6 +24,7 @@ export default function ListingsCard({
     title,
     author,
     price,
+    roommates,
     body,
     location,
     moveInStart,
@@ -31,41 +33,41 @@ export default function ListingsCard({
     // null = unknown (don’t render yet), true = saved, false = not saved
     const [clicked, setClicked] = useState<boolean | null>(null);
     const [saving, setSaving] = useState(false);
-    const { username } = useUser();
+    const { user } = useUser();
 
     // 1) Seed from cache to avoid white flash
     useEffect(() => {
-        if (!username || !id) {
+        if (!user?.username || !id) {
             setClicked(false);
             return;
         }
-        const hint = getSavedHint(username, id); // true | undefined
+        const hint = getSavedHint(user.username, id); // true | undefined
         if (hint === true) setClicked(true); // show black immediately
         else setClicked(null);               // keep hidden until we check
-    }, [username, id]);
+    }, [user, id]);
 
     // 2) Confirm from network (only if unknown or hint was missing)
     useEffect(() => {
         let cancelled = false;
         (async () => {
-            if (!username || !id) return;
+            if (!user?.username || !id) return;
             if (clicked === true) return; // already confident from cache
             try {
-                const res = await getSavedListings(username, 1, 100);
+                const res = await getSavedListings(user.username, 1, 100);
                 if (cancelled) return;
                 const isSaved = res.listings.some((l) => l.id === id);
                 setClicked(isSaved);
-                setSavedHint(username, id, isSaved);
+                setSavedHint(user.username, id, isSaved);
             } catch {
                 // don’t block UI; assume not saved if unknown
                 if (!cancelled) setClicked(false);
             }
         })();
         return () => { cancelled = true; };
-    }, [username, id]); // intentionally not depending on `clicked`
+    }, [user, id]); // intentionally not depending on `clicked`
 
     const onToggleSave = async () => {
-        if (!username) {
+        if (!user?.username) {
             alert("Please sign in to save listings.");
             return;
         }
@@ -73,15 +75,15 @@ export default function ListingsCard({
         const next = !current;
 
         setClicked(next);
-        setSavedHint(username, id, next);
+        setSavedHint(user.username, id, next);
         setSaving(true);
         try {
-            await toggleSave(id, username, next);
+            await toggleSave(id, user.username, next);
         } catch (e: any) {
             // revert on failure
             const revert = !next;
             setClicked(revert);
-            setSavedHint(username, id, revert);
+            setSavedHint(user.username, id, revert);
             console.error(e);
             alert(e?.message || "Could not update saved status.");
         } finally {
@@ -118,6 +120,7 @@ export default function ListingsCard({
                     </div>
 
                     <h1 className="pt-2 text-gray-500 font-roboto-italic text-lg">Created by {author}</h1>
+                    <h1 className="pt-2 text-gray-500 font-roboto-italic text-lg">Looking for {roommates} roommates(s)</h1>
                     <h1 className="text-gray-500 font-roboto-bold text-lg">{price}</h1>
                     <h1 className="pt-2 font-roboto-light text-lg text-wrap">{body}</h1>
 
@@ -131,7 +134,7 @@ export default function ListingsCard({
 
                         <Link
                             to={`/listings/${id}`}
-                            state={{ id, title, author, price, body, location, moveInStart, moveInEnd }}
+                            state={{ id, title, author, price, body, location, moveInStart, moveInEnd, roommates }}
                             rel="noopener noreferrer"
                             className="ml-2 mt-13 hover:underline-offset-4 hover:underline font-roboto-light text-gray-500 cursor-pointer"
                         >

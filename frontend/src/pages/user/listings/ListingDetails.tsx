@@ -3,7 +3,7 @@ import Navbar from "../components/Navbar";
 
 export default function ListingDetails() {
     const { state } = useLocation() as {
-        state?: { id: string; title: string; author: string; price: string; body: string, location: string, moveInStart: string, moveInEnd: string };
+        state?: { id: string; title: string; author: string; price: string; body: string, location: string, moveInStart: string, moveInEnd: string, roommate: string };
     };
 
     if (!state) return <div>Open this page via the card.</div>;

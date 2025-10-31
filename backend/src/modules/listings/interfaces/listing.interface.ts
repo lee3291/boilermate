@@ -1,16 +1,4 @@
-export interface Listing {
-  listingID: string;
-  userID: string;
-  title: string;
-  description: string;
-  pricing: number;
-  location: string;
-  media: string[] | null;
-  status: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
-  viewCount: number;
-  createdAt: Date;
-}
-export type ListingStatus = 'ACTIVE' | 'ARCHIVED' | 'RESOLVED';
+export type ListingStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 
 /**
  * What the client sends in the HTTP request body for creating a listing.
@@ -20,8 +8,9 @@ export interface CreateListingBody {
   title: string;
   user: string;
   description: string;
-  price: number; // cents
+  price: number;        // cents
   location: string;
+  roommates: number;
   mediaUrls: string[];
   status?: ListingStatus;
   moveInStart?: string;
@@ -48,16 +37,17 @@ export interface ListingResponse {
   description: string;
   price: number;
   location: string;
+  roommates: number;
   mediaUrls: string[];
 
   status: ListingStatus;
   viewCount: number;
 
   moveInStart: string | null; // "YYYY-MM-DD"
-  moveInEnd: string | null; // "YYYY-MM-DD"
+  moveInEnd: string | null;   // "YYYY-MM-DD"
 
-  createdAt: string; // ISO
-  updatedAt: string; // ISO
+  createdAt: string;    // ISO
+  updatedAt: string;    // ISO
 }
 
 /** Envelope for the create use case (helps future-proof). */
@@ -65,8 +55,9 @@ export interface CreateListingResult {
   listing: ListingResponse;
 }
 
+
 export interface SaveListingBody {
-  username: string; // e.g. Supabase user_metadata.username; OR provided directly
+  username: string;
 }
 
 /** Result of a save action */
@@ -74,7 +65,7 @@ export interface SaveListingResult {
   listingId: string;
   username: string;
   isSaved: true;
-  createdAt: string; // ISO
+  createdAt: string;
 }
 
 /** Result of an unsave action */
@@ -106,4 +97,18 @@ export interface SavedListingsResult {
   page: number;
   pageSize: number;
   total: number; // total rows matching
+}
+
+export interface Listing {
+    listingID: string;
+    userID: string;
+    title: string;
+    description: string;
+    pricing: number;
+    roommates: number;
+    location: string;
+    media: string[];
+    status: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+    viewCount: number;
+    createdAt: Date;
 }

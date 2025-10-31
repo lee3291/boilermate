@@ -8,11 +8,25 @@ export interface MessageWithStatusDetails extends MessageDetails {
   isDeletedForYou?: boolean // this is a merge between the message with the message status table to form 1 single object for performance boost
 }
 
+// User details for participants list, technically we fetch the UserDetails or not ????
+// -> No as we don't need the full thing, we only need specific data for the chat
+export interface ParticipantDetails {
+  id: string; // userId
+  email?: string; // user email
+  status?: string; // ACCEPTED, PENDING, DECLINED
+  // TODO: Add username, firstName, lastName when available in User model
+}
+
 export interface ChatDetails {
   id: string;
-  userAId: string;
-  userBId: string;
+  //userAId: string; // OLD - commented out for group chat support
+  //userBId: string; // OLD - commented out for group chat support
+  isGroup: boolean; // needed so frontend can tell the difference
+  name?: string; // name of group chat
+  groupIcon?: string // url to the group icon -> this is basically reach ??? maybe not now
+  creatorId?: string // owner of the group chat, will be NULL if it is just between 2 people
   latestMessageAt: Date;
+  participants?: ParticipantDetails[]; // NEW - list of all participants with their details
 }
 
 export interface MessageDetails {
@@ -41,7 +55,7 @@ export interface getChatsResults {
 export interface sendMessageDetails {
   chatId?: string;
   senderId: string;
-  recipientId: string;
+  recipientId?: string; // this now could be optional as we create a group chat, still need this to create chat between 2 users
   content?: string;
   imageUrl?: string; // need this to update the database
   imageKey?: string; // this is a special location of the image on the bucket

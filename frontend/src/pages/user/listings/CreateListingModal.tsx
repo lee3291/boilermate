@@ -1,29 +1,35 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useUser } from "./temp/UserContext";
+import { X, Upload } from "lucide-react";
+
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 type CreateListingModalProps = {
     open: boolean;
     onClose: () => void;
-    onCreated?: (created: any) => void; // optional hook to refresh parent data
+    onCreated?: (created: any) => void;
 };
 
-export default function CreateListingModal({ open, onClose, onCreated }: CreateListingModalProps) {
-    const { username } = useUser();
+export default function CreateListingModal({
+    open,
+    onClose,
+    onCreated,
+}: CreateListingModalProps) {
+    const { user } = useUser();
     const [title, setTitle] = useState("");
     const [price, setPrice] = useState<string>("");
+    const [roommates, setRoommates] = useState<string>("1");
     const [description, setDescription] = useState("");
     const [location, setLocation] = useState("");
-    const [mediaUrlsCsv, setMediaUrlsCsv] = useState<string>("");
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [moveInStart, setMoveInStart] = useState('');
-    const [moveInEnd, setMoveInEnd] = useState('');
+    const [moveInStart, setMoveInStart] = useState("");
+    const [moveInEnd, setMoveInEnd] = useState("");
+    const [, setSelectedImages] = useState<File[]>([]);
+    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
     const initialInputRef = useRef<HTMLInputElement | null>(null);
-    const dialogRef = useRef<HTMLDivElement | null>(null);
 
-    // Lock body scroll and focus first input when open
     useEffect(() => {
         if (open) {
             document.body.classList.add("overflow-hidden");
@@ -34,7 +40,6 @@ export default function CreateListingModal({ open, onClose, onCreated }: CreateL
         return () => document.body.classList.remove("overflow-hidden");
     }, [open]);
 
-    // Close on Escape
     useEffect(() => {
         if (!open) return;
         const onKey = (e: KeyboardEvent) => {
@@ -44,9 +49,21 @@ export default function CreateListingModal({ open, onClose, onCreated }: CreateL
         return () => window.removeEventListener("keydown", onKey);
     }, [open, onClose]);
 
-    // Click outside to close
     const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) onClose();
+    };
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files) return;
+        const newFiles = Array.from(files);
+        setSelectedImages((prev) => [...prev, ...newFiles]);
+        newFiles.forEach((file) => {
+            const reader = new FileReader();
+            reader.onloadend = () =>
+                setImagePreviews((prev) => [...prev, reader.result as string]);
+            reader.readAsDataURL(file);
+        });
     };
 
     const toISODateOrNull = (s: string) => {
@@ -54,28 +71,41 @@ export default function CreateListingModal({ open, onClose, onCreated }: CreateL
         return t ? new Date(`${t}T00:00:00.000Z`).toISOString() : null;
     };
 
+    const removeImage = (index: number) => {
+        setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+        setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
         setSubmitting(true);
-        try {
-            // Turn "a, b, c" into ["a","b","c"] and filter blanks
-            const mediaUrls = (mediaUrlsCsv || "")
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean);
 
+        const addressPattern = /^.+,\s*[A-Za-z\s]+,\s*[A-Z]{2}$/;
+        if (!addressPattern.test(location.trim())) {
+            setError("Please enter a valid address (e.g., '123 Main St, West Lafayette, IN').");
+            setSubmitting(false);
+            return;
+        }
+
+        const roommatesInt = Number.parseInt(roommates || "1", 10);
+        if (!Number.isFinite(roommatesInt) || roommatesInt < 1) {
+            setError("Roommates must be a whole number of at least 1.");
+            setSubmitting(false);
+            return;
+        }
+
+        try {
             const payload = {
                 title: title.trim(),
-                user: username.trim(),
+                user: user?.username.trim(),
                 description: description.trim(),
-                price: Math.round(Number(price || 0) * 100), // cents
-                location: location.trim(),                   // REQUIRED by validator
+                price: Math.round(Number(price || 0) * 100), // cents, matches Int in schema
+                location: location.trim(),
                 moveInStart: toISODateOrNull(moveInStart),
                 moveInEnd: toISODateOrNull(moveInEnd),
-                // creatorId: username.trim(),
-                mediaUrls,                                   // REQUIRED array (can be [])
-                // status: optional (DB defaults to ACTIVE)
+                status: "ACTIVE",
+                roommates: roommatesInt,
             };
 
             const res = await fetch(`${API_BASE}/listings`, {
@@ -85,34 +115,21 @@ export default function CreateListingModal({ open, onClose, onCreated }: CreateL
             });
 
             if (!res.ok) {
-                // show any validation details from Nest’s BadRequestException
-                let message = `Request failed with ${res.status}`;
-                try {
-                    const maybeJson = await res.json();
-                    if (maybeJson?.message) {
-                        message = typeof maybeJson.message === "string" ? maybeJson.message : JSON.stringify(maybeJson.message);
-                    }
-                    if (maybeJson?.errors) {
-                        message += ` — ${Object.entries(maybeJson.errors).map(([k, v]) => `${k}: ${v}`).join("; ")}`;
-                    }
-                } catch {
-                    const text = await res.text().catch(() => "");
-                    if (text) message = text;
-                }
-                throw new Error(message);
+                throw new Error(`Failed with status ${res.status}`);
             }
 
             const created = await res.json().catch(() => ({}));
             onCreated?.(created);
 
-            // clear form & close
             setTitle("");
             setPrice("");
+            setRoommates("1");
             setDescription("");
             setLocation("");
-            setMediaUrlsCsv("");
-            setMoveInStart('');
-            setMoveInEnd('');
+            setMoveInStart("");
+            setMoveInEnd("");
+            setSelectedImages([]);
+            setImagePreviews([]);
             onClose();
         } catch (err: any) {
             setError(err?.message || "Something went wrong.");
@@ -131,27 +148,26 @@ export default function CreateListingModal({ open, onClose, onCreated }: CreateL
             aria-labelledby="create-listing-title"
             onMouseDown={handleBackdropClick}
         >
-            {/* Backdrop */}
             <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]" />
-
-            {/* Modal */}
-            <div
-                ref={dialogRef}
-                className="absolute inset-0 flex items-center justify-center p-4"
-            >
-                <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl ring-1 ring-black/5">
-                    <div className="px-6 pt-6">
-                        <h2 id="create-listing-title" className="text-2xl font-semibold text-gray-900">
+            <div className="absolute inset-0 flex items-center justify-center p-4">
+                <div className="w-full max-w-xl h-[78vh] max-h-[80vh] overflow-y-auto rounded-xl bg-white shadow-lg ring-1 ring-black/5">
+                    <div className="px-4 pt-4 flex justify-between items-center pb-2">
+                        <h2 id="create-listing-title" className="text-[35px] font-sourceserif4-18pt-regular text-maingray">
                             Create a Listing
                         </h2>
-                        <p className="mt-1 text-sm text-gray-500">
-                            Fill in the details below and hit submit.
-                        </p>
+                        <button
+                            onClick={onClose}
+                            className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
+                    <form onSubmit={handleSubmit} className="px-4 py-3 space-y-3 text-sm">
                         <div className="space-y-1">
-                            <label htmlFor="title" className="text-sm font-medium text-gray-700">Title</label>
+                            <label htmlFor="title" className="font-roboto-regular text-gray-700">
+                                Title
+                            </label>
                             <input
                                 ref={initialInputRef}
                                 id="title"
@@ -160,114 +176,169 @@ export default function CreateListingModal({ open, onClose, onCreated }: CreateL
                                 onChange={(e) => setTitle(e.target.value)}
                                 required
                                 maxLength={120}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-gray-900"
-                                placeholder="e.g., West Ville Apartment, St. XX"
+                                className="w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-black"
+                                placeholder="e.g., Cozy Apartment in West Lafayette"
                                 />
                         </div>
 
-                        <div className="space-y-1">
-                            <label htmlFor="price" className="text-sm font-medium text-gray-700">Price (USD)</label>
-                            <input
-                                id="price"
-                                type="number"
-                                inputMode="decimal"
-                                step="0.01"
-                                min="0"
-                                value={price}
-                                onChange={(e) => setPrice(e.target.value)}
-                                required
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-gray-900"
-                                placeholder="19.99"
-                                />
+                        {/* Price + Location */}
+                        <div className="grid grid-cols-1 gap-3">
+                            <div className="space-y-1">
+                                <label htmlFor="price" className="font-roboto-regular text-gray-700">
+                                    Price (USD)
+                                </label>
+                                <input
+                                    id="price"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={price}
+                                    onChange={(e) => setPrice(e.target.value)}
+                                    required
+                                    className="w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-black"
+                                    placeholder="1200.00"
+                                    />
+                            </div>
+
+                            <div className="space-y-1">
+                                <label htmlFor="location" className="font-roboto-regular text-gray-700">
+                                    Location
+                                </label>
+                                <input
+                                    id="location"
+                                    type="text"
+                                    value={location}
+                                    onChange={(e) => setLocation(e.target.value)}
+                                    required
+                                    className="w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-black"
+                                    placeholder="123 Main St, West Lafayette, IN"
+                                    />
+                            </div>
                         </div>
 
-                        <div className="space-y-1">
-                            <label htmlFor="location" className="text-sm font-medium text-gray-700">Location</label>
-                            <input
-                                id="location"
-                                type="text"
-                                value={location}
-                                onChange={(e) => setLocation(e.target.value)}
-                                required
-                                maxLength={140}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-gray-900"
-                                placeholder="e.g., West Lafayette, IN"
-                                />
+                        {/* Roommates + (optional) anything else */}
+                        <div className="grid grid-cols-1 gap-3">
+                            <div className="space-y-1">
+                                <label htmlFor="roommates" className="font-roboto-regular text-gray-700">
+                                    Number of Roomates Needed
+                                </label>
+                                <input
+                                    id="roommates"
+                                    type="number"
+                                    inputMode="numeric"
+                                    min={1}
+                                    step={1}
+                                    value={roommates}
+                                    onChange={(e) => {
+                                        // keep it numeric-only; allow blank for editing
+                                        const v = e.target.value;
+                                        if (v === "") return setRoommates("");
+                                        if (/^\d+$/.test(v)) setRoommates(v);
+                                    }}
+                                    required
+                                    className="w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-black"
+                                    placeholder="1"
+                                    />
+                            </div>
+
+                            {/* spacer, or you could add another field later */}
+                            <div />
                         </div>
 
-                        <div className="space-y-1">
-                            <label htmlFor="description" className="text-sm font-medium text-gray-700">
-                                Description
-                            </label>
-                            <textarea
-                                id="description"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                rows={4}
-                                required
-                                maxLength={10000}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-gray-900"
-                                placeholder="Tell potential roomates more about your listing..."
-                                />
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <div>
-                                <label className="block text-sm font-medium">Move-in Start</label>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                                <label className="font-roboto-regular text-gray-700">Move-in Start</label>
                                 <input
                                     type="date"
                                     value={moveInStart}
                                     onChange={(e) => setMoveInStart(e.target.value)}
-                                    className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2"
+                                    className="w-full rounded-md border border-gray-300 px-3 py-2"
                                     required
                                     />
                             </div>
-
-                            <div>
-                                <label className="block text-sm font-medium">Move-in End</label>
+                            <div className="space-y-1">
+                                <label className="font-roboto-regular text-gray-700">Move-in End</label>
                                 <input
                                     type="date"
                                     value={moveInEnd}
                                     onChange={(e) => setMoveInEnd(e.target.value)}
-                                    className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2"
+                                    className="w-full rounded-md border border-gray-300 px-3 py-2"
                                     required
                                     />
                             </div>
                         </div>
 
                         <div className="space-y-1">
-                            <label htmlFor="mediaUrls" className="text-sm font-medium text-gray-700">
-                                Media URLs (comma-separated, optional)
+                            <label htmlFor="description" className="font-roboto-regular text-gray-700">
+                                Description
                             </label>
-                            <input
-                                id="mediaUrls"
-                                type="text"
-                                value={mediaUrlsCsv}
-                                onChange={(e) => setMediaUrlsCsv(e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-gray-900"
-                                placeholder="https://example.com/img1.jpg, https://example.com/img2.jpg"
+                            <textarea
+                                id="description"
+                                rows={3}
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                required
+                                className="w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-black resize-none"
+                                placeholder="Briefly describe your listing..."
                                 />
-                            <p className="text-xs text-gray-500">Up to 20 URLs. Leave blank if none.</p>
                         </div>
 
-                        {error && (
-                            <div className="text-sm text-red-600">
-                                {error}
+                        <div className="space-y-2">
+                            <label className="block font-roboto-regular text-gray-700">Photos</label>
+                            <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center hover:border-gray-400 transition-colors">
+                                <input
+                                    type="file"
+                                    id="images"
+                                    accept="image/*"
+                                    multiple
+                                    onChange={handleImageUpload}
+                                    className="hidden"
+                                    />
+                                <label
+                                    htmlFor="images"
+                                    className="cursor-pointer flex flex-col items-center gap-1"
+                                >
+                                    <Upload className="w-6 h-6 text-gray-400" />
+                                    <span className="text-xs text-gray-500">Click to upload images</span>
+                                </label>
                             </div>
-                        )}
 
-                        <div className="flex items-center justify-end gap-3 pt-2">
+                            {imagePreviews.length > 0 && (
+                                <div className="grid grid-cols-3 gap-2 mt-2">
+                                    {imagePreviews.map((preview, index) => (
+                                        <div key={index} className="relative group">
+                                            <img
+                                                src={preview || "/placeholder.svg"}
+                                                alt={`Preview ${index + 1}`}
+                                                className="w-full h-24 object-cover rounded-md"
+                                                />
+                                            <button
+                                                type="button"
+                                                onClick={() => removeImage(index)}
+                                                className="absolute top-1 right-1 bg-black/70 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {error && <div className="text-xs text-red-600">{error}</div>}
+
+                        <div className="flex items-center justify-end gap-2 pt-1">
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="rounded-full border border-gray-300 px-4 py-2 text-sm cursor-pointer"
+                                className="rounded-full border border-gray-300 px-3 py-1 text-sm cursor-pointer"
                                 disabled={submitting}
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
-                                className="rounded-full bg-black px-5 py-2 text-sm font-medium text-white disabled:opacity-50 cursor-pointer"
+                                className="rounded-full bg-black px-4 py-1.5 text-sm font-roboto-regular text-white disabled:opacity-50 cursor-pointer"
                                 disabled={submitting}
                             >
                                 {submitting ? "Submitting…" : "Submit"}
