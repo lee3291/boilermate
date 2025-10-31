@@ -11,7 +11,7 @@ export class ProfileService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
-        preference: true, // Correct: singular, one-to-one relation
+        preferences: true, // Correct: singular, one-to-one relation
       },
     });
 
@@ -19,11 +19,11 @@ export class ProfileService {
       throw new NotFoundException('User not found');
     }
 
-    const { id, email, phoneNumber, bio, searchStatus, preference } = user;
+    const { id, email, phoneNumber, bio, searchStatus, preferences } = user;
     const username = email.split('@')[0];
 
     // If a preference record exists, flatten its JSON content.
-    // Otherwise, default to an empty object.
+    const preference = preferences[0]; // Take the first preference object
     const flatPreferences =
       preference && preference.preferences
         ? Object.entries(
@@ -53,7 +53,7 @@ export class ProfileService {
         },
       },
       include: {
-        preference: true,
+        preferences: true,
       },
     });
 
@@ -61,8 +61,9 @@ export class ProfileService {
       throw new NotFoundException('User not found');
     }
 
-    const { id, email, bio, searchStatus, preference } = user;
+    const { id, email, bio, searchStatus, preferences } = user;
 
+    const preference = preferences[0]; // Take the first preference object
     const flatPreferences =
       preference && preference.preferences
         ? Object.entries(
