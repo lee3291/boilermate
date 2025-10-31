@@ -6,8 +6,9 @@
 @theme {
     --color-maingray: #433C35;
     --color-mercury: #E9E9E9;
-    --color-mainbrown: #E9E0D3;
+    --color-mainbrown: #f3f3ec;
     --color-bisonbrown: #C3AF9F;
+    --color-sharkgray: #28292d;
 }
 
 @layer utilities {
