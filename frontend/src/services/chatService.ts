@@ -10,7 +10,7 @@ export async function getChats(request: getChatsRequest): Promise<getChatsRespon
   try {
     console.log('see if getChats being called')
     const res = await api.get('/chats', { params: request });
-    console.log("wtf", res)
+    console.log("aaa", res)
 
     return res.data
   } catch (error: any) {

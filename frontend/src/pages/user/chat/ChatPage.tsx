@@ -26,15 +26,15 @@ export default function ChatPage() {
           {/* pass conversations/loading state to sidebar */}
           <ChatSideBar
               currentUserId={logic.currentUserId}
-            conversations={logic.conversations}
-            selectedChatId={logic.selectedChatId}
-            onSelect={logic.setSelectedChatId}
-            loading={logic.loadingChats}
-            error={logic.error}
-            onCreateGroup={() => logic.setShowCreateGroupModal(true)}
-            onCreateNormalChat={() => logic.setShowCreateNormalChatModal(true)}
-            onViewInvitations={() => logic.setShowInvitationsModal(true)}
-            invitationsCount={logic.invitationsCount}
+              conversations={logic.conversations}
+              selectedChatId={logic.selectedChatId}
+              onSelect={logic.setSelectedChatId}
+              loading={logic.loadingChats}
+              error={logic.error}
+              onCreateGroup={() => logic.setShowCreateGroupModal(true)}
+              onCreateNormalChat={() => logic.setShowCreateNormalChatModal(true)}
+              onViewInvitations={() => logic.setShowInvitationsModal(true)}
+              invitationsCount={logic.invitationsCount}
           />
 
           {/* find selected conversation to show header info */}
@@ -86,6 +86,7 @@ export default function ChatPage() {
           invitations={logic.invitations}
           onAccept={logic.handleAcceptInvitation}
           onDecline={logic.handleDeclineInvitation}
+          currentUserId={logic.currentUserId}
         />
 
         <AddMembersModal

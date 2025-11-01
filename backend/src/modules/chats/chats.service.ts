@@ -82,7 +82,10 @@ export class ChatsService {
           participants: {
             some: {
               userId: userId,
-              status: 'ACCEPTED', // Only show chats user has accepted
+              // Not show chat after DECLINED
+              status: {
+                in: ['ACCEPTED', 'PENDING']
+              } // Only show chats user has accepted or pending
             }
           }
         },
@@ -130,6 +133,57 @@ export class ChatsService {
       throw new InternalServerErrorException('Failed to find chats');
     }
   }
+  /*
+
+   */
+  async getInvitationId(chatId: string, recipientId: string): Promise<string | null> {
+    const participant = await this.prisma.chatParticipant.findUnique({
+      where: {
+        userId_chatId: {
+          userId: recipientId,
+          chatId: chatId,
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    return participant ? participant.id : null;
+  }
+  /*
+
+   */
+  async getParticipantStatus(chatId: string, recipientId: string): Promise<string | null> {
+    const participant = await this.prisma.chatParticipant.findUnique({
+      where: {
+        userId_chatId: {
+          userId: recipientId,
+          chatId,
+        },
+      },
+      select: {
+        status: true,
+      },
+    });
+
+    return participant ? participant.status : null;
+  }
+
+  async getRecipientId(chatId: string, senderId: string): Promise<string> {
+    const chat = await this.prisma.chat.findUnique({
+      where: { id: chatId },
+      include: { participants: true },
+    });
+
+    if (!chat) throw new NotFoundException('Chat not found');
+
+    const recipient = chat.participants.find(p => p.userId !== senderId);
+
+    if (!recipient) throw new NotFoundException('Recipient not found');
+
+    return recipient.userId;
+  }
 
   /**
    * * Send a message. If chatId not provided, find or create the chat between sender and recipient.
@@ -154,7 +208,7 @@ export class ChatsService {
       if (!chatId) {
         // First time sending message -> create DM chat with participants
         // this bypass group chat as group chat require you to already have chat id
-        
+
         //! NULL CHECK: recipientId is required for creating new chat
         if (!recipientId) {
           throw new BadRequestException('recipientId is required when creating new chat');
@@ -189,8 +243,7 @@ export class ChatsService {
               status: 'PENDING',
             },
           });
-
-          // Add recipient as ACCEPTED participant (for DM, both auto-accept)
+          // Add recipient as PENDING participant (for DM, both auto-accept)
           await tx.chatParticipant.create({
             data: {
               chatId: chat.id,
@@ -200,14 +253,14 @@ export class ChatsService {
           });
 
           //! NULL CHECK: imageUrl and imageKey might be undefined
-          const image = (imageUrl && imageKey) 
+          const image = (imageUrl && imageKey)
             ? await tx.image.create({
                 data: {
                   url: imageUrl,
                   key: imageKey,
                   userId: senderId,
                 }
-              }) 
+              })
             : null;
 
           //! NULL CHECK: content might be null for image-only, imageId might be undefined
@@ -243,18 +296,57 @@ export class ChatsService {
       // Not the first message -> update existing chat
       const txResult = await client.$transaction(async (tx: any) => {
         //! NULL CHECK: chatId might not exist in database
-        const chat = await tx.chat.findUnique({ where: { id: chatId } });
-        if (!chat) throw new NotFoundException('Chat not found');
+        const chat = await tx.chat.findUnique({
+          where: { id: chatId },
+          include: { participants: true },
+        });
 
+
+        if (!chat) throw new NotFoundException('Chat not found');
+        /*
+        if (recipientId) {
+          const recipientParticipant = await client.chatParticipant.findFirst({
+            where: { chatId, userId: recipientId },
+          });
+
+          if (!recipientParticipant) {
+            await client.chatParticipant.create({
+              data: {
+                chatId,
+                userId: recipientId,
+                status: 'PENDING',
+              },
+            });
+          } else if (recipientParticipant.status === 'DECLINED') {
+            await client.chatParticipant.update({
+              where: { chatId_userId: { chatId, userId: recipientId } },
+              data: { status: 'PENDING' },
+            });
+          }
+        }
+        */
+        const checkGroupType= await this.checkChatType(chatId)
+        // Only update status for 1-1 chat if a user previously decline
+        if (!checkGroupType.isGroup) {
+          const recipient = await this.getRecipientId(chatId, senderId);
+          const recipientParticipantStatus = await this.getParticipantStatus(chatId, recipient);
+          const invitationId = await this.getInvitationId(chatId, recipient);
+          if (recipientParticipantStatus === "DECLINED") {
+            await client.chatParticipant.update({
+              where: { id: invitationId},
+              data: { status: 'PENDING' },
+            });
+          }
+        }
         //! NULL CHECK: imageUrl and imageKey might be undefined
-        const image = (imageUrl && imageKey) 
+        const image = (imageUrl && imageKey)
           ? await tx.image.create({
               data: {
                 url: imageUrl,
                 key: imageKey,
                 userId: senderId,
               }
-            }) 
+            })
           : null;
 
         //! NULL CHECK: content might be null for image-only, imageId might be undefined
@@ -271,7 +363,7 @@ export class ChatsService {
         // Update the latestMessage timestamp in chat
         await tx.chat.update({
           where: { id: chatId },
-          data: { latestMessageAt: new Date() } 
+          data: { latestMessageAt: new Date() }
         });
 
         // NULL CHECK: image?.url might be undefined, handle gracefully
@@ -382,7 +474,7 @@ export class ChatsService {
       throw new NotFoundException('Chat not found');
     }
 
-    return { chatId: chat.id, isGroup: chat.isGroup };
+    return {isGroup: chat.isGroup };
   }
 
   /**
@@ -454,11 +546,10 @@ export class ChatsService {
    * Get chat history for a chatId (works for both DM and group chats)
    * Includes image data when messages have image attachments
    */
-  async getHistory(chatId: string, getMessagesDetails: getMessagesDetails): Promise<getMessagesResults>{
+  async getHistory(chatId: string, getMessagesDetails: getMessagesDetails): Promise<getMessagesResults> {
     const client: any = this.prisma as any;
     const { userId } = getMessagesDetails;
 
-    //! NULL CHECK: Validate required parameters
     if (!chatId) {
       throw new BadRequestException('chatId is required');
     }
@@ -468,7 +559,6 @@ export class ChatsService {
     }
 
     try {
-      //! NULL CHECK: Verify chat exists
       const chat = await client.chat.findUnique({
         where: { id: chatId },
       });
@@ -477,59 +567,63 @@ export class ChatsService {
         throw new NotFoundException('Chat not found');
       }
 
-      // Fetch messages with image data
+      const participant = await client.chatParticipant.findFirst({
+        where: {
+          chatId,
+          userId,
+        },
+        select: { status: true },
+      });
+
+      if (!participant) {
+        throw new BadRequestException('You are not a participant of this chat');
+      }
+
+
       const rawMessages = await client.message.findMany({
         where: { chatId },
-        orderBy: { createdAt: 'asc' }, // Chronological order
+        orderBy: { createdAt: 'asc' },
         select: {
           id: true,
           chatId: true,
-          content: true, // NULL WARNING: can be null for image-only messages
+          content: true,
           senderId: true,
-          imageId: true, // NULL WARNING: can be null if no image
+          imageId: true,
           createdAt: true,
           updatedAt: true,
           isEdited: true,
           isDeleted: true,
-          statuses: { // NULL WARNING: array could be empty
+          statuses: {
             where: { userId },
             select: { isDeleted: true },
           },
-          image: { // NULL WARNING: could be null if no image
-            select: {
-              url: true, // Get the image URL
-            },
+          image: {
+            select: { url: true },
           },
         },
       });
 
-      // NULL CHECK: Transform messages to include isDeletedForYou status
-      // Handle all potential null/undefined values with proper fallbacks
       const messages = rawMessages.map((m: any) => ({
         id: m.id,
         chatId: m.chatId,
         senderId: m.senderId,
-        content: m.content || null, // NULL CHECK: content can be null for image-only
-        imageUrl: m.image?.url ?? null, // NULL CHECK: handle null image or undefined url
+        content: m.content || null,
+        imageUrl: m.image?.url ?? null,
         isEdited: m.isEdited,
         isDeleted: m.isDeleted,
         createdAt: m.createdAt,
         updatedAt: m.updatedAt,
-        // NULL CHECK: statuses array might be empty, statuses[0] might not exist
-        // Use optional chaining and nullish coalescing for safety
-        //* statuses[0] is simply the status of the that user, have to be array for clarity for prisma as a message can have statues from multiple people
-        isDeletedForYou: m.statuses?.[0]?.isDeleted ?? false, // Default to false if no status
+        isDeletedForYou: m.statuses?.[0]?.isDeleted ?? false,
       })) as MessageWithStatusDetails[];
 
-      return {
-        messages: messages as MessageWithStatusDetails[]
-      };
+      return { messages };
     } catch (error) {
-      Logger.error(error)
+      Logger.error(error);
       if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException('Failed to retrieve chat history');
     }
   }
+
 
   /**
    * Edit message: only change content and mark isEdited.

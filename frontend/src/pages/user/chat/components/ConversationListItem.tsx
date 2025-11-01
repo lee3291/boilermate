@@ -24,6 +24,7 @@ export default function ConversationListItem({
   const isGroupChat = chat?.isGroup ?? false;
   
   // Display name: For groups show name, for DMs show other user's name
+
   const displayName = isGroupChat
       ? (chat?.name ?? 'Unnamed Group')
       : (chat?.participants?.find(p => p.id !== currentUserId)?.id ?? 'Unknown User');
@@ -50,7 +51,7 @@ export default function ConversationListItem({
       {/* Chat Info */}
       <div className="flex-1 min-w-0">
         <div className="font-medium truncate">{displayName}</div>
-        <div className="text-gray-500 text-sm truncate">{preview ?? 'No messages yet'}</div>
+        {/* <div className="text-gray-500 text-sm truncate">{preview ?? 'No messages yet'}</div> */}
       </div>
     </div>
   );

@@ -34,7 +34,9 @@ export default function ChatSideBar({
         <span className="font-semibold">Chats</span>
         <div className="flex items-center gap-2">
           {onViewInvitations && (
-            <InvitationsButton onClick={onViewInvitations} count={invitationsCount} />
+            <InvitationsButton
+                onClick={onViewInvitations}
+                count={invitationsCount} />
           )}
           {onCreateGroup && <CreateGroupButton onClick={onCreateGroup} />}
           {onCreateNormalChat && <CreateNormalChatButton onClick={onCreateNormalChat} />}

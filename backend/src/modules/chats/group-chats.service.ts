@@ -52,7 +52,7 @@ export class GroupChatsService {
         const groupChat = await tx.chat.create({
           data: {
             isGroup: true,
-            name, // uhh what if this is null
+            name, // Name will be null if it is 1-1 chat
             groupIcon: groupIcon || null,
             creatorId,
             latestMessageAt: new Date(),
@@ -116,6 +116,7 @@ export class GroupChatsService {
               groupIcon: true,
               isGroup: true,
               creatorId: true,
+              //participants: true,
             },
           },
         },
