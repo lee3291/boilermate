@@ -54,6 +54,10 @@ export class MessageWithStatusDto {
   @Type(() => MessageApprovalDto)
   approvals: MessageApprovalDto[];
 
+  @Expose()
+  approved: boolean;
+
+
   static fromInterface(rawMessageWithStatusDetails: MessageWithStatusDetails): MessageWithStatusDto {
     return plainToInstance(MessageWithStatusDto, rawMessageWithStatusDetails, { excludeExtraneousValues: true })
   }

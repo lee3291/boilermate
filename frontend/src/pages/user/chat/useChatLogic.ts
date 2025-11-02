@@ -185,6 +185,24 @@ export default function useChatLogic(initialUserId: string) {
     };
   }, [currentUserId]);
 
+  //refresh chat after recieve new msg
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    const refreshHandler = ({ chatId }: { chatId: string }) => {
+      if (chatId === selectedChatId) {
+        fetchHistory(chatId, currentUserId); // fetch latest messages
+      }
+    };
+
+    const unsubRefresh = chatSocket.onRefreshChat(refreshHandler);
+
+    return () => {
+      unsubRefresh();
+    };
+  }, [currentUserId, selectedChatId, fetchHistory]);
+
+
   // handle input change, useCallback just for fun literally
   const handleInputChange = useCallback((value: string) => {
     setMessageInput(value);

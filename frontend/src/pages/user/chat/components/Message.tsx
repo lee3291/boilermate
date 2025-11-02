@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { approveMessage } from '@/services/chatService';
 
 interface ImageDisplayProps {
@@ -15,6 +15,10 @@ function ImageDisplay({ imageUrl, isMine, approved, messageId, currentUserId, on
     const [isLoading, setIsLoading] = useState(true);
     const [zoomed, setZoomed] = useState(false);
     const [approvedState, setApprovedState] = useState(approved);
+
+    useEffect(() => {
+        setApprovedState(approved);
+    }, [approved]);
 
     const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
         const img = e.currentTarget;
@@ -87,18 +91,11 @@ export default function Message({ m, isMine, currentUserId, onEdit, onDelete }: 
     const [hover, setHover] = useState(false);
     const [editing, setEditing] = useState(false);
     const [editText, setEditText] = useState(m.content);
-    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const hasImage = m.imageUrl && m.imageUrl.trim().length > 0;
     const hasContent = m.content && m.content.trim().length > 0;
 
-    const isImageApproved = !!m.approvals?.some(
-        (a: { userId: string; approved: boolean }) => a.userId === currentUserId && a.approved
-    );
-
-    const handleApproved = () => {
-        setRefreshTrigger((prev) => prev + 1);
-    };
+    const handleApproved = () => {};
 
     return (
         <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} w-full mb-3`}>
@@ -142,11 +139,11 @@ export default function Message({ m, isMine, currentUserId, onEdit, onDelete }: 
                                 <div className="text-sm text-gray-400 italic">You deleted this message</div>
                             ) : editing ? (
                                 <div>
-                  <textarea
-                      className="w-full p-2 border rounded text-gray-900"
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                  />
+                                    <textarea
+                                        className="w-full p-2 border rounded text-gray-900"
+                                        value={editText}
+                                        onChange={(e) => setEditText(e.target.value)}
+                                    />
                                     <div className="flex gap-2 mt-2">
                                         <button
                                             onClick={() => {
@@ -168,12 +165,13 @@ export default function Message({ m, isMine, currentUserId, onEdit, onDelete }: 
                                         <ImageDisplay
                                             imageUrl={m.imageUrl}
                                             isMine={isMine}
-                                            approved={isImageApproved}
+                                            approved={m.approved}
                                             messageId={m.id}
                                             currentUserId={currentUserId}
                                             onApproved={handleApproved}
                                         />
                                     )}
+
                                     {hasContent && <div className={hasImage ? 'mt-2' : ''}>{m.content}</div>}
                                 </div>
                             )}

@@ -160,6 +160,19 @@ export class GroupChatsService {
         data: { status: 'ACCEPTED' },
       });
 
+      await client.messageApproval.updateMany({
+        where: {
+          userId,
+          message: {
+            chatId: invitation.chatId, // link through relation
+          },
+          approved: false, // only update those still waiting
+        },
+        data: {
+          approved: true,
+        },
+      });
+
 
     } catch (error) {
       Logger.error('acceptInvitation error', error);

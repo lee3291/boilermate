@@ -218,6 +218,7 @@ export class ChatsService {
           throw new BadRequestException('recipientId is required when creating new chat');
         }
 
+        // First message -> create a new DM chat
         const txResult = await client.$transaction(async (tx: any) => {
           // Create the DM chat (isGroup = false, no name/icon/creator)
           const chat = await tx.chat.create({
@@ -242,7 +243,7 @@ export class ChatsService {
                   url: imageUrl,
                   key: imageKey,
                   userId: senderId,
-                }
+                },
               })
               : null;
 
@@ -252,38 +253,41 @@ export class ChatsService {
               chatId: chat.id,
               senderId,
               content: content || null,
-              imageId: image?.id || null
+              imageId: image?.id || null,
             },
           });
 
           // Only create approval entries for image messages
           if (image) {
-            // Fetch participants manually because `chat.participants` isn't auto-included
             const participants = await tx.chatParticipant.findMany({
               where: { chatId: chat.id },
-              select: { userId: true },
+              select: { userId: true, status: true },
             });
 
             const recipientIds = participants
-                .map((p: { userId: string }) => p.userId)
-                .filter((id: string) => id !== senderId);
+                .filter((p: { userId: string; status: string }) => p.userId !== senderId)
+                .map((p: { userId: string; status: string }) => ({
+                  userId: p.userId,
+                  approved: p.status === 'ACCEPTED',
+                }));
 
-            for (const userId of recipientIds) {
+            for (const { userId, approved } of recipientIds) {
               await tx.messageApproval.create({
                 data: {
                   messageId: message.id,
                   userId,
-                  approved: false, // recipients must approve image
+                  approved,
                 },
               });
             }
           }
 
-          //! NULL CHECK: image?.url might be undefined, handle gracefully
+          //! NULL CHECK: image?.url might be undefined
           return { chat, message: { ...message, imageUrl: image?.url || null } };
         });
 
-        this.chatGateway.emitNewMessage(txResult.chat.id, senderId, txResult.message);
+        // Emit refresh signal to frontend (no message argument)
+        this.chatGateway.emitNewMessage(txResult.chat.id, senderId);
 
         return {
           message: txResult.message as MessageDetails,
@@ -323,7 +327,7 @@ export class ChatsService {
                 url: imageUrl,
                 key: imageKey,
                 userId: senderId,
-              }
+              },
             })
             : null;
 
@@ -333,43 +337,47 @@ export class ChatsService {
             chatId,
             senderId,
             content: content || null,
-            imageId: image?.id || null
+            imageId: image?.id || null,
           },
         });
 
         // Update the latestMessage timestamp in chat
         await tx.chat.update({
           where: { id: chatId },
-          data: { latestMessageAt: new Date() }
+          data: { latestMessageAt: new Date() },
         });
 
         // Only create approval entries for image messages
         if (image) {
           const participants = await tx.chatParticipant.findMany({
             where: { chatId: chat.id },
-            select: { userId: true },
+            select: { userId: true, status: true },
           });
 
           const recipientIds = participants
-              .map((p: { userId: string }) => p.userId)
-              .filter((id: string) => id !== senderId);
+              .filter((p: { userId: string; status: string }) => p.userId !== senderId)
+              .map((p: { userId: string; status: string }) => ({
+                userId: p.userId,
+                approved: p.status === 'ACCEPTED',
+              }));
 
-          for (const userId of recipientIds) {
+          for (const { userId, approved } of recipientIds) {
             await tx.messageApproval.create({
               data: {
                 messageId: message.id,
-                userId: userId,
-                approved: false, // recipients must approve image
+                userId,
+                approved,
               },
             });
           }
         }
 
-        //! NULL CHECK: image?.url might be undefined, handle gracefully
+        //! NULL CHECK: image?.url might be undefined
         return { chat, message: { ...message, imageUrl: image?.url || null } };
       });
 
-      this.chatGateway.emitNewMessage(txResult.chat.id, senderId, txResult.message);
+      // Emit refresh signal to frontend (no message argument)
+      this.chatGateway.emitNewMessage(txResult.chat.id, senderId);
 
       return {
         message: txResult.message as MessageDetails,
@@ -382,6 +390,7 @@ export class ChatsService {
       throw new InternalServerErrorException('Failed to send message');
     }
   }
+
 
 
   /**
@@ -622,31 +631,49 @@ export class ChatsService {
             approved: true,
           },
         },
+        chat: {
+          select: {
+            participants: {
+              select: {
+                userId: true,
+                status: true
+              }
+            }
+          }
+          },
       },
     });
-
-
     // Transform messages for frontend
-    const messages = rawMessages.map((m: any) => ({
-      id: m.id,
-      chatId: m.chatId,
-      senderId: m.senderId,
-      content: m.content || null,
-      imageUrl: m.image?.url ?? null,
-      isEdited: m.isEdited,
-      isDeleted: m.isDeleted,
-      createdAt: m.createdAt,
-      updatedAt: m.updatedAt,
-      // NULL CHECK: statuses array might be empty, statuses[0] might not exist
-      // Use optional chaining and nullish coalescing for safety
-      //* statuses[0] is simply the status of the that user,
-      // have to be array for clarity for prisma as a message can have statues from multiple people
-      isDeletedForYou: m.statuses?.[0]?.isDeleted ?? false,
-      approvals: m.approvals?.map((a: any) => ({
-        userId: a.userId,
-        approved: a.approved,
-      })) ?? [],
-    })) as MessageWithStatusDetails[];
+    const messages = rawMessages.map((m: any) => {
+      // Find approval for the current user from MessageApproval table
+      const userApproval = m.approvals?.find(
+          (a: { userId: string; approved: boolean }) => a.userId === userId
+      );
+
+      // Find the participant status from chat participants
+      const participant = m.chat?.participants?.find(
+          (p: { userId: string; status: string }) => p.userId === userId
+      );
+
+      return {
+        id: m.id,
+        chatId: m.chatId,
+        senderId: m.senderId,
+        content: m.content || null,
+        imageUrl: m.image?.url ?? null,
+        isEdited: m.isEdited,
+        isDeleted: m.isDeleted,
+        createdAt: m.createdAt,
+        updatedAt: m.updatedAt,
+        isDeletedForYou: m.statuses?.[0]?.isDeleted ?? false,
+        approvals: m.approvals?.map((a: { userId: string; approved: boolean }) => ({
+          userId: a.userId,
+          approved: a.approved,
+        })) ?? [],
+        // approved is true if either the MessageApproval says true OR participant is ACCEPTED
+        approved: (userApproval?.approved ?? (participant?.status === 'ACCEPTED')),
+      };
+    }) as MessageWithStatusDetails[];
 
     return { messages };
   }

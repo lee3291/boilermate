@@ -8,6 +8,7 @@ export interface MessageApprovalDetails {
   approved: boolean;
 }
 export interface MessageWithStatusDetails extends MessageDetails {
+  approved?: boolean; // check if the msg approve/unapprove
   approvals?: MessageApprovalDetails[];
   isDeletedForYou?: boolean // this is a merge between the message with the message status table to form 1 single object for performance boost
 }
