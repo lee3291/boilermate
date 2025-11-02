@@ -1,4 +1,4 @@
-import { IsUUID, IsBoolean } from 'class-validator';
+import { IsUUID} from 'class-validator';
 
 export class MessageApprovalDto {
     @IsUUID()

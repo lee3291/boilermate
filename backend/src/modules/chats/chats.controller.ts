@@ -245,5 +245,14 @@ export class ChatsController {
   ) {
     return this.chatsService.approveMessage(messageId, dto.userId);
   }
+  /*
+   * Get row msg approval
+   */
+  @Get('messages/:messageId/approve-status')
+  @HttpCode(200)
+  async approveMessageStatus(@Param('messageId') messageId: string, @Body() dto: MessageApprovalDto
+  ) {
+    return this.chatsService.approveMessageStatus(messageId, dto.userId);
+  }
 
 }

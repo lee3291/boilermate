@@ -5,19 +5,34 @@ interface ImageDisplayProps {
     imageUrl: string;
     isMine: boolean;
     approved: boolean;
-    onApprove: () => void;
     messageId: string;
+    currentUserId: string;
+    onApproved: () => void;
 }
 
-function ImageDisplay({ imageUrl, isMine, approved, onApprove }: ImageDisplayProps) {
+function ImageDisplay({ imageUrl, isMine, approved, messageId, currentUserId, onApproved }: ImageDisplayProps) {
     const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [zoomed, setZoomed] = useState(false);
+    const [approvedState, setApprovedState] = useState(approved);
 
     const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
         const img = e.currentTarget;
         setDimensions({ width: img.naturalWidth, height: img.naturalHeight });
         setIsLoading(false);
+    };
+
+    const handleZoom = async () => {
+        setZoomed(true);
+        if (!isMine && !approvedState) {
+            try {
+                await approveMessage(messageId, { userId: currentUserId });
+                setApprovedState(true);
+                onApproved();
+            } catch (err) {
+                console.error(err);
+            }
+        }
     };
 
     const isLandscape = dimensions ? dimensions.width > dimensions.height : true;
@@ -26,34 +41,21 @@ function ImageDisplay({ imageUrl, isMine, approved, onApprove }: ImageDisplayPro
 
     return (
         <>
-            {isLoading && (
-                <div
-                    className="animate-pulse bg-gray-200 rounded-lg"
-                    style={{ width: maxWidth, height: 200 }}
-                />
-            )}
+            {isLoading && <div className="animate-pulse bg-gray-200 rounded-lg" style={{ width: maxWidth, height: 200 }} />}
             <div className="relative">
                 <img
                     src={imageUrl}
                     alt="Chat"
                     onLoad={handleImageLoad}
-                    onClick={() => approved && setZoomed(true)}
+                    onClick={handleZoom}
                     className={`rounded-lg cursor-pointer transition-all duration-300 ${isLoading ? 'hidden' : 'block'}`}
                     style={{
                         maxWidth: `${maxWidth}px`,
                         maxHeight: `${maxHeight}px`,
                         objectFit: 'contain',
-                        filter: approved ? 'none' : 'blur(25px)',
+                        filter: approvedState || isMine ? 'none' : 'blur(25px)',
                     }}
                 />
-                {!approved && !isMine && (
-                    <button
-                        onClick={onApprove}
-                        className="absolute inset-0 flex items-center justify-center bg-black/50 text-white text-sm font-medium rounded-lg"
-                    >
-                        Approve to view
-                    </button>
-                )}
             </div>
 
             {zoomed && (
@@ -85,29 +87,22 @@ export default function Message({ m, isMine, currentUserId, onEdit, onDelete }: 
     const [hover, setHover] = useState(false);
     const [editing, setEditing] = useState(false);
     const [editText, setEditText] = useState(m.content);
-    const [approved, setApproved] = useState(
-        isMine || (Array.isArray(m.approvedBy) && m.approvedBy.includes(currentUserId))
-    );
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const hasImage = m.imageUrl && m.imageUrl.trim().length > 0;
     const hasContent = m.content && m.content.trim().length > 0;
 
-    const handleApprove = async () => {
-        try {
-            await approveMessage(m.id, { userId: currentUserId });
-            setApproved(true);
-        } catch (err) {
-            console.error(err);
-        }
+    const isImageApproved = !!m.approvals?.some(
+        (a: { userId: string; approved: boolean }) => a.userId === currentUserId && a.approved
+    );
+
+    const handleApproved = () => {
+        setRefreshTrigger((prev) => prev + 1);
     };
 
     return (
         <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} w-full mb-3`}>
-            <div
-                className="flex items-center gap-2"
-                onMouseEnter={() => setHover(true)}
-                onMouseLeave={() => setHover(false)}
-            >
+            <div className="flex items-center gap-2" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
                 {!isMine && (
                     <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
                         <span className="text-xs">{m.senderId.split('-')[1]}</span>
@@ -116,9 +111,7 @@ export default function Message({ m, isMine, currentUserId, onEdit, onDelete }: 
 
                 <div className="flex flex-col">
                     {m.isEdited && (!m.isDeleted || !m.isDeletedForYou) && (
-                        <div className={`text-[11px] text-gray-400 mb-0.5 ${isMine ? 'self-end' : 'self-start'}`}>
-                            edited
-                        </div>
+                        <div className={`text-[11px] text-gray-400 mb-0.5 ${isMine ? 'self-end' : 'self-start'}`}>edited</div>
                     )}
 
                     <div className="flex items-center gap-1">
@@ -164,10 +157,7 @@ export default function Message({ m, isMine, currentUserId, onEdit, onDelete }: 
                                         >
                                             Save
                                         </button>
-                                        <button
-                                            onClick={() => setEditing(false)}
-                                            className="px-3 py-1 rounded border text-sm"
-                                        >
+                                        <button onClick={() => setEditing(false)} className="px-3 py-1 rounded border text-sm">
                                             Cancel
                                         </button>
                                     </div>
@@ -178,9 +168,10 @@ export default function Message({ m, isMine, currentUserId, onEdit, onDelete }: 
                                         <ImageDisplay
                                             imageUrl={m.imageUrl}
                                             isMine={isMine}
-                                            approved={approved}
-                                            onApprove={handleApprove}
+                                            approved={isImageApproved}
                                             messageId={m.id}
+                                            currentUserId={currentUserId}
+                                            onApproved={handleApproved}
                                         />
                                     )}
                                     {hasContent && <div className={hasImage ? 'mt-2' : ''}>{m.content}</div>}

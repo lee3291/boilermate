@@ -1,4 +1,9 @@
 //* This section is reserved for standard interfaces
+export interface Approval {
+  msgId: string;
+  userId: string;
+  approved: boolean;
+}
 export interface MessageWithStatus {
   id: string; // message id
   chatId: string // chat box id
@@ -10,6 +15,7 @@ export interface MessageWithStatus {
   createdAt: Date;
   updatedAt: Date;
   isDeletedForYou?: boolean // this is a merge between the message with the message status table to form 1 single object for performance boost
+  approvals?: Approval[];
 }
 
 // Participant details for chat members

@@ -159,6 +159,8 @@ export class GroupChatsService {
         where: { id: invitationId },
         data: { status: 'ACCEPTED' },
       });
+
+
     } catch (error) {
       Logger.error('acceptInvitation error', error);
       if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;

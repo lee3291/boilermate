@@ -8,7 +8,7 @@ import {
   getMessagesDetails, 
   getMessagesResults, 
   MessageDetails, 
-  MessageWithStatusDetails, 
+  MessageWithStatusDetails,
   sendMessageDetails, 
   sendMessageResults,
 } from './interfaces';
@@ -213,26 +213,11 @@ export class ChatsService {
       }
 
       if (!chatId) {
-        // First time sending message -> create DM chat with participants
-        // this bypass group chat as group chat require you to already have chat id
-
         //! NULL CHECK: recipientId is required for creating new chat
         if (!recipientId) {
           throw new BadRequestException('recipientId is required when creating new chat');
         }
 
-        // OLD CODE - Create chat with userAId and userBId
-        // const [userAId, userBId] = [senderId, recipientId].sort(); // Sort for unique constraint
-        // const txResult = await client.$transaction(async (tx: any) => {
-        //   const chat = await tx.chat.create({
-        //     data: {
-        //       userAId,
-        //       userBId,
-        //       latestMessageAt: new Date(),
-        //     },
-        //   });
-
-        // NEW CODE - Create chat with ChatParticipant entries
         const txResult = await client.$transaction(async (tx: any) => {
           // Create the DM chat (isGroup = false, no name/icon/creator)
           const chat = await tx.chat.create({
@@ -242,110 +227,113 @@ export class ChatsService {
             },
           });
 
-          // Add sender as ACCEPTED participant
-          await tx.chatParticipant.create({
-            data: {
-              chatId: chat.id,
-              userId: senderId,
-              status: 'PENDING',
-            },
-          });
-          // Add recipient as PENDING participant (for DM, both auto-accept)
-          await tx.chatParticipant.create({
-            data: {
-              chatId: chat.id,
-              userId: recipientId,
-              status: 'PENDING',
-            },
+          // Add participants
+          await tx.chatParticipant.createMany({
+            data: [
+              { chatId: chat.id, userId: senderId, status: 'ACCEPTED' },
+              { chatId: chat.id, userId: recipientId, status: 'PENDING' },
+            ],
           });
 
           //! NULL CHECK: imageUrl and imageKey might be undefined
           const image = (imageUrl && imageKey)
-            ? await tx.image.create({
+              ? await tx.image.create({
                 data: {
                   url: imageUrl,
                   key: imageKey,
                   userId: senderId,
                 }
               })
-            : null;
+              : null;
 
           //! NULL CHECK: content might be null for image-only, imageId might be undefined
-          // Create message with optional image
           const message = await tx.message.create({
             data: {
               chatId: chat.id,
               senderId,
-              approved: image ? false : true,  // True if normal msg, False if image
-              content: content || null, // Allow null for image-only messages
-              imageId: image?.id || null //! NULL CHECK: use optional chaining and fallback to null
-              //* technically this is unnecessary as image?.id evaluate to undefined if image is null
-              //* => prisma treat as if it doesn't exist => fallback to NULL anyway => this is just for better clarity
+              content: content || null,
+              imageId: image?.id || null
             },
           });
 
+          // Only create approval entries for image messages
+          if (image) {
+            // Fetch participants manually because `chat.participants` isn't auto-included
+            const participants = await tx.chatParticipant.findMany({
+              where: { chatId: chat.id },
+              select: { userId: true },
+            });
+
+            const recipientIds = participants
+                .map((p: { userId: string }) => p.userId)
+                .filter((id: string) => id !== senderId);
+
+            for (const userId of recipientIds) {
+              await tx.messageApproval.create({
+                data: {
+                  messageId: message.id,
+                  userId,
+                  approved: false, // recipients must approve image
+                },
+              });
+            }
+          }
+
           //! NULL CHECK: image?.url might be undefined, handle gracefully
-          return { chat, message: {
-            ...message,
-            imageUrl: image?.url || null // Use optional chaining with fallback
-          }};
+          return { chat, message: { ...message, imageUrl: image?.url || null } };
         });
 
-        // Emit new message event through WebSocket
         this.chatGateway.emitNewMessage(txResult.chat.id, senderId, txResult.message);
 
         return {
           message: txResult.message as MessageDetails,
           chatCreated: true,
           chat: txResult.chat as ChatDetails,
-        }
+        };
       }
 
       // Not the first message -> update existing chat
       const txResult = await client.$transaction(async (tx: any) => {
-        //! NULL CHECK: chatId might not exist in database
         const chat = await tx.chat.findUnique({
           where: { id: chatId },
           include: { participants: true },
         });
 
-
         if (!chat) {
           throw new NotFoundException('Chat not found');
         }
 
-        const checkGroupType= await this.checkChatType(chatId)
-        // Only update status for 1-1 chat if a user previously decline
+        const checkGroupType = await this.checkChatType(chatId);
         if (!checkGroupType.isGroup) {
           const recipient = await this.getRecipientId(chatId, senderId);
           const recipientParticipantStatus = await this.getParticipantStatus(chatId, recipient);
           const invitationId = await this.getInvitationId(chatId, recipient);
           if (recipientParticipantStatus === "DECLINED") {
             await client.chatParticipant.update({
-              where: { id: invitationId},
+              where: { id: invitationId },
               data: { status: 'PENDING' },
             });
           }
         }
+
         //! NULL CHECK: imageUrl and imageKey might be undefined
         const image = (imageUrl && imageKey)
-          ? await tx.image.create({
+            ? await tx.image.create({
               data: {
                 url: imageUrl,
                 key: imageKey,
                 userId: senderId,
               }
             })
-          : null;
+            : null;
 
         //! NULL CHECK: content might be null for image-only, imageId might be undefined
-        // Create message with optional image
         const message = await tx.message.create({
           data: {
             chatId,
             senderId,
-            content: content || null, // Allow null for image-only messages
-            imageId: image?.id || null // NULL CHECK: use optional chaining and fallback to null
+            content: content || null,
+            imageId: image?.id || null
           },
         });
 
@@ -355,14 +343,32 @@ export class ChatsService {
           data: { latestMessageAt: new Date() }
         });
 
-        // NULL CHECK: image?.url might be undefined, handle gracefully
-        return { chat, message: {
-          ...message,
-          imageUrl: image?.url || null // Use optional chaining with fallback
-        }};
+        // Only create approval entries for image messages
+        if (image) {
+          const participants = await tx.chatParticipant.findMany({
+            where: { chatId: chat.id },
+            select: { userId: true },
+          });
+
+          const recipientIds = participants
+              .map((p: { userId: string }) => p.userId)
+              .filter((id: string) => id !== senderId);
+
+          for (const userId of recipientIds) {
+            await tx.messageApproval.create({
+              data: {
+                messageId: message.id,
+                userId: userId,
+                approved: false, // recipients must approve image
+              },
+            });
+          }
+        }
+
+        //! NULL CHECK: image?.url might be undefined, handle gracefully
+        return { chat, message: { ...message, imageUrl: image?.url || null } };
       });
 
-      // Emit new message event through WebSocket
       this.chatGateway.emitNewMessage(txResult.chat.id, senderId, txResult.message);
 
       return {
@@ -370,12 +376,13 @@ export class ChatsService {
         chatCreated: false,
       };
     } catch (error) {
-      Logger.error(error)
+      Logger.error(error);
       if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
       if (error && error.code === 'P2002') throw new ConflictException('Unique constraint violation');
       throw new InternalServerErrorException('Failed to send message');
     }
   }
+
 
   /**
    * Create a new 1-1 chat with initial participants
@@ -536,36 +543,32 @@ export class ChatsService {
    * they do not need to approve again
    */
   async approveMessage(messageId: string, userId: string) {
-    const message = await this.prisma.message.findUnique({
-      where: { id: messageId },
-    });
-
-    if (!message) {
-      throw new NotFoundException('Message not found');
-    }
-
-    const existingApproval = await this.prisma.messageApproval.findUnique({
+    return this.prisma.messageApproval.upsert({
       where: {
-        messageId_userId: { messageId, userId },
+        messageId_userId: { messageId, userId }, // composite unique key
       },
+      update: { approved: true },
+      create: { messageId, userId, approved: true },
     });
-
-    if (existingApproval) {
-      return existingApproval;
-    }
-
-    const approval = await this.prisma.messageApproval.create({
-      data: {
-        messageId,
-        userId,
+  }
+  /**
+   * Get status of approval msg
+   * True or false return
+   */
+  async approveMessageStatus(messageId: string, userId: string): Promise<boolean> {
+    const approval = await this.prisma.messageApproval.findUnique({
+      where: {
+        messageId_userId: { messageId, userId }, // composite unique key
+      },
+      select: {
         approved: true,
       },
     });
-
-    return approval;
+    return approval ? approval.approved : false;
   }
 
-  async getHistory(chatId: string, getMessagesDetails: getMessagesDetails): Promise<getMessagesResults> {
+  async getHistory(chatId: string, getMessagesDetails: getMessagesDetails
+  ): Promise<getMessagesResults> {
     const client: any = this.prisma as any;
     const { userId } = getMessagesDetails;
 
@@ -577,26 +580,22 @@ export class ChatsService {
       throw new BadRequestException('userId is required');
     }
 
-    const chat = await client.chat.findUnique({
-      where: { id: chatId },
-    });
-
+    // Check if chat exists
+    const chat = await client.chat.findUnique({ where: { id: chatId } });
     if (!chat) {
       throw new NotFoundException('Chat not found');
     }
 
+    // Check if user is participant
     const participant = await client.chatParticipant.findFirst({
-      where: {
-        chatId,
-        userId,
-      },
+      where: { chatId, userId },
       select: { status: true },
     });
-
     if (!participant) {
       throw new BadRequestException('You are not a participant of this chat');
     }
 
+    // Fetch messages with approvals
     const rawMessages = await client.message.findMany({
       where: { chatId },
       orderBy: { createdAt: 'asc' },
@@ -618,12 +617,16 @@ export class ChatsService {
           select: { url: true },
         },
         approvals: {
-          where: { userId },
-          select: { approved: true },
+          select: {
+            userId: true,
+            approved: true,
+          },
         },
       },
     });
 
+
+    // Transform messages for frontend
     const messages = rawMessages.map((m: any) => ({
       id: m.id,
       chatId: m.chatId,
@@ -634,15 +637,19 @@ export class ChatsService {
       isDeleted: m.isDeleted,
       createdAt: m.createdAt,
       updatedAt: m.updatedAt,
-      //* statuses[0] is simply the status of the that user, have to be array for clarity for prisma as a message can have statues from multiple people
-      isDeletedForYou: m.statuses?.[0]?.isDeleted ?? false, // Default to false if no status
-      approved: m.approvals?.[0]?.approved ?? false,
+      // NULL CHECK: statuses array might be empty, statuses[0] might not exist
+      // Use optional chaining and nullish coalescing for safety
+      //* statuses[0] is simply the status of the that user,
+      // have to be array for clarity for prisma as a message can have statues from multiple people
+      isDeletedForYou: m.statuses?.[0]?.isDeleted ?? false,
+      approvals: m.approvals?.map((a: any) => ({
+        userId: a.userId,
+        approved: a.approved,
+      })) ?? [],
     })) as MessageWithStatusDetails[];
 
     return { messages };
   }
-
-
 
   /**
    * Edit message: only change content and mark isEdited.

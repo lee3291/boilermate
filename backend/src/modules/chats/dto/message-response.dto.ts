@@ -1,4 +1,4 @@
-import { Exclude, Expose, plainToInstance } from 'class-transformer';
+import { Exclude, Type, Expose, plainToInstance } from 'class-transformer';
 import { MessageWithStatusDetails, ChatDetails } from '../interfaces';
 
 /**
@@ -9,6 +9,14 @@ import { MessageWithStatusDetails, ChatDetails } from '../interfaces';
  */
 
 //* This section is used for standard declaration
+@Exclude()
+export class MessageApprovalDto {
+  @Expose()
+  userId: string;
+
+  @Expose()
+  approved: boolean;
+}
 
 @Exclude()
 export class MessageWithStatusDto {
@@ -34,10 +42,17 @@ export class MessageWithStatusDto {
   createdAt: Date;
 
   @Expose()
+  updatedAt: Date;
+
+  @Expose()
   imageUrl: string;
 
   @Expose()
   isDeletedForYou: boolean; // The key field for the "delete for me" status
+
+  @Expose()
+  @Type(() => MessageApprovalDto)
+  approvals: MessageApprovalDto[];
 
   static fromInterface(rawMessageWithStatusDetails: MessageWithStatusDetails): MessageWithStatusDto {
     return plainToInstance(MessageWithStatusDto, rawMessageWithStatusDetails, { excludeExtraneousValues: true })

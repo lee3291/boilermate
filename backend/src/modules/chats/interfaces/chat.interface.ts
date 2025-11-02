@@ -2,10 +2,13 @@
  * This is the place you create the interface to ensure type matching when working with the SERVICE of the MODULE
  * There are basically 2 interface you need for every API you created,
  */
-
 //* This section is reserved for basic interface
+export interface MessageApprovalDetails {
+  userId: string;
+  approved: boolean;
+}
 export interface MessageWithStatusDetails extends MessageDetails {
-  approved?: boolean
+  approvals?: MessageApprovalDetails[];
   isDeletedForYou?: boolean // this is a merge between the message with the message status table to form 1 single object for performance boost
 }
 

@@ -119,5 +119,21 @@ export async function approveMessage(messageId: string, request: { userId: strin
   }
 }
 
+// Approve message status
+export async function approveMessageStatus(messageId: string, request: { userId: string }): Promise<boolean> {
+  try {
+    const res = await api.get(
+        `/chats/messages/${encodeURIComponent(messageId)}/approve-status`,
+        {
+          params: { userId: request.userId } // send userId as query param
+        }
+    );
+    console.log('approve message status', res.data);
+    return res.data; // should be true/false from backend
+  } catch (error: any) {
+    throw error.response?.data ?? error;
+  }
+}
+
 export default { getChats, sendMessage, getHistory, editMessage,
   deleteMessage, createNormalChat, searchUsersForNormalChatCreation};
