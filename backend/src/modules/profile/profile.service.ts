@@ -2,10 +2,15 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@core/database/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { Prisma } from '@prisma/client';
+import { UpdateAvatarDto } from './dto/update-avatar.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ProfileService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async getProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -19,7 +24,15 @@ export class ProfileService {
       throw new NotFoundException('User not found');
     }
 
-    const { id, email, phoneNumber, bio, searchStatus, preferences } = user;
+    const {
+      id,
+      email,
+      phoneNumber,
+      bio,
+      searchStatus,
+      preferences,
+      avatarURL,
+    } = user;
     const username = email.split('@')[0];
 
     // If a preference record exists, flatten its JSON content.
@@ -41,6 +54,7 @@ export class ProfileService {
       phoneNumber,
       bio,
       searchStatus,
+      avatarURL,
       ...flatPreferences,
     };
   }
@@ -61,7 +75,7 @@ export class ProfileService {
       throw new NotFoundException('User not found');
     }
 
-    const { id, email, bio, searchStatus, preferences } = user;
+    const { id, email, bio, searchStatus, preferences, avatarURL } = user;
 
     const preference = preferences[0]; // Take the first preference object
     const flatPreferences =
@@ -83,6 +97,7 @@ export class ProfileService {
       username: email.split('@')[0],
       bio,
       searchStatus,
+      avatarURL,
       ...flatPreferences,
     };
   }
@@ -168,5 +183,18 @@ export class ProfileService {
       // 4. Return the fully updated profile
       return this.getProfile(userId);
     });
+  }
+
+  async updateAvatar(userId: string, { avatarKey }: UpdateAvatarDto) {
+    const bucket = this.configService.get<string>('AWS_S3_BUCKET');
+    const region = this.configService.get<string>('AWS_REGION');
+    const avatarURL = `https://${bucket}.s3.${region}.amazonaws.com/${avatarKey}`;
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarURL },
+    });
+
+    return { avatarURL };
   }
 }
