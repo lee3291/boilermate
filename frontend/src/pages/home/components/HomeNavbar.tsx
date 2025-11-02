@@ -12,7 +12,7 @@ export default function Navbar() {
                         BoilerMate
                     </a>
 
-                    <div className="justify-self-end flex items-center gap-4">
+                    <div className="justify-self-end flex items-center gap-7 font-roboto-light text-lg">
                         <a href="/signin">Log In</a>
                         <a href="/signup">Sign Up</a>
                     </div>

@@ -1,21 +1,20 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger"; // ← added
-gsap.registerPlugin(ScrollTrigger);                  // ← added
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+gsap.registerPlugin(ScrollTrigger);
 
 import HomeNavbar from "./components/HomeNavbar";
 import MainImage from "../../assets/images/beg.webp";
+import FAQRing from "./components/FAQRing";
 
 const WORD = "BoilerMate";
 
-// Cooldown: 30 seconds
 const INTRO_COOLDOWN_MS = 30 * 1000;
 const VISIT_KEY = "bm_last_seen_at";
 const INTRO_SESS_KEY = "bm_intro_played";
 
 function getSkipIntro(cooldownMs: number) {
-    // Runs on first client render to avoid any flash
-    if (typeof window === "undefined") return false; // SSR safeguard
+    if (typeof window === "undefined") return false;
     try {
         const last = Number(localStorage.getItem(VISIT_KEY));
         const recent = Number.isFinite(last) && Date.now() - last < cooldownMs;
@@ -36,7 +35,6 @@ function markSeen() {
 export default function Homepage() {
     const rootRef = useRef<HTMLDivElement | null>(null);
 
-    // Decide skip synchronously for this render (prevents overlay flash)
     const [skipIntro] = useState(() => getSkipIntro(INTRO_COOLDOWN_MS));
 
     useLayoutEffect(() => {
@@ -44,10 +42,8 @@ export default function Homepage() {
             const prefersReduced =
                 window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
 
-            // Ensure root is visible
             gsap.set(rootRef.current, { autoAlpha: 1 });
 
-            // Shared hero start states
             gsap.set(".hero-img", { scale: 1.05, filter: "blur(6px)" });
             gsap.set(".image-wipe", { xPercent: 0 });
             gsap.set(".image-reveal", { x: -28, autoAlpha: 0 });
@@ -55,7 +51,6 @@ export default function Homepage() {
             const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
             if (skipIntro) {
-                // Hide/remove the intro immediately
                 gsap.set(".intro", { display: "none" });
 
                 if (prefersReduced) {
@@ -82,10 +77,8 @@ export default function Homepage() {
                         .from(".subtitle", { y: 20, autoAlpha: 0, duration: 0.6 }, "-=1");
                 }
 
-                // Refresh last-seen
                 markSeen();
             } else {
-                // --- INTRO FLOW ---
                 gsap.set(".intro", { autoAlpha: 1 });
                 gsap.set(".intro-char", {
                     yPercent: prefersReduced ? 0 : 120,
@@ -143,16 +136,11 @@ export default function Homepage() {
                         .from(".subtitle", { y: 20, autoAlpha: 0, duration: 0.6 }, "-=1");
                 }
 
-                // Mark as seen no matter what
                 markSeen();
                 tl.eventCallback("onComplete", markSeen);
             }
 
-            // ─────────────────────────────────────────────────────────────
-            // Minimal scroll-triggered animation for the lower section only
-            // ─────────────────────────────────────────────────────────────
             if (prefersReduced) {
-                // Respect reduced motion: ensure visible without motion
                 gsap.set(".bm-title", { autoAlpha: 1, y: 0 });
                 gsap.set(".bm-step", { autoAlpha: 1, x: 0 });
                 gsap.set(".bm-divider", { scaleX: 1, transformOrigin: "right center" });
@@ -189,9 +177,7 @@ export default function Homepage() {
                     scrollTrigger: trigger,
                 });
             }
-            // ─────────────────────────────────────────────────────────────
 
-            // Update last-seen on hide/visibility change (helps with quick back/forward)
             const onHide = () => markSeen();
             const onVis = () => {
                 if (document.visibilityState === "hidden") markSeen();
@@ -208,9 +194,45 @@ export default function Homepage() {
         return () => ctx.revert();
     }, [skipIntro]);
 
+    useLayoutEffect(() => {
+        const ctx = gsap.context(() => {
+            const btn = rootRef.current?.querySelector('a[href="/signup"] > div') as HTMLElement | null;
+            if (!btn) return;
+            const content = btn.querySelector(":scope > div") as HTMLElement | null;
+            const txt = btn.querySelector("p") as HTMLElement | null;
+            if (!content || !txt) return;
+
+            btn.classList.add("relative","overflow-hidden");
+            content.classList.add("relative","z-10");
+
+            const fill = document.createElement("span");
+            fill.className = "absolute inset-0 z-0 bg-white origin-bottom scale-y-0 rounded-[100em] will-change-transform pointer-events-none";
+            (fill.style as any).transformOrigin = "bottom center";
+            btn.appendChild(fill);
+
+            const shine = document.createElement("span");
+            shine.className = "absolute inset-x-0 bottom-0 z-10 h-1/2 opacity-0 pointer-events-none";
+            shine.style.background = "linear-gradient(to top, rgba(255,255,255,0.65), rgba(255,255,255,0.0) 60%)";
+            btn.appendChild(shine);
+
+            const tl = gsap.timeline({ paused: true, defaults: { ease: "power2.out" } });
+            tl.to(fill, { scaleY: 1, duration: 0.55 }, 0)
+                .to(shine, { opacity: 1, yPercent: -30, duration: 0.55 }, 0)
+                .to(txt, { color: "#000000", duration: 0.4 }, 0)
+                .to(btn, { y: -5, duration: 0.12, ease: "power2.out" })
+                .to(btn, { y: 0, duration: 0.28, ease: "bounce.out" });
+
+            const onEnter = () => tl.play();
+            const onLeave = () => tl.reverse();
+            btn.addEventListener("mouseenter", onEnter);
+            btn.addEventListener("mouseleave", onLeave);
+        }, rootRef);
+        return () => ctx.revert();
+    }, []);
+
+
     return (
-        <div ref={rootRef} className="opacity-0 bg-mainbrown h-700 relative">
-            {/* INTRO OVERLAY */}
+        <div ref={rootRef} className="opacity-0 bg-mainbrown h-760 relative">
             <div
                 className="intro fixed inset-0 z-[60] bg-mainbrown flex items-center justify-center select-none"
                 aria-hidden="true"
@@ -237,12 +259,10 @@ export default function Homepage() {
                 </h1>
             </div>
 
-            {/* NAV */}
             <div className="animate-nav">
                 <HomeNavbar />
             </div>
 
-            {/* HERO */}
             <div className="grid grid-cols-1 md:grid-cols-2 pt-5 px-4 gap-5 items-start min-h-250">
                 <div
                     className="image-reveal relative overflow-hidden rounded-lg
@@ -278,27 +298,28 @@ export default function Homepage() {
                 </div>
             </div>
 
-            {/* SECTION BELOW */}
-            <div className="bg-sharkgray w-full h-250 z-10 bm-section">{/* ← added bm-section */}
+            <div className="bg-sharkgray w-full h-250 z-10 bm-section">
                 <div className="pt-10 grid grid-cols-2">
                     <div className="pl-10">
                         <h1 className="font-sourceserif4-18pt-regular text-white text-[130px] scale-x-90 pt-40 leading-none bm-title">
-                            {/* ↑ added bm-title */}
                             BoilerMate
                         </h1>
 
-                        <a href="#faq" className="pl-10 font-sourceserif4-18pt-light text-white/85 text-[40px] scale-x-90 hover:underline transition-all">
-                            Learn more
-                        </a>
+                        <div className="flex flex-col">
+                            <a href="/listings" className="font-sourceserif4-18pt-light text-white/95 text-[40px] scale-x-90 hover:underline transition-all">
+                                Start creating a listing
+                            </a>
+                            <a href="#faq" className="font-sourceserif4-18pt-light text-white/85 text-[40px] scale-x-90 hover:underline transition-all">
+                                Learn more
+                            </a>
+                        </div>
                     </div>
 
                     <div className="flex flex-col gap-15 pt-20 text-right pr-30">
                         <p className="font-roboto-light text-white text-[50px] bm-step">
-                            {/* ↑ added bm-step */}
                             1. Create your account
                         </p>
                         <div className="h-[1px] w-full bg-grayline my-2 bm-divider" />
-                        {/* ↑ added bm-divider */}
                         <p className="font-roboto-light text-white text-[50px] bm-step">
                             2. Post a listing or join one
                         </p>
@@ -311,6 +332,24 @@ export default function Homepage() {
                             4. Enjoy your new home!
                         </p>
                     </div>
+                </div>
+            </div>
+
+            <div className="pt-17 h-250 bg-mainbrown">
+                <FAQRing />
+            </div>
+
+            <div className="bg-sharkgray w-full h-220 z-10">
+                <h1 className="text-white text-[100px] font-sourceserif4-18pt-regular text-center pt-60">Get Started with BoilerMate!</h1>
+
+                <div className="flex justify-center pt-10">
+                    <a href="/signup">
+                        <div className="h-30 w-90 rounded-[100em] border-white border-1 text-white font-sourceserif4-18pt-regular tracking-wide text-[30px]">
+                            <div className="flex items-center justify-center h-full">
+                                <p>Sign Up</p>
+                            </div>
+                        </div>
+                    </a>
                 </div>
             </div>
         </div>
