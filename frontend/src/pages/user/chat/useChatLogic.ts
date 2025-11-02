@@ -60,8 +60,11 @@ export default function useChatLogic(initialUserId: string) {
   const [showGroupMembersSidebar, setShowGroupMembersSidebar] = useState(false); // control group members sidebar visibility
 
   // 1-1 chat
-
   const [showCreateNormalChatModal, setShowCreateNormalChatModal] = useState(false); // control create 1-1 modal visibility
+
+  // 1-1 chat
+
+  const [showBlockModal, setShowBlockModal] = useState(false); // control block modal visibility
 
   // fetch all chats for current user
   const fetchChats = useCallback(async (userId?: string) => {
@@ -450,6 +453,24 @@ export default function useChatLogic(initialUserId: string) {
     }
   }, [currentUserId, fetchChats]);
 
+  //Handle block/unblock
+  const handleBlockModal = useCallback(async (recipientId: string) => {
+    if (!currentUserId) return;
+
+    try {
+      await apiCreateNormalChat({
+        creatorId: currentUserId,
+        name: currentUserId,
+        participantIds: [recipientId],
+      });
+
+      await fetchChats(currentUserId);
+      setShowBlockModal(false); // fix later
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to create chat');
+    }
+  }, [currentUserId, fetchChats]);
+
   // Search users for 1-1 creation
   const handleSearchUsersForNormalChat = useCallback(
       async (searchQuery: string) => {
@@ -585,6 +606,10 @@ export default function useChatLogic(initialUserId: string) {
     // normal chat state
     showCreateNormalChatModal,
     setShowCreateNormalChatModal,
+
+    // block modal state
+    showBlockModal,
+    setShowBlockModal,
 
     // status
     loadingChats,

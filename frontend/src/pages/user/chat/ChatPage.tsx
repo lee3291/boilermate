@@ -5,6 +5,7 @@ import FakeSignIn from './FakeSignIn';
 import CreateGroupModal from './components/CreateGroupModal';
 import CreateNormalChatModal from './components/CreateNormalChatModal';
 import InvitationsModal from './components/InvitationsModal';
+import BlockModal from './components/BlockModal';
 import AddMembersModal from './components/AddMembersModal';
 
 export default function ChatPage() {
@@ -33,6 +34,7 @@ export default function ChatPage() {
               error={logic.error}
               onCreateGroup={() => logic.setShowCreateGroupModal(true)}
               onCreateNormalChat={() => logic.setShowCreateNormalChatModal(true)}
+              onBlock={() => logic.setShowBlockModal(true)}
               onViewInvitations={() => logic.setShowInvitationsModal(true)}
               invitationsCount={logic.invitationsCount}
           />
@@ -78,6 +80,14 @@ export default function ChatPage() {
               currentUserId={logic.currentUserId}
               onSearchUsers={logic.handleSearchUsersForNormalChat}
               onCreateChat={logic.handleCreateNormalChat}
+          />
+
+          <BlockModal
+              isOpen={logic.showBlockModal}
+              onClose={() => logic.setShowBlockModal(false)}
+              currentUserId={logic.currentUserId}
+              onSearchUsers={logic.handleSearchUsersForNormalChat} //fix later
+              onBlockUsers={logic.handleCreateNormalChat} //fix later
           />
 
         <InvitationsModal

@@ -441,25 +441,42 @@ export class GroupChatsService {
 
       await client.$transaction(async (tx: any) => {
         // Delete all participants
+        // Get all message IDs
+        const messages: { id: string }[] = await tx.message.findMany({
+          where: { chatId },
+          select: { id: true },
+        });
+        const messageIds = messages.map(m => m.id);
+
+        // Delete all message that have image need approvals
+        if (messageIds.length > 0) {
+          await tx.messageApproval.deleteMany({
+            where: {
+              messageId: { in: messageIds },
+            },
+          });
+        }
+
+        // Delete all user message statuses
+        if (messageIds.length > 0) {
+          await tx.userMessageStatus.deleteMany({
+            where: {
+              messageId: { in: messageIds },
+            },
+          });
+        }
+
+        // Delete all messages
+        await tx.message.deleteMany({
+          where: { id: { in: messageIds } },
+        });
+
+        // Delete all participants
         await tx.chatParticipant.deleteMany({
           where: { chatId },
         });
 
-        // Delete all message statuses for messages in this chat
-        await tx.userMessageStatus.deleteMany({
-          where: {
-            message: {
-              chatId,
-            },
-          },
-        });
-
-        // Delete all messages
-        await tx.message.deleteMany({
-          where: { chatId },
-        });
-
-        // Delete the chat
+        // Delete the chat itself
         await tx.chat.delete({
           where: { id: chatId },
         });

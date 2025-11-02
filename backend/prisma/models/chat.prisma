@@ -86,4 +86,15 @@ model MessageApproval {
   @@unique([messageId, userId]) // One approval per user per message
 }
 
+model UserBlocking {
+  id        String   @id @default(uuid())
+  blockerId String   // the person doing the block
+  blockedId String   // the person being blocked
+  createdAt DateTime @default(now())
+
+  blocker   User     @relation("UserBlocked", fields: [blockerId], references: [id])
+  blocked   User     @relation("UserBlockedBy", fields: [blockedId], references: [id])
+
+  @@unique([blockerId, blockedId])
+}
 

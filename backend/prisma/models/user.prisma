@@ -26,6 +26,10 @@ model User {
   // 4. Image owner - Opposite of Image.user
   images           Image[]
   approvals        MessageApproval[]
+
+  // Block/Unblock in chat
+  usersBlocked   UserBlocking[] @relation("UserBlocked")      // users that this user has blocked
+  blockedByUsers UserBlocking[] @relation("UserBlockedBy")   // users who blocked this user
 }
 
 enum UserStatus {
@@ -39,3 +43,5 @@ enum SearchStatus {
   NOT_LOOKING
   HIDDEN
 }
+
+

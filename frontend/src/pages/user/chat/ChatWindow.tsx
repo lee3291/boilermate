@@ -128,7 +128,12 @@ export default function ChatWindow({
       </div>
 
       {/* Group Members Sidebar (only shown for group chats) */}
-      {isGroupChat && showGroupMembersSidebar && (
+      {/* Show side bar when user "ACCEPTED" */}
+      {isGroupChat &&
+          showGroupMembersSidebar &&
+          selectedConversation?.participants?.some(
+              p => p.id === currentUserId && p.status === "ACCEPTED"
+          ) && (
         <GroupMembersSidebar
           chatId={chatId ?? ''}
           currentUserId={currentUserId ?? ''}
@@ -150,11 +155,14 @@ export default function ChatWindow({
               await onDeleteGroup(chatId ?? '');
             }
           }}
-          members={selectedConversation?.participants?.map(p => ({
-            id: p.id,
-            email: p.email,
-            status: p.status,
-          }))}
+          // Only contain people with "ACCEPTED" status in groupchat
+          members={selectedConversation?.participants
+              ?.filter(p => p.status === "ACCEPTED")
+              .map(p => ({
+                id: p.id,
+                email: p.email,
+                status: p.status,
+              }))}
         />
       )}
     </div>
