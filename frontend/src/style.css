@@ -9,6 +9,7 @@
     --color-mainbrown: #f3f3ec;
     --color-bisonbrown: #C3AF9F;
     --color-sharkgray: #28292d;
+    --color-grayline: #4f5053;
 }
 
 @layer utilities {

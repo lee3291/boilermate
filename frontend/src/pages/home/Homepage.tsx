@@ -1,5 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger"; // ← added
+gsap.registerPlugin(ScrollTrigger);                  // ← added
 
 import HomeNavbar from "./components/HomeNavbar";
 import MainImage from "../../assets/images/beg.webp";
@@ -146,6 +148,49 @@ export default function Homepage() {
                 tl.eventCallback("onComplete", markSeen);
             }
 
+            // ─────────────────────────────────────────────────────────────
+            // Minimal scroll-triggered animation for the lower section only
+            // ─────────────────────────────────────────────────────────────
+            if (prefersReduced) {
+                // Respect reduced motion: ensure visible without motion
+                gsap.set(".bm-title", { autoAlpha: 1, y: 0 });
+                gsap.set(".bm-step", { autoAlpha: 1, x: 0 });
+                gsap.set(".bm-divider", { scaleX: 1, transformOrigin: "right center" });
+            } else {
+                const trigger = {
+                    trigger: ".bm-section",
+                    start: "top 70%",
+                    once: true,
+                };
+
+                gsap.from(".bm-title", {
+                    y: 40,
+                    autoAlpha: 0,
+                    duration: 0.6,
+                    ease: "power3.out",
+                    scrollTrigger: trigger,
+                });
+
+                gsap.from(".bm-step", {
+                    x: 40,
+                    autoAlpha: 0,
+                    duration: 0.5,
+                    ease: "power3.out",
+                    stagger: 0.12,
+                    scrollTrigger: trigger,
+                });
+
+                gsap.from(".bm-divider", {
+                    scaleX: 0,
+                    transformOrigin: "right center",
+                    duration: 0.4,
+                    ease: "power2.out",
+                    stagger: 0.12,
+                    scrollTrigger: trigger,
+                });
+            }
+            // ─────────────────────────────────────────────────────────────
+
             // Update last-seen on hide/visibility change (helps with quick back/forward)
             const onHide = () => markSeen();
             const onVis = () => {
@@ -164,12 +209,12 @@ export default function Homepage() {
     }, [skipIntro]);
 
     return (
-        <div ref={rootRef} className="opacity-0 bg-mainbrown h-500 relative">
+        <div ref={rootRef} className="opacity-0 bg-mainbrown h-700 relative">
             {/* INTRO OVERLAY */}
             <div
                 className="intro fixed inset-0 z-[60] bg-mainbrown flex items-center justify-center select-none"
                 aria-hidden="true"
-                style={{ display: skipIntro ? "none" as const : undefined }}
+                style={{ display: skipIntro ? ("none" as const) : undefined }}
             >
                 <h1
                     className="intro-word font-sourceserif4-18pt-regular tracking-tighter
@@ -209,7 +254,7 @@ export default function Homepage() {
                         className="hero-img block w-full h-auto"
                         loading="eager"
                         decoding="async"
-                        />
+                    />
                     <div className="image-wipe absolute inset-0 bg-mainbrown rounded-inherit pointer-events-none" />
                 </div>
 
@@ -234,19 +279,37 @@ export default function Homepage() {
             </div>
 
             {/* SECTION BELOW */}
-            <div className="bg-sharkgray w-full h-300 z-10">
-                <div className="grid grid-cols-2">
-                    <h1 className="font-sourceserif4-18pt-regular text-white text-[130px] scale-x-90 pl-10 pt-30">
-                        BoilerMate
-                    </h1>
+            <div className="bg-sharkgray w-full h-250 z-10 bm-section">{/* ← added bm-section */}
+                <div className="pt-10 grid grid-cols-2">
+                    <div className="pl-10">
+                        <h1 className="font-sourceserif4-18pt-regular text-white text-[130px] scale-x-90 pt-40 leading-none bm-title">
+                            {/* ↑ added bm-title */}
+                            BoilerMate
+                        </h1>
 
-                    <div className="pt-20">
-                        <p className="font-roboto-light text-white text-[60px]">0. Start</p>
-                        <div className="h-[1px] w-full bg-white my-2" />
-                        <p className="font-roboto-light text-white text-[60px]">0. Start</p>
-                        <div className="h-[1px] w-full bg-white my-2" />
-                        <p className="font-roboto-light text-white text-[60px]">0. Start</p>
-                        <div className="h-[1px] w-full bg-white my-2" />
+                        <a href="#faq" className="pl-10 font-sourceserif4-18pt-light text-white/85 text-[40px] scale-x-90 hover:underline transition-all">
+                            Learn more
+                        </a>
+                    </div>
+
+                    <div className="flex flex-col gap-15 pt-20 text-right pr-30">
+                        <p className="font-roboto-light text-white text-[50px] bm-step">
+                            {/* ↑ added bm-step */}
+                            1. Create your account
+                        </p>
+                        <div className="h-[1px] w-full bg-grayline my-2 bm-divider" />
+                        {/* ↑ added bm-divider */}
+                        <p className="font-roboto-light text-white text-[50px] bm-step">
+                            2. Post a listing or join one
+                        </p>
+                        <div className="h-[1px] w-full bg-grayline my-2 bm-divider" />
+                        <p className="font-roboto-light text-white text-[50px] bm-step">
+                            3. Meet your new roomate
+                        </p>
+                        <div className="h-[1px] w-full bg-grayline my-2 bm-divider" />
+                        <p className="font-roboto-light text-white text-[50px] bm-step">
+                            4. Enjoy your new home!
+                        </p>
                     </div>
                 </div>
             </div>
