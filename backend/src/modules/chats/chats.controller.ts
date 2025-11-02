@@ -22,7 +22,7 @@ import {
   InvitationResponseDto,
   SearchUsersResponseDto,
 } from './dto';
-
+import { MessageApprovalDto } from './dto/message-approval.dto';
 /**
  * Chat endpoints
  */
@@ -233,4 +233,17 @@ export class ChatsController {
     const result = await this.groupChatsService.searchUsersForAddingToGroup(chatId, searchQuery);
     return SearchUsersResponseDto.fromResult(result);
   }
+
+  /*
+   * Approve msgs
+   */
+  @Post('messages/:messageId/approve')
+  @HttpCode(200)
+  async approveMessage(
+      @Param('messageId') messageId: string,
+      @Body() dto: MessageApprovalDto
+  ) {
+    return this.chatsService.approveMessage(messageId, dto.userId);
+  }
+
 }

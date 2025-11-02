@@ -133,14 +133,14 @@ export class ChatsService {
       throw new InternalServerErrorException('Failed to find chats');
     }
   }
-  /*
-
+  /**
+   * Get the id of invitation based on chat id and userId
    */
-  async getInvitationId(chatId: string, recipientId: string): Promise<string | null> {
+  async getInvitationId(chatId: string, userId: string): Promise<string | null> {
     const participant = await this.prisma.chatParticipant.findUnique({
       where: {
         userId_chatId: {
-          userId: recipientId,
+          userId: userId,
           chatId: chatId,
         },
       },
@@ -151,14 +151,14 @@ export class ChatsService {
 
     return participant ? participant.id : null;
   }
-  /*
-
+  /**
+   * Get the status of invitation based on chat id and userId
    */
-  async getParticipantStatus(chatId: string, recipientId: string): Promise<string | null> {
+  async getParticipantStatus(chatId: string, userId: string): Promise<string | null> {
     const participant = await this.prisma.chatParticipant.findUnique({
       where: {
         userId_chatId: {
-          userId: recipientId,
+          userId: userId,
           chatId,
         },
       },
@@ -170,17 +170,24 @@ export class ChatsService {
     return participant ? participant.status : null;
   }
 
+  /**
+   * Get the id of recipent based on chatId and senderId
+   */
   async getRecipientId(chatId: string, senderId: string): Promise<string> {
     const chat = await this.prisma.chat.findUnique({
       where: { id: chatId },
       include: { participants: true },
     });
 
-    if (!chat) throw new NotFoundException('Chat not found');
+    if (!chat) {
+      throw new NotFoundException('Chat not found');
+    }
 
     const recipient = chat.participants.find(p => p.userId !== senderId);
 
-    if (!recipient) throw new NotFoundException('Recipient not found');
+    if (!recipient) {
+      throw new NotFoundException('Recipient not found');
+    }
 
     return recipient.userId;
   }
@@ -269,6 +276,7 @@ export class ChatsService {
             data: {
               chatId: chat.id,
               senderId,
+              approved: image ? false : true,  // True if normal msg, False if image
               content: content || null, // Allow null for image-only messages
               imageId: image?.id || null //! NULL CHECK: use optional chaining and fallback to null
               //* technically this is unnecessary as image?.id evaluate to undefined if image is null
@@ -302,29 +310,10 @@ export class ChatsService {
         });
 
 
-        if (!chat) throw new NotFoundException('Chat not found');
-        /*
-        if (recipientId) {
-          const recipientParticipant = await client.chatParticipant.findFirst({
-            where: { chatId, userId: recipientId },
-          });
-
-          if (!recipientParticipant) {
-            await client.chatParticipant.create({
-              data: {
-                chatId,
-                userId: recipientId,
-                status: 'PENDING',
-              },
-            });
-          } else if (recipientParticipant.status === 'DECLINED') {
-            await client.chatParticipant.update({
-              where: { chatId_userId: { chatId, userId: recipientId } },
-              data: { status: 'PENDING' },
-            });
-          }
+        if (!chat) {
+          throw new NotFoundException('Chat not found');
         }
-        */
+
         const checkGroupType= await this.checkChatType(chatId)
         // Only update status for 1-1 chat if a user previously decline
         if (!checkGroupType.isGroup) {
@@ -543,9 +532,39 @@ export class ChatsService {
   }
 
   /**
-   * Get chat history for a chatId (works for both DM and group chats)
-   * Includes image data when messages have image attachments
+   * Approve image and if the reciever refresh the page,
+   * they do not need to approve again
    */
+  async approveMessage(messageId: string, userId: string) {
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+    });
+
+    if (!message) {
+      throw new NotFoundException('Message not found');
+    }
+
+    const existingApproval = await this.prisma.messageApproval.findUnique({
+      where: {
+        messageId_userId: { messageId, userId },
+      },
+    });
+
+    if (existingApproval) {
+      return existingApproval;
+    }
+
+    const approval = await this.prisma.messageApproval.create({
+      data: {
+        messageId,
+        userId,
+        approved: true,
+      },
+    });
+
+    return approval;
+  }
+
   async getHistory(chatId: string, getMessagesDetails: getMessagesDetails): Promise<getMessagesResults> {
     const client: any = this.prisma as any;
     const { userId } = getMessagesDetails;
@@ -558,71 +577,71 @@ export class ChatsService {
       throw new BadRequestException('userId is required');
     }
 
-    try {
-      const chat = await client.chat.findUnique({
-        where: { id: chatId },
-      });
+    const chat = await client.chat.findUnique({
+      where: { id: chatId },
+    });
 
-      if (!chat) {
-        throw new NotFoundException('Chat not found');
-      }
-
-      const participant = await client.chatParticipant.findFirst({
-        where: {
-          chatId,
-          userId,
-        },
-        select: { status: true },
-      });
-
-      if (!participant) {
-        throw new BadRequestException('You are not a participant of this chat');
-      }
-
-
-      const rawMessages = await client.message.findMany({
-        where: { chatId },
-        orderBy: { createdAt: 'asc' },
-        select: {
-          id: true,
-          chatId: true,
-          content: true,
-          senderId: true,
-          imageId: true,
-          createdAt: true,
-          updatedAt: true,
-          isEdited: true,
-          isDeleted: true,
-          statuses: {
-            where: { userId },
-            select: { isDeleted: true },
-          },
-          image: {
-            select: { url: true },
-          },
-        },
-      });
-
-      const messages = rawMessages.map((m: any) => ({
-        id: m.id,
-        chatId: m.chatId,
-        senderId: m.senderId,
-        content: m.content || null,
-        imageUrl: m.image?.url ?? null,
-        isEdited: m.isEdited,
-        isDeleted: m.isDeleted,
-        createdAt: m.createdAt,
-        updatedAt: m.updatedAt,
-        isDeletedForYou: m.statuses?.[0]?.isDeleted ?? false,
-      })) as MessageWithStatusDetails[];
-
-      return { messages };
-    } catch (error) {
-      Logger.error(error);
-      if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
-      throw new InternalServerErrorException('Failed to retrieve chat history');
+    if (!chat) {
+      throw new NotFoundException('Chat not found');
     }
+
+    const participant = await client.chatParticipant.findFirst({
+      where: {
+        chatId,
+        userId,
+      },
+      select: { status: true },
+    });
+
+    if (!participant) {
+      throw new BadRequestException('You are not a participant of this chat');
+    }
+
+    const rawMessages = await client.message.findMany({
+      where: { chatId },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        id: true,
+        chatId: true,
+        content: true,
+        senderId: true,
+        imageId: true,
+        createdAt: true,
+        updatedAt: true,
+        isEdited: true,
+        isDeleted: true,
+        statuses: {
+          where: { userId },
+          select: { isDeleted: true },
+        },
+        image: {
+          select: { url: true },
+        },
+        approvals: {
+          where: { userId },
+          select: { approved: true },
+        },
+      },
+    });
+
+    const messages = rawMessages.map((m: any) => ({
+      id: m.id,
+      chatId: m.chatId,
+      senderId: m.senderId,
+      content: m.content || null,
+      imageUrl: m.image?.url ?? null,
+      isEdited: m.isEdited,
+      isDeleted: m.isDeleted,
+      createdAt: m.createdAt,
+      updatedAt: m.updatedAt,
+      //* statuses[0] is simply the status of the that user, have to be array for clarity for prisma as a message can have statues from multiple people
+      isDeletedForYou: m.statuses?.[0]?.isDeleted ?? false, // Default to false if no status
+      approved: m.approvals?.[0]?.approved ?? false,
+    })) as MessageWithStatusDetails[];
+
+    return { messages };
   }
+
 
 
   /**

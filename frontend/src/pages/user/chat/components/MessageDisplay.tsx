@@ -34,7 +34,8 @@ export default function MessageDisplay({
             m={m} 
             isMine={m.senderId === currentUser} 
             onEdit={onEdit} 
-            onDelete={onDelete} 
+            onDelete={onDelete}
+            currentUserId={currentUser}
           />
         ))}
         <div ref={messagesEndRef} />

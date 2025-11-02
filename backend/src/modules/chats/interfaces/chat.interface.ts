@@ -5,6 +5,7 @@
 
 //* This section is reserved for basic interface
 export interface MessageWithStatusDetails extends MessageDetails {
+  approved?: boolean
   isDeletedForYou?: boolean // this is a merge between the message with the message status table to form 1 single object for performance boost
 }
 

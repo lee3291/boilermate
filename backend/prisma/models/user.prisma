@@ -25,6 +25,7 @@ model User {
 
   // 4. Image owner - Opposite of Image.user
   images           Image[]
+  approvals        MessageApproval[]
 }
 
 enum UserStatus {

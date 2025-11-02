@@ -81,3 +81,13 @@ export interface deleteMessageRequest {
   userId: string;
   forEveryone: boolean;
 }
+
+export interface messageApprovalRequest {
+  messageId: string;
+  userId: string;
+}
+
+export interface messageApprovalResponse {
+  messageId: string;
+  approved: true;
+}

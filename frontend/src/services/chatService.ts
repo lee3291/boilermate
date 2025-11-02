@@ -1,5 +1,15 @@
 import axios from 'axios';
-import type { deleteMessageRequest, editMessageRequest, getChatsRequest, getChatsResponse, getHistoryRequest, getHistoryResponse, sendMessageRequest, sendMessageResponse } from '../types/chats';
+import type { deleteMessageRequest,
+  editMessageRequest,
+  getChatsRequest,
+  getChatsResponse,
+  getHistoryRequest,
+  getHistoryResponse,
+  sendMessageRequest,
+  sendMessageResponse,
+  messageApprovalRequest,
+  messageApprovalResponse
+} from '../types/chats';
 
 const api = axios.create({
   baseURL: 'http://localhost:3000',
@@ -89,6 +99,20 @@ export async function searchUsersForNormalChatCreation(creatorId: string, search
       params: { creatorId, q: searchQuery },
     });
     console.log('search users for normal chat creation', res);
+    return res.data;
+  } catch (error: any) {
+    throw error.response?.data ?? error;
+  }
+}
+
+//Approve msgs
+export async function approveMessage(messageId: string, request: { userId: string }): Promise<any> {
+  try {
+    const res = await api.post(
+        `/chats/messages/${encodeURIComponent(messageId)}/approve`,
+        request
+    );
+    console.log('approve message', res);
     return res.data;
   } catch (error: any) {
     throw error.response?.data ?? error;
