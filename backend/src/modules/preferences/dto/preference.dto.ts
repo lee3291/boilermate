@@ -15,6 +15,12 @@ export class SetUserProfilePreferenceDto {
   visibility: string; // PUBLIC or PRIVATE
 }
 
+//* Update User Profile Preference (only importance and visibility)
+export class UpdateUserProfilePreferenceDto {
+  importance?: number; // 1-5 (optional)
+  visibility?: string; // PUBLIC or PRIVATE (optional)
+}
+
 //* Delete User Profile Preference
 export class DeleteUserProfilePreferenceDto {
   userId: string;
@@ -32,6 +38,12 @@ export class SetRoommatePreferenceDto {
   preferenceId: string;
   importance: number; // 1-5
   visibility: string; // PUBLIC or PRIVATE
+}
+
+//* Update Roommate Preference (only importance and visibility)
+export class UpdateRoommatePreferenceDto {
+  importance?: number; // 1-5 (optional)
+  visibility?: string; // PUBLIC or PRIVATE (optional)
 }
 
 //* Delete Roommate Preference

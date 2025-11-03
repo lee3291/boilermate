@@ -2,9 +2,11 @@ import { Injectable, NotFoundException, BadRequestException, ConflictException, 
 import { 
   GetUserProfilePreferencesDetails,
   SetUserProfilePreferenceDetails,
+  UpdateUserProfilePreferenceDetails,
   DeleteUserProfilePreferenceDetails,
   GetRoommatePreferencesDetails,
   SetRoommatePreferenceDetails,
+  UpdateRoommatePreferenceDetails,
   DeleteRoommatePreferenceDetails,
   GetPreferencesResults,
   UserProfilePreferenceDetails,
@@ -152,6 +154,70 @@ export class PreferencesService {
   }
 
   /**
+   * Update user profile preference (I am...)
+   * Only updates importance and/or visibility - does not change the preference itself
+   */
+  async updateUserProfilePreference(details: UpdateUserProfilePreferenceDetails): Promise<UserProfilePreferenceDetails> {
+    const client: any = this.prisma as any;
+    const { userId, preferenceId, importance, visibility } = details;
+
+    //! NULL CHECK: Validate required fields
+    if (!userId || !preferenceId) {
+      throw new BadRequestException('userId and preferenceId are required');
+    }
+
+    //! NULL CHECK: Validate importance range if provided
+    if (importance !== undefined && (importance < 1 || importance > 5)) {
+      throw new BadRequestException('importance must be between 1 and 5');
+    }
+
+    //! NULL CHECK: At least one field must be provided for update
+    if (importance === undefined && visibility === undefined) {
+      throw new BadRequestException('At least one of importance or visibility must be provided');
+    }
+
+    try {
+      //! NULL CHECK: Verify preference exists
+      const existing = await client.userProfilePreference.findUnique({
+        where: {
+          userId_preferenceId: {
+            userId,
+            preferenceId
+          }
+        }
+      });
+
+      if (!existing) {
+        throw new NotFoundException('User profile preference not found');
+      }
+
+      // Build update object with only provided fields
+      const updateData: any = {};
+      if (importance !== undefined) updateData.importance = importance;
+      if (visibility !== undefined) updateData.visibility = visibility;
+
+      // Update the preference
+      const updated = await client.userProfilePreference.update({
+        where: {
+          userId_preferenceId: {
+            userId,
+            preferenceId
+          }
+        },
+        data: updateData,
+        include: {
+          preference: true
+        }
+      });
+
+      return updated;
+    } catch (error) {
+      this.logger.error('Failed to update user profile preference', error);
+      throw error;
+    }
+  }
+
+  /**
    * Delete user profile preference (I am...)
    */
   async deleteUserProfilePreference(details: DeleteUserProfilePreferenceDetails): Promise<void> {
@@ -293,6 +359,70 @@ export class PreferencesService {
       return roommatePreference;
     } catch (error) {
       this.logger.error('Failed to set roommate preference', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update roommate preference (I want...)
+   * Only updates importance and/or visibility - does not change the preference itself
+   */
+  async updateRoommatePreference(details: UpdateRoommatePreferenceDetails): Promise<RoommatePreferenceDetails> {
+    const client: any = this.prisma as any;
+    const { userId, preferenceId, importance, visibility } = details;
+
+    //! NULL CHECK: Validate required fields
+    if (!userId || !preferenceId) {
+      throw new BadRequestException('userId and preferenceId are required');
+    }
+
+    //! NULL CHECK: Validate importance range if provided
+    if (importance !== undefined && (importance < 1 || importance > 5)) {
+      throw new BadRequestException('importance must be between 1 and 5');
+    }
+
+    //! NULL CHECK: At least one field must be provided for update
+    if (importance === undefined && visibility === undefined) {
+      throw new BadRequestException('At least one of importance or visibility must be provided');
+    }
+
+    try {
+      //! NULL CHECK: Verify preference exists
+      const existing = await client.roommatePreference.findUnique({
+        where: {
+          userId_preferenceId: {
+            userId,
+            preferenceId
+          }
+        }
+      });
+
+      if (!existing) {
+        throw new NotFoundException('Roommate preference not found');
+      }
+
+      // Build update object with only provided fields
+      const updateData: any = {};
+      if (importance !== undefined) updateData.importance = importance;
+      if (visibility !== undefined) updateData.visibility = visibility;
+
+      // Update the preference
+      const updated = await client.roommatePreference.update({
+        where: {
+          userId_preferenceId: {
+            userId,
+            preferenceId
+          }
+        },
+        data: updateData,
+        include: {
+          preference: true
+        }
+      });
+
+      return updated;
+    } catch (error) {
+      this.logger.error('Failed to update roommate preference', error);
       throw error;
     }
   }

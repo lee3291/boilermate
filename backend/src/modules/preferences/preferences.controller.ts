@@ -1,11 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Post, HttpCode, Logger } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Patch, HttpCode, Logger } from '@nestjs/common';
 import { PreferencesService } from './preferences.service';
 import {
   GetUserProfilePreferencesDto,
   SetUserProfilePreferenceDto,
+  UpdateUserProfilePreferenceDto,
   DeleteUserProfilePreferenceDto,
   GetRoommatePreferencesDto,
   SetRoommatePreferenceDto,
+  UpdateRoommatePreferenceDto,
   DeleteRoommatePreferenceDto,
   GetPreferencesResponseDto,
   GetUserProfilePreferencesResponseDto,
@@ -19,9 +21,11 @@ import {
  * - GET /preferences - Get all available preferences (master list)
  * - GET /preferences/profile/:userId - Get user profile preferences (I am...)
  * - POST /preferences/profile - Set/Update user profile preference
+ * - PATCH /preferences/profile/:userId/:preferenceId - Update importance/visibility only
  * - DELETE /preferences/profile/:userId/:preferenceId - Delete user profile preference
  * - GET /preferences/roommate/:userId - Get roommate preferences (I want...)
  * - POST /preferences/roommate - Set/Update roommate preference
+ * - PATCH /preferences/roommate/:userId/:preferenceId - Update importance/visibility only
  * - DELETE /preferences/roommate/:userId/:preferenceId - Delete roommate preference
  */
 @Controller('preferences')
@@ -62,6 +66,21 @@ export class PreferencesController {
   }
 
   /**
+   * Update user profile preference importance/visibility (I am...)
+   */
+  @Patch('profile/:userId/:preferenceId')
+  @HttpCode(200)
+  async updateUserProfilePreference(
+    @Param('userId') userId: string,
+    @Param('preferenceId') preferenceId: string,
+    @Body() body: UpdateUserProfilePreferenceDto
+  ) {
+    const dto = { userId, preferenceId, ...body };
+    const preference = await this.preferencesService.updateUserProfilePreference(dto);
+    return UserProfilePreferenceDto.fromUserProfilePreference(preference);
+  }
+
+  /**
    * Delete user profile preference (I am...)
    */
   @Delete('profile/:userId/:preferenceId')
@@ -92,6 +111,21 @@ export class PreferencesController {
   @HttpCode(201)
   async setRoommatePreference(@Body() dto: SetRoommatePreferenceDto) {
     const preference = await this.preferencesService.setRoommatePreference(dto);
+    return RoommatePreferenceDto.fromRoommatePreference(preference);
+  }
+
+  /**
+   * Update roommate preference importance/visibility (I want...)
+   */
+  @Patch('roommate/:userId/:preferenceId')
+  @HttpCode(200)
+  async updateRoommatePreference(
+    @Param('userId') userId: string,
+    @Param('preferenceId') preferenceId: string,
+    @Body() body: UpdateRoommatePreferenceDto
+  ) {
+    const dto = { userId, preferenceId, ...body };
+    const preference = await this.preferencesService.updateRoommatePreference(dto);
     return RoommatePreferenceDto.fromRoommatePreference(preference);
   }
 

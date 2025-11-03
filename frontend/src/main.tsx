@@ -64,8 +64,12 @@ const router = createBrowserRouter([
 
   // Protected routes
   {
-    element: <ProtectedRoute />,
+    // element: <ProtectedRoute />,
     children: [
+      {
+        path: '/random',
+        element: <PreferencesPage />
+      },
       {
         path: '/profile',
         element: <UserProfilePage />,
@@ -125,13 +129,14 @@ const router = createBrowserRouter([
 ]);
 
 import { AuthProvider } from './contexts/AuthContext';
+import PreferencesPage from './pages/user/preferences/PreferencesPage.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <UserProvider>
-      <AuthProvider>
+      {/* <AuthProvider> */}
         <RouterProvider router={router} />
-      </AuthProvider>
+      {/* </AuthProvider> */}
     </UserProvider>
   </StrictMode>,
 )

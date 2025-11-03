@@ -33,6 +33,13 @@ export interface SetUserProfilePreferenceDetails {
   visibility: string;
 }
 
+export interface UpdateUserProfilePreferenceDetails {
+  userId: string;
+  preferenceId: string;
+  importance?: number; // Optional - only update if provided
+  visibility?: string; // Optional - only update if provided
+}
+
 export interface GetUserProfilePreferencesDetails {
   userId: string;
 }
@@ -56,6 +63,13 @@ export interface SetRoommatePreferenceDetails {
   preferenceId: string;
   importance: number;
   visibility: string;
+}
+
+export interface UpdateRoommatePreferenceDetails {
+  userId: string;
+  preferenceId: string;
+  importance?: number; // Optional - only update if provided
+  visibility?: string; // Optional - only update if provided
 }
 
 export interface GetRoommatePreferencesDetails {
