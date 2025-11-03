@@ -9,6 +9,7 @@ model User {
   isVerified    Boolean       @default(false)
   status        UserStatus?   @default(ACTIVE)
   searchStatus  SearchStatus? @default(LOOKING)
+  role          Role          @default(USER)
   preferences   Preference[]
   listings      Listing[]
 
@@ -37,4 +38,9 @@ enum SearchStatus {
   LOOKING
   NOT_LOOKING
   HIDDEN
+}
+
+enum Role {
+  USER
+  ADMIN
 }
