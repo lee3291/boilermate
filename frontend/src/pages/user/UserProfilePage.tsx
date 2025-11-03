@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import Avatar from '../../components/Avatar';
 
 const UserProfilePage = () => {
   const { user, logout } = useAuth();
@@ -17,9 +18,16 @@ const UserProfilePage = () => {
   return (
     <div className='flex min-h-screen flex-col items-center justify-center bg-gray-100'>
       <div className='w-full max-w-md rounded-lg bg-white p-8 text-center shadow-md'>
-        <h1 className='mb-4 text-4xl font-bold'>Welcome!</h1>
         {user ? (
           <>
+            <div className='mb-4 flex justify-center'>
+              <Avatar
+                src={user.avatarURL}
+                alt={`${user.email}'s avatar`}
+                className='h-32 w-32 rounded-full object-cover'
+              />
+            </div>
+            <h1 className='mb-2 text-4xl font-bold'>Welcome!</h1>
             <p className='mb-8 text-lg text-gray-600'>
               You are signed in as {user.email}.
             </p>

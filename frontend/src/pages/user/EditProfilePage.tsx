@@ -7,6 +7,7 @@ import {
   uploadAvatar,
 } from '../../services/profile.service';
 import type { ProfileData, UpdateProfileDto } from '../../types/profile';
+import Avatar from '../../components/Avatar';
 
 const EditProfilePage: React.FC = () => {
   const navigate = useNavigate();
@@ -116,14 +117,10 @@ const EditProfilePage: React.FC = () => {
           <div className='mt-8 space-y-6'>
             {/* Avatar Upload */}
             <div className='flex flex-col items-center'>
-              <img
-                src={avatarPreview || 'https://via.placeholder.com/150'}
-                alt='Avatar Preview'
-                className='h-32 w-32 rounded-full object-cover'
-              />
+              <Avatar src={avatarPreview} alt='Avatar Preview' />
               <label
                 htmlFor='avatar-upload'
-                className='mt-4 cursor-pointer rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
+                className='mt-4 cursor-pointer rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
               >
                 Upload Avatar
               </label>

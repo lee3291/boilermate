@@ -6,11 +6,7 @@ import {
   type ReactNode,
 } from 'react';
 import { jwtDecode } from 'jwt-decode';
-
-interface User {
-  id: string;
-  email: string;
-}
+import type { User } from '../types/user';
 
 interface AuthContextType {
   user: User | null;
@@ -32,8 +28,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (token) {
       try {
-        const decoded: { sub: string; email: string } = jwtDecode(token);
-        setUser({ id: decoded.sub, email: decoded.email });
+        const decoded: { sub: string; email: string; avatarURL?: string } =
+          jwtDecode(token);
+        setUser({
+          id: decoded.sub,
+          email: decoded.email,
+          avatarURL: decoded.avatarURL,
+        });
         localStorage.setItem('access_token', token);
       } catch (error) {
         console.error('Failed to decode token:', error);
