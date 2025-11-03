@@ -12,4 +12,5 @@ export interface UpdateProfileDto {
 export interface ProfileData extends UpdateProfileDto {
   username: string;
   email: string;
+  avatarURL?: string;
 }
