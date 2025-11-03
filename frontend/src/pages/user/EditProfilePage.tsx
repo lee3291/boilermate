@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ToggleSwitch from '../../components/ToggleSwitch';
-import { getProfile, updateProfile } from '../../services/profile.service';
+import {
+  getProfile,
+  updateProfile,
+  uploadAvatar,
+} from '../../services/profile.service';
 import type { ProfileData, UpdateProfileDto } from '../../types/profile';
+import Avatar from '../../components/Avatar';
 
 const EditProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -16,6 +23,9 @@ const EditProfilePage: React.FC = () => {
         setLoading(true);
         const response = await getProfile();
         setProfile(response.data);
+        if (response.data.avatarURL) {
+          setAvatarPreview(response.data.avatarURL);
+        }
         setError(null);
       } catch (err) {
         setError('Failed to fetch profile data.');
@@ -27,6 +37,14 @@ const EditProfilePage: React.FC = () => {
 
     fetchProfile();
   }, []);
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -64,6 +82,9 @@ const EditProfilePage: React.FC = () => {
 
     try {
       await updateProfile(profileToUpdate);
+      if (avatarFile) {
+        await uploadAvatar(avatarFile);
+      }
       navigate('/profile');
     } catch (err) {
       setError('Failed to update profile.');
@@ -94,6 +115,25 @@ const EditProfilePage: React.FC = () => {
             Edit Profile
           </h2>
           <div className='mt-8 space-y-6'>
+            {/* Avatar Upload */}
+            <div className='flex flex-col items-center'>
+              <Avatar src={avatarPreview} alt='Avatar Preview' />
+              <label
+                htmlFor='avatar-upload'
+                className='mt-4 cursor-pointer rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
+              >
+                Upload Avatar
+              </label>
+              <input
+                id='avatar-upload'
+                name='avatar-upload'
+                type='file'
+                accept='image/*'
+                className='sr-only'
+                onChange={handleAvatarChange}
+              />
+            </div>
+
             {/* Username */}
             <div>
               <label

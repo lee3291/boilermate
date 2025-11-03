@@ -3,8 +3,6 @@ import { createRoot } from 'react-dom/client';
 import './style.css';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
-
-
 import ListingDetails from './pages/user/listings/ListingDetails.tsx';
 
 // Import all top-level views/components
@@ -33,6 +31,7 @@ import ReportTestPage from './pages/report/ReportTestPage.tsx';
 
 import ProtectedRoute from './components/ProtectedRoute';
 import UserProfilePage from './pages/user/UserProfilePage';
+import PublicProfilePage from './pages/user/PublicProfilePage';
 
 import EditProfilePage from './pages/user/EditProfilePage';
 
@@ -71,6 +70,10 @@ const router = createBrowserRouter([
       {
         path: '/profile',
         element: <UserProfilePage />,
+      },
+      {
+        path: '/profile/:username',
+        element: <PublicProfilePage />,
       },
       {
         path: '/profile/edit',
@@ -116,7 +119,7 @@ const router = createBrowserRouter([
       },
       {
         path: '/reporttest',
-        element: <ReportTestPage/>,
+        element: <ReportTestPage />,
       },
       {
         path: '/user-reports',
@@ -140,4 +143,4 @@ createRoot(document.getElementById('root')!).render(
       </AuthProvider>
     </UserProvider>
   </StrictMode>,
-)
+);

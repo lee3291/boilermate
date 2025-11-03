@@ -1,11 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import Avatar from '../../components/Avatar';
+import { getProfile } from '../../services/profile.service';
+import type { ProfileData } from '../../types/profile';
 
 const UserProfilePage = () => {
   const { user, logout } = useAuth();
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchUsername, setSearchUsername] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (user) {
+        try {
+          setLoading(true);
+          const response = await getProfile();
+          setProfile(response.data);
+          setError(null);
+        } catch (err) {
+          setError('Failed to fetch profile data.');
+          console.error(err);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -14,14 +40,31 @@ const UserProfilePage = () => {
     }
   };
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div className='text-red-500'>{error}</div>;
+  }
+
   return (
     <div className='flex min-h-screen flex-col items-center justify-center bg-gray-100'>
       <div className='w-full max-w-md rounded-lg bg-white p-8 text-center shadow-md'>
-        <h1 className='mb-4 text-4xl font-bold'>Welcome!</h1>
-        {user ? (
+        {profile ? (
           <>
+            <div className='mb-4 flex justify-center'>
+              <Avatar
+                src={profile.avatarURL}
+                alt={`${profile.email}'s avatar`}
+                className='h-32 w-32 rounded-full object-cover'
+              />
+            </div>
+            <h1 className='mb-2 text-4xl font-bold'>
+              Welcome, {profile.username}!
+            </h1>
             <p className='mb-8 text-lg text-gray-600'>
-              You are signed in as {user.email}.
+              You are signed in as {profile.email}.
             </p>
             <div className='mb-8'>
               <form onSubmit={handleSearch} className='flex'>

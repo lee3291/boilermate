@@ -3,6 +3,7 @@ import { ProfileService } from './profile.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { User } from '../auth/decorators/user.decorator';
+import { UpdateAvatarDto } from './dto/update-avatar.dto';
 
 @Controller('profile')
 export class ProfileController {
@@ -26,5 +27,14 @@ export class ProfileController {
     @Body() updateProfileDto: UpdateProfileDto,
   ) {
     return this.profileService.updateProfile(user.userId, updateProfileDto);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch('avatar')
+  async updateAvatar(
+    @User() user: { userId: string },
+    @Body() updateAvatarDto: UpdateAvatarDto,
+  ) {
+    return this.profileService.updateAvatar(user.userId, updateAvatarDto);
   }
 }
