@@ -33,6 +33,9 @@ import ReportTestPage from './pages/report/ReportTestPage.tsx';
 
 import ProtectedRoute from './components/ProtectedRoute';
 import UserProfilePage from './pages/user/UserProfilePage';
+import PreferencesPage from './pages/user/preferences/PreferencesPage.tsx';
+import RoommatesPage from './pages/user/roommates/RoommatesPage.tsx';
+import ProfileViewPage from './pages/user/roommates/ProfileViewPage.tsx';
 
 const router = createBrowserRouter([
   // Public routes
@@ -67,8 +70,16 @@ const router = createBrowserRouter([
     // element: <ProtectedRoute />,
     children: [
       {
-        path: '/random',
-        element: <PreferencesPage />
+        path: '/preferences',
+        element: <PreferencesPage />,
+      },
+      {
+        path: '/roommates',
+        element: <RoommatesPage />,
+      },
+      {
+        path: '/profile/:userId',
+        element: <ProfileViewPage />,
       },
       {
         path: '/profile',
@@ -129,7 +140,6 @@ const router = createBrowserRouter([
 ]);
 
 import { AuthProvider } from './contexts/AuthContext';
-import PreferencesPage from './pages/user/preferences/PreferencesPage.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

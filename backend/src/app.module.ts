@@ -12,6 +12,7 @@ import { UploadsModule } from '@modules/uploads/uploads.module';
 import { BugReportModule } from './modules/bug-report/bug-report.module';
 import { ReportModule } from '@modules/report/report.module';
 import { PreferencesModule } from '@modules/preferences/preferences.module';
+import { ProfileModule } from '@modules/profile/profile.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { PreferencesModule } from '@modules/preferences/preferences.module';
     ChatsModule, // Chat feature module
     UploadsModule, // Image upload module
     PreferencesModule, // Preferences module (I am.../I want...)
+    ProfileModule, // Profile and roommate matching module
     AuthModule,
     EmailVerificationModule,
     OTPModule,

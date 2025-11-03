@@ -1,0 +1,237 @@
+/**
+ * ProfileViewPage - Read-only profile view for viewing other users
+ * Same beautiful design as PreferencesPage but without edit/add/remove buttons
+ * Shows another user's profile with lifestyle and roommate preferences
+ */
+
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { getProfileDetails } from '../../../services/profileService';
+import type { ProfileDetails } from '../../../types/profile';
+import Navbar from '../components/Navbar';
+import ProfileHeader from '../preferences/components/ProfileHeader';
+import BioSection from '../preferences/components/BioSection';
+
+export default function ProfileViewPage() {
+  const { userId } = useParams<{ userId: string }>();
+  const navigate = useNavigate();
+  
+  const [profile, setProfile] = useState<ProfileDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // TODO: Replace with actual viewerId from auth context
+  const viewerId = '1'; // Hardcoded for now
+
+  // Redirect if trying to view own profile
+  useEffect(() => {
+    if (userId === viewerId) {
+      navigate('/preferences');
+    }
+  }, [userId, viewerId, navigate]);
+
+  useEffect(() => {
+    if (!userId || userId === viewerId) {
+      return;
+    }
+
+    const fetchProfile = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const data = await getProfileDetails({ userId, viewerId });
+        setProfile(data);
+      } catch (err: any) {
+        setError(err?.message || 'Failed to load profile');
+        console.error('Error fetching profile:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [userId, viewerId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
+        <Navbar />
+        <div className="mx-auto max-w-4xl px-4 py-8">
+          <div className="text-center text-gray-600">Loading profile...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !profile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
+        <Navbar />
+        <div className="mx-auto max-w-4xl px-4 py-8">
+          <div className="rounded-xl bg-red-50 border border-red-200 p-6 text-center">
+            <p className="text-red-600">⚠️ {error || 'Profile not found'}</p>
+            <button
+              onClick={() => navigate('/roommates')}
+              className="mt-4 px-6 py-2 bg-black text-white rounded-full hover:bg-gray-800 transition"
+            >
+              Back to Roommates
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+    // Mock user data for ProfileHeader (replace with real data when user model has these fields)
+  const displayName = profile.email.split('@')[0]; // Use email username for now
+  const mockUser = {
+    id: profile.id,
+    name: displayName, // TODO: Use real username/firstName/lastName when available
+    age: profile.age || 0,
+    major: profile.major || '',
+    year: profile.year || '',
+    profileImage: 'https://i.pravatar.cc/300?u=' + profile.id, // Mock avatar based on ID
+    bio: profile.bio || '',
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
+      <Navbar />
+
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        {/* Back button */}
+        <button
+          onClick={() => navigate('/roommates')}
+          className="mb-4 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition flex items-center gap-2"
+        >
+          ← Back to Roommates
+        </button>
+
+        {/* Profile Header */}
+        <ProfileHeader user={mockUser} />
+
+        {/* Bio Section */}
+        {mockUser.bio && <BioSection bio={mockUser.bio} />}
+
+        {/* Lifestyle Preferences (I am...) - READ ONLY */}
+        <div className="mb-8 rounded-2xl bg-white p-8 shadow-lg border-2 border-pink-200">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                💫 Lifestyle Preferences
+              </h2>
+              <p className="text-gray-600">Their lifestyle and habits</p>
+            </div>
+          </div>
+
+          {profile.lifestylePreferences.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">
+              No lifestyle preferences added yet
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {profile.lifestylePreferences.map((pref) => (
+                <PreferenceCard key={pref.id} preference={pref} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Roommate Preferences (I want...) - READ ONLY */}
+        <div className="mb-8 rounded-2xl bg-white p-8 shadow-lg border-2 border-purple-200">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                🏠 Roommate Preferences
+              </h2>
+              <p className="text-gray-600">Looking for in a roommate</p>
+            </div>
+          </div>
+
+          {profile.roommatePreferences.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">
+              No roommate preferences added yet
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {profile.roommatePreferences.map((pref) => (
+                <PreferenceCard key={pref.id} preference={pref} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+//* Preference Card Component (Read-only version)
+interface PreferenceCardProps {
+  preference: {
+    id: string;
+    category: string;
+    label: string;
+    value: string;
+    importance: number;
+    visibility: string;
+  };
+}
+
+function PreferenceCard({ preference }: PreferenceCardProps) {
+  const categoryColor = getCategoryColor(preference.category);
+  
+  // Render importance stars
+  const stars = Array.from({ length: 5 }, (_, i) => {
+    const filled = i < preference.importance;
+    return (
+      <span key={i} className={filled ? 'text-yellow-400' : 'text-gray-300'}>
+        ★
+      </span>
+    );
+  });
+
+  return (
+    <div className="group relative rounded-xl bg-gradient-to-br from-white to-gray-50 p-4 border border-gray-200 hover:shadow-md transition-all">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold mb-2 ${categoryColor}`}>
+            {preference.category}
+          </span>
+          <h3 className="font-semibold text-gray-900 mb-1">{preference.label}</h3>
+          <p className="text-sm text-gray-600">{preference.value}</p>
+        </div>
+        
+        {/* Visibility badge */}
+        {preference.visibility === 'PRIVATE' && (
+          <span className="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+            🔒 Private
+          </span>
+        )}
+      </div>
+      
+      {/* Importance stars */}
+      <div className="mt-3 flex items-center gap-1">
+        {stars}
+        <span className="ml-2 text-xs text-gray-500">
+          ({preference.importance}/5)
+        </span>
+      </div>
+    </div>
+  );
+}
+
+//* Helper function for category colors
+function getCategoryColor(category: string): string {
+  const colors: Record<string, string> = {
+    'Sleep': 'bg-blue-100 text-blue-700',
+    'Cleanliness': 'bg-green-100 text-green-700',
+    'Social': 'bg-purple-100 text-purple-700',
+    'Noise': 'bg-yellow-100 text-yellow-700',
+    'Guests': 'bg-pink-100 text-pink-700',
+    'Lifestyle': 'bg-indigo-100 text-indigo-700',
+    'Study': 'bg-cyan-100 text-cyan-700',
+    'Diet': 'bg-orange-100 text-orange-700',
+  };
+  return colors[category] || 'bg-gray-100 text-gray-700';
+}
