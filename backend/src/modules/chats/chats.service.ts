@@ -11,6 +11,10 @@ import {
   MessageWithStatusDetails,
   sendMessageDetails, 
   sendMessageResults,
+  blockUserDetails,
+  unblockUserDetails,
+  blockedUserResult,
+  searchUnblockedUserResult,
 } from './interfaces';
 //Assume normal chat is groupchat but isGroup = False
 import {
@@ -531,9 +535,32 @@ export class ChatsService {
         take: 20, // Limit results to 20 users
       });
 
-      // Filter out users you already have a normal chat with
+      // Get list of blocked user IDs for both directions
+      const blocks = await client.userBlocking.findMany({
+        where: {
+          OR: [
+            { blockerId: creatorId },
+            { blockedId: creatorId },
+          ],
+        },
+        select: {
+          blockerId: true,
+          blockedId: true,
+        },
+      });
+
+      // Build a set of user IDs that should be excluded
+      const blockedIds = new Set<string>();
+      for (const b of blocks) {
+        if (b.blockerId === creatorId) blockedIds.add(b.blockedId);
+        if (b.blockedId === creatorId) blockedIds.add(b.blockerId);
+      }
+
+      // Filter out users you already have a normal chat with AND blocked ones
       const filteredUsers = [];
       for (const user of users) {
+        if (blockedIds.has(user.id)) continue; // skip blocked users
+
         const chatCheck = await this.findExistingNormalChat(creatorId, user.id);
         if (!chatCheck.exists) {
           filteredUsers.push(user);
@@ -546,6 +573,7 @@ export class ChatsService {
       throw new InternalServerErrorException('Failed to search users');
     }
   }
+
 
   /**
    * Approve image and if the reciever refresh the page,
@@ -839,5 +867,71 @@ export class ChatsService {
       }
       throw new InternalServerErrorException('Failed to delete message');
     }
+  }
+  /*
+   * Given userId, recieve a list of user that got blocked by userId
+   */
+
+  async getBlockedByUserId({ userId }: { userId: string }): Promise<{ id: string; email: string }[]> {
+    const blockedRecords = await this.prisma.userBlocking.findMany({
+      where: { blockerId: userId },
+      include: { blocked: true } // include full user object
+    });
+
+    return blockedRecords.map((b) => ({
+      id: b.blocked.id,
+      email: b.blocked.email,
+    }));
+  }
+
+  /*
+   * Given userId, recieve a list of user who block userId
+   */
+  async getUsersWhoBlockedMeIds({ userId }: { userId: string }): Promise<string[]> {
+    const blockers = await this.prisma.userBlocking.findMany({
+      where: { blockedId: userId },
+      select: { blockerId: true },
+    });
+    return blockers.map((b) => b.blockerId);
+  }
+
+  /*
+   * Given userId, recieve a list of user that userId can block
+   */
+  async getUserIdsCanBlock({ userId }: { userId: string }): Promise<{ id: string; email: string }[]> {
+    // Fetch all users except the current user
+    const allUsers = await this.prisma.user.findMany({
+      where: { NOT: { id: userId } },
+      select: { id: true, email: true },
+    });
+
+    // Get users that current user has blocked (full objects)
+    const blockedByMe = await this.getBlockedByUserId({ userId });
+    const blockedByMeSet = new Set(blockedByMe.map(u => u.id)); // only store IDs
+
+    // Get users who have blocked me (already IDs)
+    const blockedMe = await this.getUsersWhoBlockedMeIds({ userId });
+    const blockedMeSet = new Set(blockedMe);
+
+    // Filter out users already blocked by me OR who have blocked me
+    return allUsers.filter(u => !blockedByMeSet.has(u.id) && !blockedMeSet.has(u.id));
+  }
+
+  /*
+   * Block
+   */
+  async blockUser({ blockerId, blockedId }: blockUserDetails): Promise<void> {
+    await this.prisma.userBlocking.create({
+      data: { blockerId, blockedId },
+    });
+  }
+
+  /*
+   * Unblock
+   */
+  async unblockUser({ blockerId, blockedId }: unblockUserDetails): Promise<void> {
+    await this.prisma.userBlocking.deleteMany({
+      where: { blockerId, blockedId },
+    });
   }
 }

@@ -42,7 +42,6 @@ export default function ChatSideBar({
           {onCreateGroup && <CreateGroupButton onClick={onCreateGroup} />}
           {onCreateNormalChat && <CreateNormalChatButton onClick={onCreateNormalChat} />}
           {onBlock && <BlockButton onClick={onBlock} />}
-
         </div>
       </div>
       <div className="overflow-y-auto p-3 space-y-2">

@@ -86,8 +86,9 @@ export default function ChatPage() {
               isOpen={logic.showBlockModal}
               onClose={() => logic.setShowBlockModal(false)}
               currentUserId={logic.currentUserId}
-              onSearchUsers={logic.handleSearchUsersForNormalChat} //fix later
-              onBlockUsers={logic.handleCreateNormalChat} //fix later
+              onSearchUsers={logic.handleSearchUsersForBlock}
+              onBlockUsers={logic.handleBlock}
+              //handleGetBlockedList={logic.handleGetBlockedList}
           />
 
         <InvitationsModal

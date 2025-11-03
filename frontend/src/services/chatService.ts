@@ -135,5 +135,60 @@ export async function approveMessageStatus(messageId: string, request: { userId:
   }
 }
 
+// Get list of userIds blocked by user
+export async function getBlockedByUserId(userId: string): Promise<{ users: Array<{ id: string; email: string }> }> {
+  try {
+    const res = await api.get(`/chats/${userId}/blocked`);
+    console.log('list of users blocked by userId', res.data);
+    return res.data;
+  } catch (error: any) {
+    throw error.response?.data ?? error;
+  }
+}
+
+// Get list of userIds who blocked user
+export async function getUsersWhoBlockedMeIds(userId: string): Promise<string[]> {
+  try {
+    const res = await api.get(`/chats/${userId}/blocked-by`);
+    console.log('list of userIds who blocked user', res.data);
+    return res.data.userIds;
+  } catch (error: any) {
+    throw error.response?.data ?? error;
+  }
+}
+
+// Get list of userIds user can still block
+// Get list of userIds user can still block (with optional search query)
+export async function getUserIdsCanBlock(userId: string, searchQuery?: string): Promise<{ users: Array<{ id: string; email: string }> }> {
+  try {
+    const res = await api.get(`/chats/${userId}/can-block`, {
+      params: { q: searchQuery },
+    });
+    console.log('list of users user can still block', res.data);
+    return res.data; // expected format: { users: [{ id, email }, ...] }
+  } catch (error: any) {
+    throw error.response?.data ?? error;
+  }
+}
+
+// Block a user
+export async function blockUser(blockerId: string, blockedId: string): Promise<void> {
+  try {
+    await api.post(`/chats/${blockerId}/blocked`, { blockerId, blockedId });
+  } catch (error: any) {
+    throw error.response?.data ?? error;
+  }
+}
+
+// Unblock a user
+export async function unblockUser(blockerId: string, blockedId: string): Promise<void> {
+  try {
+    await api.delete(`/chats/${blockerId}/unblock`, { data: { blockerId, blockedId } });
+  } catch (error: any) {
+    throw error.response?.data ?? error;
+  }
+}
 export default { getChats, sendMessage, getHistory, editMessage,
-  deleteMessage, createNormalChat, searchUsersForNormalChatCreation};
+  deleteMessage, createNormalChat, searchUsersForNormalChatCreation,
+  getBlockedByUserId, getUsersWhoBlockedMeIds, getUserIdsCanBlock,
+  blockUser, unblockUser};

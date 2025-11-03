@@ -96,3 +96,21 @@ export interface deleteMessageDetails {
   forEveryone: string // used to be boolean but have to change as params only take string
 }
 
+//* This section is reserved for block/unblock users
+export interface blockUserDetails {
+  blockerId: string; // the user who blocks
+  blockedId: string; // the user being blocked
+}
+
+export interface unblockUserDetails {
+  blockerId: string; // previous blocker
+  blockedId: string; // the user who got unblock by blocker
+}
+
+export interface blockedUserResult {
+  userIds: string[]; // array of blocked user IDs
+}
+
+export interface searchUnblockedUserResult {
+  userIds: string[]; // array of unblocked user IDs
+}

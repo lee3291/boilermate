@@ -492,7 +492,7 @@ export class GroupChatsService {
    * Search users for creating a new group chat
    * Returns users matching the query string (searches by userId for now)
    */
-  async searchUsersForGroupCreation(searchQuery: string): Promise<any> {
+  async searchUsersForGroupCreation(creatorId: string, searchQuery: string): Promise<any> {
     const client: any = this.prisma as any;
 
     try {
@@ -513,14 +513,37 @@ export class GroupChatsService {
         take: 20, // Limit results to 20 users
       });
 
-      return {
-        users,
-      };
+      // Get list of blocked user IDs for both directions
+      const blocks = await client.userBlocking.findMany({
+        where: {
+          OR: [
+            { blockerId: creatorId },
+            { blockedId: creatorId },
+          ],
+        },
+        select: {
+          blockerId: true,
+          blockedId: true,
+        },
+      });
+
+      // Build a set of user IDs that should be excluded
+      const blockedIds = new Set<string>();
+      for (const b of blocks) {
+        if (b.blockerId === creatorId) blockedIds.add(b.blockedId);
+        if (b.blockedId === creatorId) blockedIds.add(b.blockerId);
+      }
+
+      // Filter out blocked users
+      const filteredUsers = users.filter((u: { id: string }) => !blockedIds.has(u.id));
+
+      return { users: filteredUsers };
     } catch (error) {
       Logger.error('searchUsersForGroupCreation error', error);
       throw new InternalServerErrorException('Failed to search users');
     }
   }
+
 
   /**
    * Search users to add to an existing group chat

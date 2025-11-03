@@ -21,8 +21,13 @@ import {
   GroupChatResponseDto,
   InvitationResponseDto,
   SearchUsersResponseDto,
+  MessageApprovalDto,
 } from './dto';
-import { MessageApprovalDto } from './dto/message-approval.dto';
+import { BlockUserDto,
+  UnblockUserDto,
+  BlockedUserResultDto,
+  SearchUnblockedUserResultDto } from './dto/block.dto';
+
 /**
  * Chat endpoints
  */
@@ -214,8 +219,8 @@ export class ChatsController {
    */
   @Get('users/search')
   @HttpCode(200)
-  async searchUsersForGroupCreation(@Query('q') searchQuery: string) {
-    const result = await this.groupChatsService.searchUsersForGroupCreation(searchQuery);
+  async searchUsersForGroupCreation(@Query('creatorId') creatorId: string, @Query('q') searchQuery: string) {
+    const result = await this.groupChatsService.searchUsersForGroupCreation(creatorId, searchQuery);
     return SearchUsersResponseDto.fromResult(result);
   }
 
@@ -253,6 +258,43 @@ export class ChatsController {
   async approveMessageStatus(@Param('messageId') messageId: string, @Body() dto: MessageApprovalDto
   ) {
     return this.chatsService.approveMessageStatus(messageId, dto.userId);
+  }
+
+  /*
+   * Given userId, recieve a list of user that got blocked by userId
+   */
+  @Get(':userId/blocked')
+  async getBlockedByUserId(@Param('userId') userId: string): Promise<{ users: { id: string; email: string }[] }> {
+    const users = await this.chatsService.getBlockedByUserId({ userId }); // should return full user objects
+    return { users }; // now matches the type { users: { id, email }[] }
+  }
+
+  /*
+   * Given userId, recieve a list of user who block userId
+   */
+  @Get(':userId/blocked-by')
+  async getUsersWhoBlockedMeIds(@Param('userId') userId: string): Promise<any> {
+    const userIds = await this.chatsService.getUsersWhoBlockedMeIds({ userId });
+    return { userIds }; // list
+  }
+
+  /*
+   * Given userId, recieve a list of user that userId can block
+   */
+  @Get(':userId/can-block')
+  async getUserIdsCanBlock(@Param('userId') userId: string): Promise<{ users: { id: string; email: string }[] }> {
+    const users = await this.chatsService.getUserIdsCanBlock({ userId });
+    return { users };
+  }
+
+  @Post(':userId/blocked') // userId is the person who block other
+  async blockUser(@Param('userId') userId: string, @Body() dto: BlockUserDto): Promise<void> {
+    await this.chatsService.blockUser({ blockerId: userId, blockedId: dto.blockedId });
+  }
+
+  @Delete(':userId/unblock') // userId is the person who unblock other
+  async unblockUser(@Param('userId') userId: string, @Body() dto: UnblockUserDto): Promise<void> {
+    await this.chatsService.unblockUser({ blockerId: userId, blockedId: dto.blockedId });
   }
 
 }

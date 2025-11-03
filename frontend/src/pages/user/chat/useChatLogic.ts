@@ -7,6 +7,9 @@ import {
   deleteMessage as apiDeleteMessage,
     createNormalChat as apiCreateNormalChat,
   searchUsersForNormalChatCreation as apiSearchUsersForNormalChatCreation,
+  getUserIdsCanBlock as apiSearchUsersForBlock,
+    blockUser as apiBlockUser,
+  getBlockedByUserId as apiBlockedByUserId,
 } from '@/services/chatService';
 import {
   getPresignedUrl as apiGetPresignedUrl,
@@ -453,27 +456,54 @@ export default function useChatLogic(initialUserId: string) {
     }
   }, [currentUserId, fetchChats]);
 
-  //Handle block/unblock
-  const handleBlockModal = useCallback(async (recipientId: string) => {
+  //Handle block
+  const handleBlock = useCallback(async (targetUserId: string) => {
     if (!currentUserId) return;
-
     try {
-      await apiCreateNormalChat({
-        creatorId: currentUserId,
-        name: currentUserId,
-        participantIds: [recipientId],
-      });
-
-      await fetchChats(currentUserId);
-      setShowBlockModal(false); // fix later
+      await apiBlockUser(currentUserId, targetUserId);
+      await fetchChats(currentUserId); // refresh UI if needed
+      setShowBlockModal(false);
     } catch (err: any) {
-      setError(err?.message ?? 'Failed to create chat');
+      setError(err?.message ?? 'Failed to block user');
     }
   }, [currentUserId, fetchChats]);
 
+  //Handle unblock
+
+  //Search users for block
+  const handleSearchUsersForBlock = useCallback(async (searchQuery: string) => {
+    if (!currentUserId) return [];
+    try {
+      const result = await apiSearchUsersForBlock(currentUserId, searchQuery);
+      return result.users || []; // expected format: [{ id, email }]
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to search users for blocking');
+      return [];
+    }
+  }, [currentUserId]);
+
+  // Get list of blocked users by current userId
+  const handleGetBlockedList = useCallback(
+      async (currentUserId: string): Promise<{ id: string; email?: string }[]> => {
+        if (!currentUserId) return [];
+
+        try {
+          const blockedIds = await apiBlockedByUserId(currentUserId);
+          // Ensure blockedIds is always an array
+          const safeBlockedIds = Array.isArray(blockedIds) ? blockedIds : [];
+          return safeBlockedIds.map((id) => ({ id }));
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to fetch blocked users');
+          return [];
+        }
+      },
+      [currentUserId]
+  );
+
+
+
   // Search users for 1-1 creation
-  const handleSearchUsersForNormalChat = useCallback(
-      async (searchQuery: string) => {
+  const handleSearchUsersForNormalChat = useCallback(async (searchQuery: string) => {
         if (!currentUserId) return [];
 
         try {
@@ -490,14 +520,15 @@ export default function useChatLogic(initialUserId: string) {
 
   // Search users for group creation (mock function for now - you can fill this in)
   const handleSearchUsers = useCallback(async (searchQuery: string) => {
+    if (!currentUserId) return [];
     try {
-      const result = await apiSearchUsersForGroupCreation(searchQuery);
+      const result = await apiSearchUsersForGroupCreation(currentUserId, searchQuery);
       return result.users || [];
     } catch (err: any) {
       setError(err?.message ?? 'Failed to search users');
       return [];
     }
-  }, []);
+  }, [currentUserId]);
 
   // Search users for adding to group (mock function for now - you can fill this in)
   const handleSearchUsersForGroup = useCallback(async (chatId: string, searchQuery: string) => {
@@ -640,5 +671,10 @@ export default function useChatLogic(initialUserId: string) {
     // 1-1 chat
     handleCreateNormalChat,
     handleSearchUsersForNormalChat,
+
+    // block/unblock
+    handleBlock,
+    handleSearchUsersForBlock,
+    handleGetBlockedList,
   };
 }
