@@ -14,7 +14,6 @@ const FAQ_ITEMS: FAQItem[] = [
     { q: "Can I deactivate or delete my account?", a: "You may deactivate your profile (hide activity) or permanently delete your account at any time." },
 ];
 
-// Minimal modal
 function Modal({
     open,
     onClose,
@@ -54,10 +53,6 @@ function Modal({
     );
 }
 
-/**
- * FAQRing — labels float gently in place (no rotation), text-only chips,
- * and the "FAQ" title is centered inside the ring (no subtitle).
- */
 export default function FAQRing() {
     const ringRef = useRef<HTMLDivElement | null>(null);
     const [active, setActive] = useState<FAQItem | null>(null);
@@ -73,7 +68,6 @@ export default function FAQRing() {
         const ctx = gsap.context(() => {
             gsap.from(".faq-section-in", { autoAlpha: 0, y: 24, duration: 0.5, ease: "power3.out" });
 
-            // Float each label in place (no rotation)
             if (!prefersReduced) {
                 const chips = gsap.utils.toArray<HTMLButtonElement>(".faq-chip");
                 chips.forEach((chip, i) => {
@@ -98,16 +92,13 @@ export default function FAQRing() {
         return () => ctx.revert();
     }, []);
 
-    // Layout ring positions
-    const RADIUS = 300; // px
+    const RADIUS = 300;
     const size = FAQ_ITEMS.length;
 
     return (
         <section id="faq" className="bg-mainbrown w-full">
             <div className="faq-section-in mx-auto max-w-6xl px-6 py-28 md:py-36">
-                {/* Ring only (title inside) */}
                 <div className="relative mx-auto" style={{ width: 520, height: 520, maxWidth: "90vw", maxHeight: "90vw" }}>
-                    {/* Centered title inside the ring */}
                     <div
                         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
                         flex items-center justify-center pointer-events-none select-none"
@@ -118,10 +109,9 @@ export default function FAQRing() {
                         </h2>
                     </div>
 
-                    {/* Static ring wrapper (no rotation) */}
                     <div ref={ringRef} className="absolute inset-0">
                         {FAQ_ITEMS.map((item, i) => {
-                            const angle = (i / size) * Math.PI * 2; // radians
+                            const angle = (i / size) * Math.PI * 2;
                             const x = Math.cos(angle) * RADIUS;
                             const y = Math.sin(angle) * RADIUS;
                             return (
@@ -135,7 +125,6 @@ export default function FAQRing() {
                                     }}
                                     className={[
                                         "faq-chip absolute inline-block",
-                                        // PURE TEXT: no bubble, no border, no bg
                                         "bg-transparent border-0 p-0",
                                         "font-sourceserif4-18pt-regular text-maingray text-base md:text-[25px]",
                                         "hover:underline focus:underline focus:outline-none",
@@ -150,7 +139,6 @@ export default function FAQRing() {
                 </div>
             </div>
 
-            {/* Modal */}
             <Modal open={!!active} onClose={() => setActive(null)} title={active?.q ?? ""}>
                 {active?.a}
             </Modal>
