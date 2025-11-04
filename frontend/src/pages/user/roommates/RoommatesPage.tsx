@@ -131,127 +131,236 @@ export default function RoommatesPage() {
     <div className='min-h-screen w-full bg-gray-50'>
       <Navbar />
 
-      <div className='flex items-start gap-6 pt-6 px-6'>
-        {/* Left sidebar - Filters */}
-        <div className='w-96 max-h-screen overflow-y-auto pb-10 bg-white rounded-lg shadow-sm p-6'>
-          <h1 className='font-sourceserif4-18pt-regular text-maingray pb-3 text-[60px] font-extralight tracking-[-0.02em] leading-tight'>
-            Roommates
-          </h1>
+      {/* Header */}
+      <div className='px-8 pt-6 pb-4 bg-white border-b border-gray-200'>
+        <h1 className='font-sourceserif4-18pt-regular text-maingray text-[60px] font-extralight tracking-[-0.02em] leading-tight'>
+          Roommates
+        </h1>
+        <p className='text-gray-600 text-sm mt-1'>
+          Search for roommates by their lifestyle preferences
+        </p>
+      </div>
 
-          <p className='text-gray-600 text-sm pb-6'>
-            Search for roommates by their lifestyle preferences
-          </p>
-
-          <h1 className='font-sourceserif4-18pt-regular text-maingray pt-4 pb-4 text-[40px] font-extralight tracking-[-0.02em] border-t border-gray-200'>
-            Filter
-          </h1>
-
-          {/* Importance filter */}
-          <div className='mt-4 mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100'>
-            <label className='text-sm font-semibold text-blue-900 mb-3 block'>Importance Level</label>
-            <div className='flex items-center gap-2'>
-              <select
-                value={importanceOperator}
-                onChange={(e) => {
-                  setImportanceOperator(e.target.value as any);
-                  setPage(1);
-                }}
-                className='h-10 rounded-lg border border-blue-200 bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100'
+      {/* Horizontal Filter Bar - Clean & Visible Design */}
+      <div className='px-8 py-5 bg-white border-b border-gray-200'>
+        <div className='flex items-start gap-4'>
+          <div className='flex-shrink-0'>
+            <h2 className='font-sourceserif4-18pt-regular text-maingray text-[24px] font-extralight tracking-[-0.02em]'>
+              Filters
+            </h2>
+          </div>
+          
+          <div className='flex-1'>
+            {/* Filter Pills Row */}
+            <div className='flex items-center gap-2 flex-wrap mb-4'>
+              {/* Importance filter pill */}
+              <button
+                onClick={() => toggleCategory('IMPORTANCE')}
+                className={`flex items-center gap-2 h-10 px-4 rounded-lg border-2 transition ${
+                  expandedCategories.has('IMPORTANCE')
+                    ? 'bg-blue-50 border-blue-500 text-blue-900'
+                    : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'
+                }`}
               >
-                <option value="equal">Equal to</option>
-                <option value="greater_or_equal">≥ (At least)</option>
-                <option value="less_or_equal">≤ (At most)</option>
-              </select>
-              <input
-                type='number'
-                min='1'
-                max='5'
-                step='1'
-                value={importanceValue}
-                onChange={(e) => {
-                  setImportanceValue(parseInt(e.target.value));
-                  setPage(1);
-                }}
-                className='h-10 w-16 rounded-lg border border-blue-200 bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-center font-semibold'
-              />
-            </div>
-          </div>
+                <span className='text-sm font-semibold'>Importance:</span>
+                <span className='text-sm font-bold'>
+                  {importanceOperator === 'equal' ? '=' : importanceOperator === 'greater_or_equal' ? '≥' : '≤'} {importanceValue}
+                </span>
+                <span className='text-xs ml-1'>
+                  {expandedCategories.has('IMPORTANCE') ? '▲' : '▼'}
+                </span>
+              </button>
 
-          {/* Preference selection - Collapsible by category */}
-          <div className='mt-2'>
-            <label className='text-sm font-semibold text-gray-800 mb-3 block bg-green-50 px-3 py-2 rounded-lg border border-green-100'>
-              Select Preferences ({selectedPreferences.length} selected)
-            </label>
-            {Object.entries(preferencesByCategory).map(([category, prefs]) => (
-              <div key={category} className='mb-2 border border-gray-200 rounded-lg overflow-hidden hover:border-gray-300 transition'>
-                {/* Category header - clickable */}
-                <button
-                  onClick={() => toggleCategory(category)}
-                  className='w-full flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-white hover:from-gray-100 hover:to-gray-50 transition'
-                >
-                  <span className='text-sm font-semibold text-gray-800'>{category}</span>
-                  <div className='flex items-center gap-2'>
-                    <span className='text-xs font-medium px-2 py-1 rounded-full bg-gray-200 text-gray-700'>
-                      {prefs.filter(p => selectedPreferences.includes(p.id)).length}/{prefs.length}
-                    </span>
-                    <span className='text-gray-500 text-lg'>
-                      {expandedCategories.has(category) ? '▼' : '▶'}
-                    </span>
-                  </div>
-                </button>
+              {/* Preference category pills */}
+              {Object.entries(preferencesByCategory).map(([category, prefs]) => {
+                const selectedCount = prefs.filter(p => selectedPreferences.includes(p.id)).length;
+                const isActive = selectedCount > 0;
+                const isExpanded = expandedCategories.has(category);
                 
-                {/* Category preferences - collapsible */}
-                {expandedCategories.has(category) && (
-                  <div className='p-3 pt-0 pb-4 bg-gray-50 flex flex-wrap gap-2'>
-                    {prefs.map((pref) => (
-                      <button
-                        key={pref.id}
-                        onClick={() => togglePreference(pref.id)}
-                        className={`text-xs px-3 py-1.5 rounded-full transition shadow-sm ${
-                          selectedPreferences.includes(pref.id)
-                            ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md'
-                            : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100 hover:border-gray-300'
-                        }`}
-                      >
-                        {pref.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                return (
+                  <button
+                    key={category}
+                    onClick={() => toggleCategory(category)}
+                    className={`flex items-center gap-2 h-10 px-4 rounded-lg border-2 transition ${
+                      isExpanded
+                        ? 'bg-black border-black text-white'
+                        : isActive
+                        ? 'bg-gray-900 border-gray-900 text-white'
+                        : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'
+                    }`}
+                  >
+                    <span className='text-sm font-semibold'>{category}</span>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                      isExpanded || isActive
+                        ? 'bg-white/30 text-white'
+                        : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {selectedCount}/{prefs.length}
+                    </span>
+                    <span className='text-xs'>
+                      {isExpanded ? '▲' : '▼'}
+                    </span>
+                  </button>
+                );
+              })}
+
+              {/* Right controls */}
+              <div className='ml-auto flex items-center gap-3'>
+                <div className='text-sm font-semibold text-gray-700 bg-gray-100 px-4 py-2 rounded-lg'>
+                  {selectedPreferences.length} selected
+                </div>
+                
+                <button
+                  type='button'
+                  onClick={handleClearFilters}
+                  className='h-10 px-5 rounded-lg border-2 border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition'
+                >
+                  Clear Filters
+                </button>
               </div>
-            ))}
-          </div>
-
-          <button
-            type='button'
-            onClick={handleClearFilters}
-            className='mt-6 h-10 w-full rounded-lg border-2 border-red-200 bg-red-50 px-3 text-sm font-medium text-red-700 hover:bg-red-100 hover:border-red-300 transition'
-          >
-            Clear All Filters
-          </button>
-
-          {/* Pagination info */}
-          {!loading && (
-            <div className='mt-5 text-sm text-gray-600 bg-gray-100 p-3 rounded-lg'>
-              Showing {profiles.length > 0 ? ((page - 1) * PAGE_SIZE + 1) : 0}-
-              {Math.min(page * PAGE_SIZE, total)} of {total} profiles
             </div>
-          )}
+
+            {/* Expanded Filter Panels - Below the pills */}
+            <div className='space-y-3'>
+              {/* Importance Filter Panel */}
+              {expandedCategories.has('IMPORTANCE') && (
+                <div className='p-5 bg-blue-50 rounded-xl border-2 border-blue-200'>
+                  <div className='flex items-center gap-4'>
+                    <div className='flex-1'>
+                      <label className='block text-sm font-semibold text-blue-900 mb-2'>Operator</label>
+                      <select
+                        value={importanceOperator}
+                        onChange={(e) => {
+                          setImportanceOperator(e.target.value as any);
+                          setPage(1);
+                        }}
+                        className='w-full h-11 rounded-lg border-2 border-blue-300 bg-white px-4 text-sm font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
+                      >
+                        <option value="equal">Equal to (=)</option>
+                        <option value="greater_or_equal">At least (≥)</option>
+                        <option value="less_or_equal">At most (≤)</option>
+                      </select>
+                    </div>
+                    <div className='w-32'>
+                      <label className='block text-sm font-semibold text-blue-900 mb-2'>Value</label>
+                      <input
+                        type='number'
+                        min='1'
+                        max='5'
+                        step='1'
+                        value={importanceValue}
+                        onChange={(e) => {
+                          setImportanceValue(parseInt(e.target.value));
+                          setPage(1);
+                        }}
+                        className='w-full h-11 rounded-lg border-2 border-blue-300 bg-white px-4 text-sm font-bold outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-center'
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Category Filter Panels */}
+              {Object.entries(preferencesByCategory).map(([category, prefs]) => (
+                expandedCategories.has(category) && (
+                  <div key={category} className='p-5 bg-gray-50 rounded-xl border-2 border-gray-300'>
+                    <div className='text-sm font-bold text-gray-800 mb-3'>{category} Preferences</div>
+                    <div className='flex flex-wrap gap-2'>
+                      {prefs.map((pref) => (
+                        <button
+                          key={pref.id}
+                          onClick={() => togglePreference(pref.id)}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                            selectedPreferences.includes(pref.id)
+                              ? 'bg-black text-white border-2 border-black'
+                              : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-100'
+                          }`}
+                        >
+                          {pref.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main content area */}
+      <div className='flex gap-6 px-8 pt-6'>
+        {/* Left Sidebar - Saved Filters (Mock UI) */}
+        <div className='w-64 flex-shrink-0'>
+          <div className='bg-white rounded-lg shadow-sm p-5 sticky top-6'>
+            <h3 className='font-sourceserif4-18pt-regular text-maingray text-[24px] font-extralight tracking-[-0.02em] mb-4'>
+              Saved Searches
+            </h3>
+            
+            {/* Mock saved filters */}
+            <div className='space-y-3'>
+              <div className='p-3 bg-purple-50 rounded-lg border border-purple-200 cursor-pointer hover:bg-purple-100 transition'>
+                <div className='flex items-center justify-between mb-1'>
+                  <span className='text-sm font-semibold text-purple-900'>Early Birds</span>
+                  <span className='text-xs text-purple-600'>⭐</span>
+                </div>
+                <p className='text-xs text-purple-700'>Sleep schedule: Early</p>
+                <p className='text-xs text-gray-500 mt-1'>3 preferences</p>
+              </div>
+
+              <div className='p-3 bg-green-50 rounded-lg border border-green-200 cursor-pointer hover:bg-green-100 transition'>
+                <div className='flex items-center justify-between mb-1'>
+                  <span className='text-sm font-semibold text-green-900'>Clean & Quiet</span>
+                  <span className='text-xs text-green-600'>⭐</span>
+                </div>
+                <p className='text-xs text-green-700'>Cleanliness + Low noise</p>
+                <p className='text-xs text-gray-500 mt-1'>5 preferences</p>
+              </div>
+
+              <div className='p-3 bg-orange-50 rounded-lg border border-orange-200 cursor-pointer hover:bg-orange-100 transition'>
+                <div className='flex items-center justify-between mb-1'>
+                  <span className='text-sm font-semibold text-orange-900'>Social Butterfly</span>
+                  <span className='text-xs text-orange-600'>⭐</span>
+                </div>
+                <p className='text-xs text-orange-700'>Guest friendly + Social</p>
+                <p className='text-xs text-gray-500 mt-1'>4 preferences</p>
+              </div>
+            </div>
+
+            <button className='mt-4 w-full h-9 rounded-lg border-2 border-dashed border-gray-300 text-xs text-gray-500 hover:border-gray-400 hover:text-gray-700 transition'>
+              + Save Current Search
+            </button>
+
+            {/* Stats */}
+            <div className='mt-6 pt-6 border-t border-gray-200'>
+              <div className='text-xs text-gray-500 mb-2'>Search Results</div>
+              {!loading && (
+                <div className='text-sm font-semibold text-gray-800'>
+                  {profiles.length > 0 ? ((page - 1) * PAGE_SIZE + 1) : 0}-
+                  {Math.min(page * PAGE_SIZE, total)} of {total}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Right content area - Profile cards */}
-        <div className='flex-1 pb-10 pr-6'>
-          <div className='mt-2 flex w-fit flex-wrap justify-start gap-10'>
-            {loading && <div className='text-gray-600'>Loading roommates...</div>}
+        {/* Profile Cards Grid */}
+        <div className='flex-1 pb-10'>
+          <div className='flex flex-wrap justify-start gap-8'>
+            {loading && (
+              <div className='w-full text-center py-10 text-gray-600'>
+                Loading roommates...
+              </div>
+            )}
             
             {error && (
-              <div className='text-sm whitespace-pre-wrap text-red-600 bg-red-50 p-4 rounded-lg border border-red-200'>
+              <div className='w-full text-sm text-red-600 bg-red-50 p-4 rounded-lg border border-red-200'>
                 {error}
               </div>
             )}
             
             {!loading && profiles.length === 0 && (
-              <div className='font-roboto-light text-gray-600 bg-yellow-50 p-6 rounded-lg border border-yellow-200'>
+              <div className='w-full text-center py-10 font-roboto-light text-gray-600 bg-yellow-50 p-6 rounded-lg border border-yellow-200'>
                 No roommates found. {selectedPreferences.length > 0 && 'Try adjusting your filters.'}
               </div>
             )}
@@ -268,7 +377,7 @@ export default function RoommatesPage() {
 
           {/* Pagination controls */}
           {!loading && totalPages > 1 && (
-            <div className='mt-10 flex items-center gap-3'>
+            <div className='mt-10 flex items-center justify-center gap-3'>
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
