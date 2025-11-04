@@ -14,6 +14,7 @@ export class ProfileService {
 
   /**
    * Get current user's full profile
+   * Note: When viewing own profile, isFavoritedByMe is always false (can't favorite yourself)
    */
   async getMe(userId: string): Promise<any> {
     const user = await this.prisma.user.findUnique({
@@ -39,15 +40,20 @@ export class ProfileService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    return ProfileDetailsDto.fromProfile(user);
+    // Own profile is never favorited by self
+    return ProfileDetailsDto.fromProfile(user, false);
   }
 
   /**
    * Get profile details for a specific user
+   * Includes favorite status if viewerId is provided
    */
   async getProfile(dto: GetProfileDetailsDto): Promise<ProfileDetailsDto> {
+    const { userId, viewerId } = dto;
+
+    // Fetch user profile
     const user = await this.prisma.user.findUnique({
-      where: { id: dto.userId },
+      where: { id: userId },
       include: {
         images: {
           orderBy: { createdAt: 'asc' },
@@ -66,10 +72,24 @@ export class ProfileService {
     });
 
     if (!user) {
-      throw new NotFoundException(`User with ID ${dto.userId} not found`);
+      throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    return ProfileDetailsDto.fromProfile(user);
+    // Check if viewer has favorited this user (only if viewerId is provided and different from userId)
+    let isFavoritedByMe = false;
+    if (viewerId && viewerId !== userId) {
+      const favorite = await this.prisma.favoriteMatch.findUnique({
+        where: {
+          userId_favoritedUserId: {
+            userId: viewerId,
+            favoritedUserId: userId,
+          },
+        },
+      });
+      isFavoritedByMe = !!favorite;
+    }
+
+    return ProfileDetailsDto.fromProfile(user, isFavoritedByMe);
   }
 
   /**
@@ -79,7 +99,10 @@ export class ProfileService {
    * Also includes whether each user is favorited by the current user
    */
   async searchUsers(dto: SearchUsersDto): Promise<SearchUsersResponseDto> {
-    const { userId, page = 1, limit = 10, preferenceIds, importanceOperator, importanceValue } = dto;
+    // Ensure page and limit are numbers (workaround until ValidationPipe is active)
+    const page = Number(dto.page) || 1;
+    const limit = Number(dto.limit) || 10;
+    const { userId, preferenceIds, importanceOperator, importanceValue } = dto;
 
     // Calculate skip for pagination
     const skip = (page - 1) * limit;
@@ -258,7 +281,10 @@ export class ProfileService {
    * Returns a paginated list of favorited users with summary info
    */
   async getFavorites(dto: GetFavoritesDto): Promise<GetFavoritesResponseDto> {
-    const { userId, page = 1, limit = 20 } = dto;
+    // Ensure page and limit are numbers (workaround until ValidationPipe is active)
+    const page = Number(dto.page) || 1;
+    const limit = Number(dto.limit) || 20;
+    const { userId } = dto;
 
     // Calculate skip for pagination
     const skip = (page - 1) * limit;

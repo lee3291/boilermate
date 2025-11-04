@@ -58,7 +58,7 @@ export class ProfileController {
    * Remove a user from favorites
    */
   @Delete('favorites/:favoritedUserId')
-  @HttpCode(204)
+  @HttpCode(200)
   async removeFavorite(
     @Param('favoritedUserId') favoritedUserId: string,
     @Query() dto: RemoveFavoriteDto
@@ -68,8 +68,9 @@ export class ProfileController {
   }
 
   /**
-   * GET /profile/:userId
+   * GET /profile/:userId?viewerId=xxx
    * Get full profile details for a specific user
+   * Include viewerId in query to check if profile is favorited by viewer
    */
   @Get(':userId')
   @HttpCode(200)
@@ -78,6 +79,7 @@ export class ProfileController {
     @Query() dto: GetProfileDetailsDto,
   ): Promise<ProfileDetailsDto> {
     dto.userId = userId;
+    // dto.viewerId comes from query params
     return this.profileService.getProfile(dto);
   }
 }

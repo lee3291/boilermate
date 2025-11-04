@@ -8,7 +8,13 @@ import type {
   ProfileDetails, 
   SearchUsersResponse,
   GetProfileDetailsRequest,
-  SearchUsersRequest 
+  SearchUsersRequest,
+  GetFavoritesRequest,
+  GetFavoritesResponse,
+  AddFavoriteRequest,
+  AddFavoriteResponse,
+  RemoveFavoriteRequest,
+  RemoveFavoriteResponse
 } from '../types/profile';
 
 const BASE_URL = '/profile';
@@ -62,4 +68,65 @@ export const searchUsers = async (
   
   const response = await api.get(`${BASE_URL}/search`, { params });
   return response.data;
+};
+
+/**
+ * Get all favorites for current user
+ * Returns a paginated list of favorited users
+ */
+export const getFavorites = async (
+  request: GetFavoritesRequest
+): Promise<GetFavoritesResponse> => {
+  const { userId, page = 1, limit = 20 } = request;
+  
+  const params = { userId, page, limit };
+  
+  const response = await api.get(`${BASE_URL}/favorites/list`, { params });
+  return response.data;
+};
+
+/**
+ * Add a user to favorites
+ */
+export const addFavorite = async (
+  request: AddFavoriteRequest
+): Promise<AddFavoriteResponse> => {
+  const response = await api.post(`${BASE_URL}/favorites`, request);
+  return response.data;
+};
+
+/**
+ * Remove a user from favorites
+ */
+export const removeFavorite = async (
+  request: RemoveFavoriteRequest
+): Promise<RemoveFavoriteResponse> => {
+  const { userId, favoritedUserId } = request;
+  
+  const params = { userId };
+  
+  const response = await api.delete(`${BASE_URL}/favorites/${favoritedUserId}`, { params });
+  return response.data;
+};
+
+/**
+ * Toggle favorite status for a user
+ * Convenience function that adds or removes based on current status
+ */
+export const toggleFavorite = async (
+  userId: string,
+  favoritedUserId: string,
+  isFavorited: boolean
+): Promise<void> => {
+  console.log('toggleFavorite called:', { userId, favoritedUserId, isFavorited });
+  
+  if (isFavorited) {
+    console.log('Removing favorite...');
+    await removeFavorite({ userId, favoritedUserId });
+  } else {
+    console.log('Adding favorite...');
+    await addFavorite({ userId, favoritedUserId });
+  }
+  
+  console.log('toggleFavorite completed successfully');
 };

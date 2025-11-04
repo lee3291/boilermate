@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getProfileDetails } from '../../../services/profileService';
+import { getProfileDetails, toggleFavorite } from '../../../services/profileService';
 import type { ProfileDetails } from '../../../types/profile';
 import Navbar from '../components/Navbar';
 import ProfileHeader from '../preferences/components/ProfileHeader';
@@ -19,6 +19,7 @@ export default function ProfileViewPage() {
   const [profile, setProfile] = useState<ProfileDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFavorited, setIsFavorited] = useState(false);
 
   // TODO: Replace with actual viewerId from auth context
   const viewerId = '1'; // Hardcoded for now
@@ -42,6 +43,9 @@ export default function ProfileViewPage() {
       try {
         const data = await getProfileDetails({ userId, viewerId });
         setProfile(data);
+        
+        // Set favorite status from backend response
+        setIsFavorited(data.isFavoritedByMe || false);
       } catch (err: any) {
         setError(err?.message || 'Failed to load profile');
         console.error('Error fetching profile:', err);
@@ -52,6 +56,19 @@ export default function ProfileViewPage() {
 
     fetchProfile();
   }, [userId, viewerId]);
+
+  const handleToggleFavorite = async () => {
+    if (!userId) return;
+    
+    try {
+      await toggleFavorite(viewerId, userId, isFavorited);
+      setIsFavorited(!isFavorited);
+    } catch (err: any) {
+      console.error('Error toggling favorite:', err);
+      const errorMessage = err?.response?.data?.message || err?.message || 'Failed to update favorite status';
+      alert(errorMessage);
+    }
+  };
 
   if (loading) {
     return (
@@ -100,13 +117,28 @@ export default function ProfileViewPage() {
       <Navbar />
 
       <div className="mx-auto max-w-4xl px-4 py-8">
-        {/* Back button */}
-        <button
-          onClick={() => navigate('/roommates')}
-          className="mb-4 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition flex items-center gap-2"
-        >
-          ← Back to Roommates
-        </button>
+        {/* Back button and Favorite button */}
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={() => navigate('/roommates')}
+            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition flex items-center gap-2"
+          >
+            ← Back to Roommates
+          </button>
+          
+          <button
+            onClick={handleToggleFavorite}
+            className="px-6 py-3 rounded-full bg-white shadow-lg hover:shadow-xl transition-all flex items-center gap-2 border-2 border-gray-200 hover:scale-105"
+            title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            <span className="text-2xl">
+              {isFavorited ? '❤️' : '🤍'}
+            </span>
+            <span className="text-sm font-semibold text-gray-700">
+              {isFavorited ? 'Favorited' : 'Add to Favorites'}
+            </span>
+          </button>
+        </div>
 
         {/* Profile Header */}
         <ProfileHeader user={mockUser} />

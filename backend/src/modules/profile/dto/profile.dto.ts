@@ -10,6 +10,7 @@ export class GetProfileDetailsDto {
   @IsString()
   userId: string;
 
+  // The ID of the user viewing this profile (to check favorite status)
   @IsOptional()
   @IsString()
   viewerId?: string;

@@ -15,6 +15,9 @@ export interface ProfileSummary {
   
   lifestylePreferencesCount: number;
   roommatePreferencesCount: number;
+  
+  // Favorite status - whether current user has favorited this profile
+  isFavoritedByMe?: boolean;
 }
 
 //* Preference Detail (for full profile view)
@@ -39,6 +42,9 @@ export interface ProfileDetails {
   
   lifestylePreferences: PreferenceDetail[];
   roommatePreferences: PreferenceDetail[];
+  
+  // Favorite status - whether the viewer has favorited this profile
+  isFavoritedByMe?: boolean;
 }
 
 //* Get Profile Details Request
@@ -64,4 +70,43 @@ export interface SearchUsersResponse {
   page: number;
   limit: number;
   totalPages: number;
+}
+
+//* Get Favorites Request
+export interface GetFavoritesRequest {
+  userId: string;
+  page?: number;
+  limit?: number;
+}
+
+//* Get Favorites Response
+export interface GetFavoritesResponse {
+  favorites: ProfileSummary[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+//* Add Favorite Request
+export interface AddFavoriteRequest {
+  userId: string;
+  favoritedUserId: string;
+}
+
+//* Add Favorite Response
+export interface AddFavoriteResponse {
+  message: string;
+  favoriteId: string;
+}
+
+//* Remove Favorite Request
+export interface RemoveFavoriteRequest {
+  userId: string;
+  favoritedUserId: string;
+}
+
+//* Remove Favorite Response
+export interface RemoveFavoriteResponse {
+  message: string;
 }

@@ -78,7 +78,10 @@ export class ProfileDetailsDto {
   @Type(() => PreferenceDetailDto)
   roommatePreferences: PreferenceDetailDto[];
 
-  static fromProfile(profile: any): ProfileDetailsDto {
+  // Favorite status - whether the viewer has favorited this profile
+  @Expose() isFavoritedByMe?: boolean;
+
+  static fromProfile(profile: any, isFavoritedByMe?: boolean): ProfileDetailsDto {
     const dto = new ProfileDetailsDto();
     dto.id = profile.id;
     dto.email = profile.email;
@@ -95,6 +98,9 @@ export class ProfileDetailsDto {
     // Map roommate preferences (only PUBLIC ones if viewerId is different)
     dto.roommatePreferences = (profile.roommatePreferences || [])
       .map((p: any) => PreferenceDetailDto.fromUserPreference(p));
+    
+    // Set favorite status
+    dto.isFavoritedByMe = isFavoritedByMe || false;
     
     return dto;
   }
