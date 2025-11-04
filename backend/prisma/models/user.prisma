@@ -1,3 +1,14 @@
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum SearchStatus {
+  LOOKING
+  NOT_LOOKING
+  HIDDEN
+}
 model User {
   id            String        @id @default(uuid())
   email         String        @unique
@@ -31,16 +42,24 @@ model User {
 
   // Links to preferences this user wants in a roommate ("I want...")
   roommatePreferences RoommatePreference[]
+
+  // A list of all the favorites this user has made
+  favoritesMade FavoriteMatch[] @relation("FavoritingUser")
+
+  // A list of all the users who have favorited this user
+  favoritedBy FavoriteMatch[] @relation("FavoritedUser")
 }
 
-enum UserStatus {
-  ACTIVE
-  INACTIVE
-  SUSPENDED
-}
+model FavoriteMatch {
+  id                   String @id @default(uuid())
+  userId               String // The user who is doing the favoriting
+  favoritedUserId      String // The user who is being favorited
+  createdAt            DateTime @default(now())
 
-enum SearchStatus {
-  LOOKING
-  NOT_LOOKING
-  HIDDEN
+  // RELATIONS
+  user                 User @relation("FavoritingUser", fields: [userId], references: [id])
+  favoritedUser        User @relation("FavoritedUser", fields: [favoritedUserId], references: [id])
+
+  // Ensures a user cannot favorite the same person more than once
+  @@unique([userId, favoritedUserId])
 }

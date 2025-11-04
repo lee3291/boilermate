@@ -17,8 +17,11 @@ export class ProfileSummaryDto {
   
   @Expose() lifestylePreferencesCount: number;
   @Expose() roommatePreferencesCount: number;
+  
+  // Favorite status - whether current user has favorited this profile
+  @Expose() isFavoritedByMe?: boolean;
 
-  static fromProfile(profile: any): ProfileSummaryDto {
+  static fromProfile(profile: any, isFavoritedByMe?: boolean): ProfileSummaryDto {
     const dto = new ProfileSummaryDto();
     dto.id = profile.id;
     dto.email = profile.email;
@@ -29,6 +32,7 @@ export class ProfileSummaryDto {
     dto.bio = profile.bio;
     dto.lifestylePreferencesCount = profile._count?.profilePreferences || 0;
     dto.roommatePreferencesCount = profile._count?.roommatePreferences || 0;
+    dto.isFavoritedByMe = isFavoritedByMe || false;
     return dto;
   }
 }
@@ -111,6 +115,29 @@ export class SearchUsersResponseDto {
   static fromProfiles(profiles: any[], total: number, page: number, limit: number): SearchUsersResponseDto {
     const dto = new SearchUsersResponseDto();
     dto.profiles = profiles;
+    dto.total = total;
+    dto.page = page;
+    dto.limit = limit;
+    dto.totalPages = Math.ceil(total / limit);
+    return dto;
+  }
+}
+
+//* Get Favorites Response DTO (same structure as SearchUsersResponseDto)
+@Exclude()
+export class GetFavoritesResponseDto {
+  @Expose()
+  @Type(() => ProfileSummaryDto)
+  favorites: ProfileSummaryDto[];
+  
+  @Expose() total: number;
+  @Expose() page: number;
+  @Expose() limit: number;
+  @Expose() totalPages: number;
+
+  static fromFavorites(favorites: any[], total: number, page: number, limit: number): GetFavoritesResponseDto {
+    const dto = new GetFavoritesResponseDto();
+    dto.favorites = favorites;
     dto.total = total;
     dto.page = page;
     dto.limit = limit;

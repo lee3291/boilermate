@@ -17,6 +17,9 @@ export interface ProfileSummary {
   // Lifestyle preferences count (not full details)
   lifestylePreferencesCount: number;
   roommatePreferencesCount: number;
+  
+  // Favorite status - whether current user has favorited this profile
+  isFavoritedByMe?: boolean;
 }
 
 //* User Profile Full Details (for profile/:userId view)
@@ -72,6 +75,34 @@ export interface SearchUsersRequest {
 
 export interface SearchUsersResponse {
   profiles: ProfileSummary[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+//* Add Favorite Request
+export interface AddFavoriteRequest {
+  userId: string; // Current user ID (who is favoriting)
+  favoritedUserId: string; // User being favorited
+}
+
+//* Remove Favorite Request
+export interface RemoveFavoriteRequest {
+  userId: string; // Current user ID (who is unfavoriting)
+  favoritedUserId: string; // User being unfavorited
+}
+
+//* Get Favorites Request
+export interface GetFavoritesRequest {
+  userId: string; // Current user ID
+  page?: number; // Pagination page (default 1)
+  limit?: number; // Items per page (default 20)
+}
+
+//* Get Favorites Response
+export interface GetFavoritesResponse {
+  favorites: ProfileSummary[];
   total: number;
   page: number;
   limit: number;

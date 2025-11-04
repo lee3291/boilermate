@@ -3,10 +3,10 @@
  * Handles HTTP requests for profile and matching endpoints
  */
 
-import { Controller, Get, Param, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Query, Body, HttpCode } from '@nestjs/common';
 import { ProfileService } from './profile.service';
-import { GetProfileDetailsDto, SearchUsersDto } from './dto';
-import { ProfileDetailsDto, SearchUsersResponseDto } from './dto/profile-response.dto';
+import { GetProfileDetailsDto, SearchUsersDto, AddFavoriteDto, RemoveFavoriteDto, GetFavoritesDto } from './dto';
+import { ProfileDetailsDto, SearchUsersResponseDto, GetFavoritesResponseDto } from './dto/profile-response.dto';
 
 @Controller('profile')
 export class ProfileController {
@@ -15,16 +15,13 @@ export class ProfileController {
   /**
    * GET /profile/me
    * Get current user's profile
-   * TODO: Implement when user basic fields are available
+   * Query param: userId
    */
   @Get('me')
-  async getMe(@Request() req: any): Promise<any> {
-    // TODO: Extract userId from JWT token when auth is implemented
-    // For now, use hardcoded or query param
-    const userId = req.user?.id || req.query?.userId;
-    
+  @HttpCode(200)
+  async getMe(@Query('userId') userId: string): Promise<any> {
     if (!userId) {
-      throw new Error('User ID is required. TODO: Extract from JWT token');
+      throw new Error('userId is required');
     }
 
     return this.profileService.getMe(userId);
@@ -33,22 +30,20 @@ export class ProfileController {
   /**
    * GET /profile/search
    * Search for users based on lifestyle preferences
-   * Query params: page, limit, preferenceIds, importanceOperator, importanceValue
+   * Query params: userId, page, limit, preferenceIds, importanceOperator, importanceValue
    */
   @Get('search')
+  @HttpCode(200)
   async searchUsers(
-    @Request() req: any,
+    @Query('userId') userId: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('preferenceIds') preferenceIds?: string | string[],
     @Query('importanceOperator') importanceOperator?: 'equal' | 'less_or_equal' | 'greater_or_equal',
     @Query('importanceValue') importanceValue?: string,
   ): Promise<SearchUsersResponseDto> {
-    // TODO: Extract userId from JWT token when auth is implemented
-    const userId = req.user?.id || req.query?.userId;
-    
     if (!userId) {
-      throw new Error('User ID is required. TODO: Extract from JWT token');
+      throw new Error('userId is required');
     }
 
     const dto = new SearchUsersDto();
@@ -68,19 +63,88 @@ export class ProfileController {
   }
 
   /**
+   * GET /profile/favorites/list
+   * Get all favorites for current user
+   * Query params: userId, page, limit
+   * NOTE: Must be before /:userId route to avoid route conflict
+   */
+  @Get('favorites/list')
+  @HttpCode(200)
+  async getFavorites(
+    @Query('userId') userId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<GetFavoritesResponseDto> {
+    if (!userId) {
+      throw new Error('userId is required');
+    }
+
+    const dto = new GetFavoritesDto();
+    dto.userId = userId;
+    dto.page = page ? parseInt(page, 10) : 1;
+    dto.limit = limit ? parseInt(limit, 10) : 20;
+
+    return this.profileService.getFavorites(dto);
+  }
+
+  /**
+   * POST /profile/favorites
+   * Add a user to favorites
+   * Body: { userId: string, favoritedUserId: string }
+   */
+  @Post('favorites')
+  @HttpCode(201)
+  async addFavorite(
+    @Body() body: { userId: string; favoritedUserId: string },
+  ): Promise<{ message: string; favoriteId: string }> {
+    if (!body.userId) {
+      throw new Error('userId is required');
+    }
+
+    if (!body.favoritedUserId) {
+      throw new Error('favoritedUserId is required');
+    }
+
+    const dto = new AddFavoriteDto();
+    dto.userId = body.userId;
+    dto.favoritedUserId = body.favoritedUserId;
+
+    return this.profileService.addFavorite(dto);
+  }
+
+  /**
+   * DELETE /profile/favorites/:favoritedUserId
+   * Remove a user from favorites
+   * Query param: userId
+   */
+  @Delete('favorites/:favoritedUserId')
+  @HttpCode(204)
+  async removeFavorite(
+    @Query('userId') userId: string,
+    @Param('favoritedUserId') favoritedUserId: string,
+  ): Promise<{ message: string }> {
+    if (!userId) {
+      throw new Error('userId is required');
+    }
+
+    const dto = new RemoveFavoriteDto();
+    dto.userId = userId;
+    dto.favoritedUserId = favoritedUserId;
+
+    return this.profileService.removeFavorite(dto);
+  }
+
+  /**
    * GET /profile/:userId
    * Get full profile details for a specific user
-   * Optionally provide viewerId for match score calculation
+   * Query params: viewerId (optional)
    */
   @Get(':userId')
+  @HttpCode(200)
   async getProfile(
     @Param('userId') userId: string,
-    @Request() req: any,
-    @Query('viewerId') viewerIdQuery?: string,
+    @Query('viewerId') viewerId?: string,
   ): Promise<ProfileDetailsDto> {
-    // TODO: Extract viewerId from JWT token when auth is implemented
-    const viewerId = req.user?.id || viewerIdQuery;
-
     const dto = new GetProfileDetailsDto();
     dto.userId = userId;
     dto.viewerId = viewerId;

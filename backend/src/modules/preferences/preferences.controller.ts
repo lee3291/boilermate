@@ -30,8 +30,6 @@ import {
  */
 @Controller('preferences')
 export class PreferencesController {
-  private readonly logger = new Logger(PreferencesController.name);
-
   constructor(private readonly preferencesService: PreferencesService) {}
 
   /**
