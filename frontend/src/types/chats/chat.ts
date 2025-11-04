@@ -43,6 +43,9 @@ export interface Chat {
   creatorId?: string; // creator's userId for group chats (null for DMs)
   latestMessageAt: Date;
   participants?: Participant[]; // NEW - list of all participants with their details
+  // true if user1 block user2 and vice versa
+  // false if no block or groupchat
+  //blockRelation?: boolean;
   // NOTE: userAId and userBId no longer exist - use participants for members
 }
 

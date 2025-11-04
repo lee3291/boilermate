@@ -207,6 +207,7 @@ export class ChatsService {
 
     try {
       //! NULL CHECK: Validate message has either content or image
+
       if (!content && !imageUrl) {
         throw new BadRequestException('Message must have either content or image');
       }
@@ -933,5 +934,21 @@ export class ChatsService {
     await this.prisma.userBlocking.deleteMany({
       where: { blockerId, blockedId },
     });
+  }
+
+  /**
+   * Returns true if user1 has blocked user2 OR user2 has blocked user1.
+   */
+  async isBlockedBetween(userId1: string, userId2: string): Promise<boolean> {
+    const block = await this.prisma.userBlocking.findFirst({
+      where: {
+        OR: [
+          { blockerId: userId1, blockedId: userId2 },
+          { blockerId: userId2, blockedId: userId1 },
+        ],
+      },
+    });
+
+    return !!block; // true if found, false if not
   }
 }

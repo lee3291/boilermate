@@ -10,6 +10,7 @@ export class ChatSocketService {
   private editHandlers: ((data: { messageId: string; content: string }) => void)[] = [];
   private deleteHandlers: ((data: { messageId: string }) => void)[] = [];
   private refreshHandlers: ((data: { chatId: string }) => void)[] = [];
+  private blockStatusHandlers: ((data: { user1: string; user2: string;}) => void)[] = [];
 
   constructor() {
     this.initialize();
@@ -37,6 +38,9 @@ export class ChatSocketService {
     });
     this.socket.on('refreshChat', (data: { chatId: string }) => {
       this.refreshHandlers.forEach(handler => handler(data));
+    });
+    this.socket.on('onBlockStatusChange', (data: { user1: string; user2: string;}) => {
+      this.blockStatusHandlers.forEach(handler => handler(data));
     });
   }
 
@@ -123,6 +127,13 @@ export class ChatSocketService {
     this.refreshHandlers.push(handler);
     return () => {
       this.refreshHandlers = this.refreshHandlers.filter(h => h !== handler);
+    };
+  }
+
+  onBlockStatusChange(handler: (data: { user1: string; user2: string;}) => void) {
+    this.blockStatusHandlers.push(handler);
+    return () => {
+      this.blockStatusHandlers = this.blockStatusHandlers.filter(h => h !== handler);
     };
   }
 }

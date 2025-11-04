@@ -157,7 +157,6 @@ export async function getUsersWhoBlockedMeIds(userId: string): Promise<string[]>
   }
 }
 
-// Get list of userIds user can still block
 // Get list of userIds user can still block (with optional search query)
 export async function getUserIdsCanBlock(userId: string, searchQuery?: string): Promise<{ users: Array<{ id: string; email: string }> }> {
   try {
@@ -188,7 +187,21 @@ export async function unblockUser(blockerId: string, blockedId: string): Promise
     throw error.response?.data ?? error;
   }
 }
+
+// Checks if either user has blocked the other
+export async function isBlockedBetween(user1: string, user2: string): Promise<boolean> {
+  try {
+    const res = await api.get<{ blocked: boolean }>('/chats/is-block-between', {
+      params: { user1, user2 },
+    });
+    return res.data.blocked;
+  } catch (error: any) {
+    console.error('Error checking block status:', error);
+    return false;
+  }
+}
+
 export default { getChats, sendMessage, getHistory, editMessage,
   deleteMessage, createNormalChat, searchUsersForNormalChatCreation,
   getBlockedByUserId, getUsersWhoBlockedMeIds, getUserIdsCanBlock,
-  blockUser, unblockUser};
+  blockUser, unblockUser, isBlockedBetween};

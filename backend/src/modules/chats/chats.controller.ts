@@ -286,15 +286,30 @@ export class ChatsController {
     const users = await this.chatsService.getUserIdsCanBlock({ userId });
     return { users };
   }
-
+  /*
+   * Block
+   */
   @Post(':userId/blocked') // userId is the person who block other
   async blockUser(@Param('userId') userId: string, @Body() dto: BlockUserDto): Promise<void> {
     await this.chatsService.blockUser({ blockerId: userId, blockedId: dto.blockedId });
   }
 
+  /*
+   * Unblock
+   */
+
   @Delete(':userId/unblock') // userId is the person who unblock other
   async unblockUser(@Param('userId') userId: string, @Body() dto: UnblockUserDto): Promise<void> {
     await this.chatsService.unblockUser({ blockerId: userId, blockedId: dto.blockedId });
+  }
+
+  /*
+   * Returns true if user1 has blocked user2 OR user2 has blocked user1.
+   */
+  @Get('is-block-between')
+  async checkBlocked(@Query('user1') user1: string, @Query('user2') user2: string): Promise<{ blocked: boolean }> {
+    const blocked = await this.chatsService.isBlockedBetween(user1, user2);
+    return { blocked };
   }
 
 }

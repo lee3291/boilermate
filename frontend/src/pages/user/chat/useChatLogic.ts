@@ -9,7 +9,9 @@ import {
   searchUsersForNormalChatCreation as apiSearchUsersForNormalChatCreation,
   getUserIdsCanBlock as apiSearchUsersForBlock,
     blockUser as apiBlockUser,
+    unblockUser as apiUnblockUser,
   getBlockedByUserId as apiBlockedByUserId,
+  isBlockedBetween as apiIsBlockBetween,
 } from '@/services/chatService';
 import {
   getPresignedUrl as apiGetPresignedUrl,
@@ -53,7 +55,7 @@ export default function useChatLogic(initialUserId: string) {
   const [loadingChats, setLoadingChats] = useState(false); // set loading state when fetching all chatIds in side bar
   const [loadingMessages, setLoadingMessages] = useState(false); // set loading state when fetching all the messages in chat window
   const [error, setError] = useState<string | null>(null); // set error state when handling events
-  
+
   // Group chat specific states
   const [invitations, setInvitations] = useState<any[]>([]); // pending group invitations
   const [invitationsCount, setInvitationsCount] = useState(0); // count of pending invitations
@@ -64,10 +66,8 @@ export default function useChatLogic(initialUserId: string) {
 
   // 1-1 chat
   const [showCreateNormalChatModal, setShowCreateNormalChatModal] = useState(false); // control create 1-1 modal visibility
-
-  // 1-1 chat
-
   const [showBlockModal, setShowBlockModal] = useState(false); // control block modal visibility
+  const [blockedBetween, setBlockedBetween] = useState<boolean>(false);
 
   // fetch all chats for current user
   const fetchChats = useCallback(async (userId?: string) => {
@@ -124,7 +124,7 @@ export default function useChatLogic(initialUserId: string) {
         setError('Connection failed');
       }
     }
-    
+
     // Connect to WebSocket
     //chatSocket.connect(currentUserId);
     initConnection();
@@ -139,7 +139,7 @@ export default function useChatLogic(initialUserId: string) {
   // When selected chat changes fetch its history and join chat room
   useEffect(() => {
     if (!selectedChatId || !currentUserId) return;
-    
+
     fetchHistory(selectedChatId, currentUserId);
     chatSocket.joinChat(selectedChatId); // emit signal to backend that user join a new chat
 
@@ -161,8 +161,8 @@ export default function useChatLogic(initialUserId: string) {
 
     // this handler is used to find the edited message and update it for other users
     const editHandler = (data: { messageId: string; content: string }) => {
-      setMessages(prev => prev.map(msg => 
-        msg.id === data.messageId 
+      setMessages(prev => prev.map(msg =>
+        msg.id === data.messageId
           ? { ...msg, content: data.content, isEdited: true }
           : msg
       ));
@@ -209,6 +209,52 @@ export default function useChatLogic(initialUserId: string) {
   }, [currentUserId, selectedChatId, fetchHistory]);
 
 
+    // Refresh block status when selected chat changes
+    // Update blockedBetween correctly in useChatLogic
+    // Track if DM is blocked
+    // Track if DM is blocked
+  useEffect(() => {
+    if (!currentUserId || !selectedChatId) return;
+
+    const selectedConversation = conversations.find(c => c.id === selectedChatId);
+    if (!selectedConversation || selectedConversation.isGroup) {
+      setBlockedBetween(false);
+      return;
+    }
+
+    const otherUserId = selectedConversation.participants?.find(p => p.id !== currentUserId)?.id;
+    if (!otherUserId) {
+      setBlockedBetween(false);
+      return;
+    }
+
+    const fetchBlockStatus = async () => {
+      try {
+        const res = await apiIsBlockBetween(currentUserId, otherUserId);
+        setBlockedBetween(res);
+      } catch {
+        setBlockedBetween(false);
+      }
+    };
+
+    // initial fetch
+    fetchBlockStatus();
+
+    // subscribe to block events from WebSocket
+    const unsubBlock = chatSocket.onBlockStatusChange(({ user1, user2 }) => {
+      if ([user1, user2].includes(currentUserId) && [user1, user2].includes(otherUserId)) {
+        fetchBlockStatus();
+      }
+    });
+
+    return () => {
+      unsubBlock();
+    };
+  }, [currentUserId, selectedChatId, conversations]);
+
+
+
+
   // handle input change, useCallback just for fun literally
   const handleInputChange = useCallback((value: string) => {
     setMessageInput(value);
@@ -248,7 +294,7 @@ export default function useChatLogic(initialUserId: string) {
 
       // prevent sending empty message
       if (!hasText && !hasImage) return null;
-      
+
       setError(null);
 
       try {
@@ -358,7 +404,7 @@ export default function useChatLogic(initialUserId: string) {
         setError('userId required');
         return false;
       }
-      
+
       try {
         const req: deleteMessageRequest = { userId: currentUserId, forEveryone: forEveryone };
         await apiDeleteMessage(messageId, req);
@@ -469,6 +515,19 @@ export default function useChatLogic(initialUserId: string) {
   }, [currentUserId, fetchChats]);
 
   //Handle unblock
+  const handleUnblock = useCallback(
+      async (targetUserId: string) => {
+        if (!currentUserId) return;
+        try {
+          await apiUnblockUser(currentUserId, targetUserId); // <-- use your unblock API here
+          await fetchChats(currentUserId); // refresh UI if needed
+          setShowBlockModal(false);
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to unblock user');
+        }
+      },
+      [currentUserId, fetchChats]
+  );
 
   //Search users for block
   const handleSearchUsersForBlock = useCallback(async (searchQuery: string) => {
@@ -499,8 +558,6 @@ export default function useChatLogic(initialUserId: string) {
       },
       [currentUserId]
   );
-
-
 
   // Search users for 1-1 creation
   const handleSearchUsersForNormalChat = useCallback(async (searchQuery: string) => {
@@ -655,6 +712,8 @@ export default function useChatLogic(initialUserId: string) {
     send,
     edit,
     remove,
+    blockedBetween,
+      setBlockedBetween,
 
     // group chat actions
     fetchInvitations,
@@ -676,5 +735,6 @@ export default function useChatLogic(initialUserId: string) {
     handleBlock,
     handleSearchUsersForBlock,
     handleGetBlockedList,
+    handleUnblock
   };
 }

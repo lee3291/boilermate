@@ -1,33 +1,33 @@
-import { X, UserMinus} from 'lucide-react';
+import { X, UserMinus } from 'lucide-react';
 import { useState } from 'react';
 
 interface Member {
     id: string;
-    email: string; // Using email for now, will be name later
-    // name: string; // OLD - will be available later
-    // avatarURL?: string; // OLD - will be available later
+    email: string;
 }
 
 interface BlockedUsersSidebarProps {
     currentUserId: string;
     onClose: () => void;
-    //onRemoveMember?: (memberId: string) => Promise<void>;
-    members?: Member[]; // Optional, pass participants from selectedConversation
+    members?: Member[];
+    onRemoveMember?: (memberId: string) => void;
 }
 
-export default function BlockedUsersSidebar({currentUserId,
+export default function BlockedUsersSidebar({
+                                                currentUserId,
                                                 onClose,
-                                                members = [], // Default to empty array if not provided
-                                                //onRemoveMember,
+                                                members = [],
+                                                onRemoveMember,
                                             }: BlockedUsersSidebarProps) {
     const [removingId, setRemovingId] = useState<string | null>(null);
 
     const handleRemove = async (memberId: string, memberEmail: string) => {
-        if (!confirm(`Remove ${memberEmail} from the group?`)) return;
+        if (!confirm(`Remove ${memberEmail} from list of blocked users?`)) return;
 
         setRemovingId(memberId);
         try {
-            //await onRemoveMember?.(memberId);
+            // Just trigger parent callback for now
+            onRemoveMember?.(memberId);
         } catch (error) {
             console.error('Remove member error:', error);
             alert('Failed to remove member');
@@ -51,7 +51,6 @@ export default function BlockedUsersSidebar({currentUserId,
                 </button>
             </div>
 
-
             {/* Blocked Users List */}
             <div className="flex-1 overflow-y-auto p-4">
                 {members.length === 0 ? (
@@ -61,9 +60,8 @@ export default function BlockedUsersSidebar({currentUserId,
                 ) : (
                     <div className="space-y-2">
                         {members.map((member) => {
-                            // NOTE: We don't have creatorId in member data yet, so canRemove logic is simplified
                             const isCurrentUser = member.id === currentUserId;
-                            const canRemove = !isCurrentUser; // TODO: Add !isMemberCreator when we have creator data
+                            const canRemove = !isCurrentUser;
 
                             return (
                                 <div
@@ -71,17 +69,14 @@ export default function BlockedUsersSidebar({currentUserId,
                                     className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors"
                                 >
                                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                                        {/* Avatar */}
                                         <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0">
                                             {member.email[0].toUpperCase()}
                                         </div>
-
-                                        {/* Email and Role */}
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2">
-                                              <span className="text-sm font-medium text-gray-900 truncate">
-                                                 {member.email}
-                                              </span>
+                        <span className="text-sm font-medium text-gray-900 truncate">
+                          {member.email}
+                        </span>
                                                 {isCurrentUser && (
                                                     <span className="text-xs text-gray-500">(You)</span>
                                                 )}
@@ -89,7 +84,6 @@ export default function BlockedUsersSidebar({currentUserId,
                                         </div>
                                     </div>
 
-                                    {/* Remove Button */}
                                     {canRemove && (
                                         <button
                                             onClick={() => handleRemove(member.id, member.email)}

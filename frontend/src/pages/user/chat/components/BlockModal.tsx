@@ -19,6 +19,7 @@ interface BlockModalProps {
     currentUserId: string;
     onSearchUsers: (query: string) => Promise<User[]>;
     onBlockUsers: (userId: string) => Promise<void>;
+    onUnblockUsers: (userId: string) => Promise<void>;
 }
 
 export default function BlockModal({
@@ -27,12 +28,14 @@ export default function BlockModal({
                                        currentUserId,
                                        onSearchUsers,
                                        onBlockUsers,
+                                       onUnblockUsers,
                                    }: BlockModalProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<User[]>([]);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [isSearching, setIsSearching] = useState(false);
     const [isBlocking, setIsBlocking] = useState(false);
+    const [isUnblocking, setIsUnblocking] = useState(false);
     const [showBlockedSidebar, setShowBlockedSidebar] = useState(false);
     const [blockedUsers, setBlockedUsers] = useState<Member[]>([]);
 
@@ -42,7 +45,7 @@ export default function BlockModal({
             try {
                 const response = await getBlockedByUserId(currentUserId);
                 const users = response.users ?? [];
-                const members: Member[] = users.map(u => ({
+                const members: Member[] = users.map((u) => ({
                     id: u.id,
                     email: u.email ?? `${u.id}@example.com`,
                 }));
@@ -65,7 +68,7 @@ export default function BlockModal({
         setIsSearching(true);
         try {
             const results = await onSearchUsers(query);
-            setSearchResults(results.filter(u => u.id !== currentUserId));
+            setSearchResults(results.filter((u) => u.id !== currentUserId));
         } catch (err) {
             console.error('Search error', err);
         } finally {
@@ -90,7 +93,7 @@ export default function BlockModal({
             if (showBlockedSidebar) {
                 const response = await getBlockedByUserId(currentUserId);
                 const users = response.users ?? [];
-                const members: Member[] = users.map(u => ({
+                const members: Member[] = users.map((u) => ({
                     id: u.id,
                     email: u.email ?? `${u.id}@example.com`,
                 }));
@@ -104,6 +107,30 @@ export default function BlockModal({
         }
     };
 
+    const handleUnblock = async (userId: string) => {
+        if (!confirm('Are you sure you want to unblock this user?')) return;
+        setIsUnblocking(true);
+        try {
+            await onUnblockUsers(userId);
+            setBlockedUsers((prev) => prev.filter((u) => u.id !== userId));
+            // Refresh blocked list if sidebar is open
+            if (showBlockedSidebar) {
+                const response = await getBlockedByUserId(currentUserId);
+                const users = response.users ?? [];
+                const members: Member[] = users.map((u) => ({
+                    id: u.id,
+                    email: u.email ?? `${u.id}@example.com`,
+                }));
+                setBlockedUsers(members);
+            }
+        } catch (err) {
+            console.error('Unblock error', err);
+            alert('Failed to unblock user');
+        } finally {
+            setIsUnblocking(false);
+        }
+    };
+
     return (
         <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
             <div className="bg-white rounded-lg shadow-2xl border border-gray-200 w-full max-w-md mx-4 max-h-[90vh] flex flex-col pointer-events-auto">
@@ -113,6 +140,7 @@ export default function BlockModal({
                         <X size={24} />
                     </button>
                 </div>
+
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     {selectedUser && (
                         <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
@@ -127,25 +155,30 @@ export default function BlockModal({
                             </button>
                         </div>
                     )}
+
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Search Users</label>
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                            <Search
+                                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                                size={20}
+                            />
                             <input
                                 type="text"
                                 value={searchQuery}
-                                onChange={e => handleSearch(e.target.value)}
+                                onChange={(e) => handleSearch(e.target.value)}
                                 placeholder="Search users..."
                                 className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
+
                         {searchQuery && (
                             <div className="mt-2 border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
                                 {isSearching ? (
                                     <div className="p-4 text-center text-gray-500">Searching...</div>
                                 ) : searchResults.length ? (
                                     <div className="divide-y">
-                                        {searchResults.map(u => (
+                                        {searchResults.map((u) => (
                                             <button
                                                 key={u.id}
                                                 onClick={() => handleSelectUser(u)}
@@ -168,6 +201,7 @@ export default function BlockModal({
                         )}
                     </div>
                 </div>
+
                 <div className="p-4 border-t flex gap-2">
                     <button
                         className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -175,6 +209,7 @@ export default function BlockModal({
                     >
                         Manage Blocked Users
                     </button>
+
                     <button
                         onClick={handleBlock}
                         disabled={isBlocking || !selectedUser}
@@ -182,11 +217,13 @@ export default function BlockModal({
                     >
                         {isBlocking ? 'Blocking...' : 'Block User'}
                     </button>
+
                     {showBlockedSidebar && (
                         <BlockedUsersSidebar
                             currentUserId={currentUserId}
                             onClose={() => setShowBlockedSidebar(false)}
                             members={blockedUsers}
+                            onRemoveMember={handleUnblock} // 🔥 connected to real unblock logic
                         />
                     )}
                 </div>
@@ -194,3 +231,4 @@ export default function BlockModal({
         </div>
     );
 }
+

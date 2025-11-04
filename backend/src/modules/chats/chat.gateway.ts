@@ -137,7 +137,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     .to(`chat:${chatId}`)
     .except(Array.from(this.userSockets.get(senderId) || []))
     .emit('onMessageEdit', { messageId, content });
-}
+  }
 
   /**
    * Emits a message deletion event to all sockets in a chat room
@@ -149,7 +149,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     .to(`chat:${chatId}`)
     .except(Array.from(this.userSockets.get(senderId) || []))
     .emit('onMessageDelete', { messageId });
-}
+  }
+  /*
+   * Call this when someone blocks/unblocks another user
+   */
+  notifyBlockChange(chatId: string, user1: string, user2: string) {
+    this.server
+        .to(`chat:${chatId}`)
+        .emit('onBlockStatusChange', { user1, user2 });
+  }
+
+
 
   /**
    * Handles requests to join a chat room

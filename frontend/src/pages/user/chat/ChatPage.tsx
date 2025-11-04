@@ -55,6 +55,7 @@ export default function ChatPage() {
             selectedFile={logic.selectedFile}
             onFileChange={logic.handleFileChange}
             isUploadingImage={logic.isUploadingImage}
+            blockedBetween={logic.blockedBetween}
             // Group chat props
             showGroupMembersSidebar={logic.showGroupMembersSidebar}
             onToggleGroupMembersSidebar={() => logic.setShowGroupMembersSidebar(!logic.showGroupMembersSidebar)}
@@ -88,7 +89,8 @@ export default function ChatPage() {
               currentUserId={logic.currentUserId}
               onSearchUsers={logic.handleSearchUsersForBlock}
               onBlockUsers={logic.handleBlock}
-              //handleGetBlockedList={logic.handleGetBlockedList}
+              onUnblockUsers={logic.handleUnblock}
+              //onGetBlockedList={logic.handleGetBlockedList}
           />
 
         <InvitationsModal
