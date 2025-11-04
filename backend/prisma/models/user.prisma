@@ -9,6 +9,12 @@ enum SearchStatus {
   NOT_LOOKING
   HIDDEN
 }
+
+enum VoteType {
+  LIKE
+  DISLIKE
+}
+
 model User {
   id            String        @id @default(uuid())
   email         String        @unique
@@ -48,6 +54,11 @@ model User {
 
   // A list of all the users who have favorited this user
   favoritedBy FavoriteMatch[] @relation("FavoritedUser")
+
+  // Votes this user has cast
+  votesCast     UserVote[]      @relation("VotingUser")
+  // Votes this user has received
+  votesReceived UserVote[]      @relation("VotedUser")
 }
 
 model FavoriteMatch {
@@ -62,4 +73,19 @@ model FavoriteMatch {
 
   // Ensures a user cannot favorite the same person more than once
   @@unique([userId, favoritedUserId])
+}
+
+model UserVote {
+  id                  String   @id @default(uuid())
+  voteType            VoteType // This is either LIKE or DISLIKE
+  voterId             String // The user who is casting the vote
+  votedUserId         String // The user who is receiving the vote
+  createdAt           DateTime @default(now())
+
+  // RELATIONS
+  voter               User @relation("VotingUser", fields: [voterId], references: [id])
+  votedUser           User @relation("VotedUser", fields: [votedUserId], references: [id])
+
+  // Ensures a user can only vote (like/dislike) another user once
+  @@unique([voterId, votedUserId])
 }

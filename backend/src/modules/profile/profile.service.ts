@@ -5,8 +5,24 @@
 
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '@core/database/prisma.service';
-import { GetProfileDetailsDto, SearchUsersDto, AddFavoriteDto, RemoveFavoriteDto, GetFavoritesDto } from './dto';
-import { ProfileDetailsDto, ProfileSummaryDto, SearchUsersResponseDto, GetFavoritesResponseDto } from './dto/profile-response.dto';
+import { 
+  GetProfileDetailsDto, 
+  SearchUsersDto, 
+  AddFavoriteDto, 
+  RemoveFavoriteDto, 
+  GetFavoritesDto,
+  VoteUserDto,
+  RemoveVoteDto,
+  GetMyVotesDto,
+  GetVoteStatsDto,
+  ProfileDetailsDto, 
+  ProfileSummaryDto, 
+  SearchUsersResponseDto, 
+  GetFavoritesResponseDto,
+  VoteResponseDto,
+  VoteStatsDto,
+  GetMyVotesResponseDto
+} from './dto';
 
 @Injectable()
 export class ProfileService {
@@ -40,8 +56,18 @@ export class ProfileService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
+    // Get vote counts for own profile
+    const [likesReceived, dislikesReceived] = await Promise.all([
+      this.prisma.userVote.count({
+        where: { votedUserId: userId, voteType: 'LIKE' },
+      }),
+      this.prisma.userVote.count({
+        where: { votedUserId: userId, voteType: 'DISLIKE' },
+      }),
+    ]);
+
     // Own profile is never favorited by self
-    return ProfileDetailsDto.fromProfile(user, false);
+    return ProfileDetailsDto.fromProfile(user, false, likesReceived, dislikesReceived);
   }
 
   /**
@@ -89,7 +115,17 @@ export class ProfileService {
       isFavoritedByMe = !!favorite;
     }
 
-    return ProfileDetailsDto.fromProfile(user, isFavoritedByMe);
+    // Get vote counts for this profile
+    const [likesReceived, dislikesReceived] = await Promise.all([
+      this.prisma.userVote.count({
+        where: { votedUserId: userId, voteType: 'LIKE' },
+      }),
+      this.prisma.userVote.count({
+        where: { votedUserId: userId, voteType: 'DISLIKE' },
+      }),
+    ]);
+
+    return ProfileDetailsDto.fromProfile(user, isFavoritedByMe, likesReceived, dislikesReceived);
   }
 
   /**
@@ -157,10 +193,40 @@ export class ProfileService {
     // Create a Set of favorited user IDs for quick lookup
     const favoritedUserIds = new Set(myFavorites.map(f => f.favoritedUserId));
 
-    // Transform to DTOs with favorite status
-    const profiles = users.map((user: any) => 
-      ProfileSummaryDto.fromProfile(user, favoritedUserIds.has(user.id))
-    );
+    // Get vote counts for all users in results
+    const userIds = users.map(u => u.id);
+    const voteCounts = await this.prisma.userVote.groupBy({
+      by: ['votedUserId', 'voteType'],
+      where: {
+        votedUserId: { in: userIds },
+      },
+      _count: true,
+    });
+
+    // Build a map of userId -> {likes, dislikes}
+    const voteMap = new Map<string, { likes: number; dislikes: number }>();
+    voteCounts.forEach((vc: any) => {
+      if (!voteMap.has(vc.votedUserId)) {
+        voteMap.set(vc.votedUserId, { likes: 0, dislikes: 0 });
+      }
+      const counts = voteMap.get(vc.votedUserId)!;
+      if (vc.voteType === 'LIKE') {
+        counts.likes = vc._count;
+      } else {
+        counts.dislikes = vc._count;
+      }
+    });
+
+    // Transform to DTOs with favorite status and vote counts
+    const profiles = users.map((user: any) => {
+      const votes = voteMap.get(user.id) || { likes: 0, dislikes: 0 };
+      return ProfileSummaryDto.fromProfile(
+        user, 
+        favoritedUserIds.has(user.id),
+        votes.likes,
+        votes.dislikes
+      );
+    });
 
     // Return paginated response
     return SearchUsersResponseDto.fromProfiles(
@@ -322,9 +388,34 @@ export class ProfileService {
 
     // Transform to DTOs
     // All users in this list are favorited by definition (isFavoritedByMe = true)
-    const favorites = favoriteMatches.map((match: any) => 
-      ProfileSummaryDto.fromProfile(match.favoritedUser, true)
-    );
+    // Get vote counts for favorited users
+    const userIds = favoriteMatches.map((m: any) => m.favoritedUser.id);
+    const voteCounts = await this.prisma.userVote.groupBy({
+      by: ['votedUserId', 'voteType'],
+      where: {
+        votedUserId: { in: userIds },
+      },
+      _count: true,
+    });
+
+    // Build vote map
+    const voteMap = new Map<string, { likes: number; dislikes: number }>();
+    voteCounts.forEach((vc: any) => {
+      if (!voteMap.has(vc.votedUserId)) {
+        voteMap.set(vc.votedUserId, { likes: 0, dislikes: 0 });
+      }
+      const counts = voteMap.get(vc.votedUserId)!;
+      if (vc.voteType === 'LIKE') {
+        counts.likes = vc._count;
+      } else {
+        counts.dislikes = vc._count;
+      }
+    });
+
+    const favorites = favoriteMatches.map((match: any) => {
+      const votes = voteMap.get(match.favoritedUser.id) || { likes: 0, dislikes: 0 };
+      return ProfileSummaryDto.fromProfile(match.favoritedUser, true, votes.likes, votes.dislikes);
+    });
 
     // Return paginated response
     return GetFavoritesResponseDto.fromFavorites(
@@ -333,5 +424,223 @@ export class ProfileService {
       page,
       limit
     );
+  }
+
+  /**
+   * Vote on a user (LIKE or DISLIKE)
+   * Creates or updates a UserVote record
+   */
+  async voteUser(dto: VoteUserDto): Promise<VoteResponseDto> {
+    const { voterId, votedUserId, voteType } = dto;
+
+    // Validate: Cannot vote for yourself
+    if (voterId === votedUserId) {
+      throw new BadRequestException('Cannot vote for yourself');
+    }
+
+    // Validate: Voted user exists
+    const votedUser = await this.prisma.user.findUnique({
+      where: { id: votedUserId },
+    });
+
+    if (!votedUser) {
+      throw new NotFoundException(`User with ID ${votedUserId} not found`);
+    }
+
+    // Check if vote already exists
+    const existingVote = await this.prisma.userVote.findUnique({
+      where: {
+        voterId_votedUserId: {
+          voterId,
+          votedUserId,
+        },
+      },
+    });
+
+    let vote;
+    let message: string;
+
+    if (existingVote) {
+      // Update existing vote
+      vote = await this.prisma.userVote.update({
+        where: {
+          id: existingVote.id,
+        },
+        data: {
+          voteType,
+        },
+      });
+      message = `Vote updated to ${voteType} successfully`;
+    } else {
+      // Create new vote
+      vote = await this.prisma.userVote.create({
+        data: {
+          voterId,
+          votedUserId,
+          voteType,
+        },
+      });
+      message = `User ${voteType === 'LIKE' ? 'liked' : 'disliked'} successfully`;
+    }
+
+    const response = new VoteResponseDto();
+    response.message = message;
+    response.voteId = vote.id;
+    response.voteType = vote.voteType as 'LIKE' | 'DISLIKE';
+    return response;
+  }
+
+  /**
+   * Remove a vote from a user
+   * Deletes the UserVote record
+   */
+  async removeVote(dto: RemoveVoteDto): Promise<{ message: string }> {
+    const { voterId, votedUserId } = dto;
+
+    // Find the vote record
+    const vote = await this.prisma.userVote.findUnique({
+      where: {
+        voterId_votedUserId: {
+          voterId,
+          votedUserId,
+        },
+      },
+    });
+
+    if (!vote) {
+      throw new NotFoundException('Vote not found');
+    }
+
+    // Delete the vote record
+    await this.prisma.userVote.delete({
+      where: {
+        id: vote.id,
+      },
+    });
+
+    return {
+      message: 'Vote removed successfully',
+    };
+  }
+
+  /**
+   * Get all votes cast by a user
+   * Optionally filter by vote type (LIKE or DISLIKE)
+   */
+  async getMyVotes(dto: GetMyVotesDto): Promise<GetMyVotesResponseDto> {
+    const page = Number(dto.page) || 1;
+    const limit = Number(dto.limit) || 20;
+    const { voterId, voteType } = dto;
+
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const whereClause: any = {
+      voterId,
+    };
+
+    if (voteType) {
+      whereClause.voteType = voteType;
+    }
+
+    // Fetch votes with voted user details
+    const [votes, total] = await Promise.all([
+      this.prisma.userVote.findMany({
+        where: whereClause,
+        include: {
+          votedUser: {
+            include: {
+              _count: {
+                select: {
+                  profilePreferences: true,
+                  roommatePreferences: true,
+                },
+              },
+            },
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      this.prisma.userVote.count({
+        where: whereClause,
+      }),
+    ]);
+
+    // Transform to DTOs (no favorite info needed here)
+    // Get vote counts for voted users
+    const userIds = votes.map((v: any) => v.votedUser.id);
+    const voteCounts = await this.prisma.userVote.groupBy({
+      by: ['votedUserId', 'voteType'],
+      where: {
+        votedUserId: { in: userIds },
+      },
+      _count: true,
+    });
+
+    // Build vote map
+    const voteMap = new Map<string, { likes: number; dislikes: number }>();
+    voteCounts.forEach((vc: any) => {
+      if (!voteMap.has(vc.votedUserId)) {
+        voteMap.set(vc.votedUserId, { likes: 0, dislikes: 0 });
+      }
+      const counts = voteMap.get(vc.votedUserId)!;
+      if (vc.voteType === 'LIKE') {
+        counts.likes = vc._count;
+      } else {
+        counts.dislikes = vc._count;
+      }
+    });
+
+    const votedProfiles = votes.map((vote: any) => {
+      const voteCounts = voteMap.get(vote.votedUser.id) || { likes: 0, dislikes: 0 };
+      return ProfileSummaryDto.fromProfile(vote.votedUser, false, voteCounts.likes, voteCounts.dislikes);
+    });
+
+    return GetMyVotesResponseDto.fromVotes(
+      votedProfiles,
+      total,
+      page,
+      limit,
+      voteType
+    );
+  }
+
+  /**
+   * Get vote statistics for a user
+   * Returns how many likes and dislikes they have received
+   */
+  async getVoteStats(dto: GetVoteStatsDto): Promise<VoteStatsDto> {
+    const { userId } = dto;
+
+    // Validate: User exists
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    // Count likes and dislikes
+    const [likesReceived, dislikesReceived] = await Promise.all([
+      this.prisma.userVote.count({
+        where: {
+          votedUserId: userId,
+          voteType: 'LIKE',
+        },
+      }),
+      this.prisma.userVote.count({
+        where: {
+          votedUserId: userId,
+          voteType: 'DISLIKE',
+        },
+      }),
+    ]);
+
+    return VoteStatsDto.fromStats(userId, likesReceived, dislikesReceived);
   }
 }

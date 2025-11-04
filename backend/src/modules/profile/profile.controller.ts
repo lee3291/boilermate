@@ -5,8 +5,23 @@
 
 import { Controller, Get, Post, Delete, Param, Query, Body, HttpCode } from '@nestjs/common';
 import { ProfileService } from './profile.service';
-import { GetProfileDetailsDto, SearchUsersDto, AddFavoriteDto, RemoveFavoriteDto, GetFavoritesDto } from './dto';
-import { ProfileDetailsDto, SearchUsersResponseDto, GetFavoritesResponseDto } from './dto/profile-response.dto';
+import { 
+  GetProfileDetailsDto, 
+  SearchUsersDto, 
+  AddFavoriteDto, 
+  RemoveFavoriteDto, 
+  GetFavoritesDto,
+  VoteUserDto,
+  RemoveVoteDto,
+  GetMyVotesDto,
+  GetVoteStatsDto,
+  ProfileDetailsDto, 
+  SearchUsersResponseDto, 
+  GetFavoritesResponseDto,
+  VoteResponseDto,
+  VoteStatsDto,
+  GetMyVotesResponseDto
+} from './dto';
 
 @Controller('profile')
 export class ProfileController {
@@ -81,5 +96,52 @@ export class ProfileController {
     dto.userId = userId;
     // dto.viewerId comes from query params
     return this.profileService.getProfile(dto);
+  }
+
+  /**
+   * POST /profile/votes
+   * Vote on a user (LIKE or DISLIKE)
+   * If vote already exists, it will be updated
+   */
+  @Post('votes')
+  @HttpCode(200)
+  async voteUser(@Body() dto: VoteUserDto): Promise<VoteResponseDto> {
+    return this.profileService.voteUser(dto);
+  }
+
+  /**
+   * DELETE /profile/votes/:votedUserId
+   * Remove a vote from a user
+   */
+  @Delete('votes/:votedUserId')
+  @HttpCode(200)
+  async removeVote(
+    @Param('votedUserId') votedUserId: string,
+    @Query() dto: RemoveVoteDto
+  ): Promise<{ message: string }> {
+    dto.votedUserId = votedUserId;
+    return this.profileService.removeVote(dto);
+  }
+
+  /**
+   * GET /profile/votes/my-votes
+   * Get all votes cast by current user
+   * Optional: filter by voteType (LIKE or DISLIKE)
+   * NOTE: Must be before /:userId route to avoid route conflict
+   */
+  @Get('votes/my-votes')
+  @HttpCode(200)
+  async getMyVotes(@Query() dto: GetMyVotesDto): Promise<GetMyVotesResponseDto> {
+    return this.profileService.getMyVotes(dto);
+  }
+
+  /**
+   * GET /profile/votes/stats/:userId
+   * Get vote statistics for a user (likes and dislikes received)
+   */
+  @Get('votes/stats/:userId')
+  @HttpCode(200)
+  async getVoteStats(@Param('userId') userId: string): Promise<VoteStatsDto> {
+    return this.profileService.getVoteStats({ userId });
   }
 }
