@@ -11,6 +11,7 @@ import { ChatsModule } from '@modules/chats/chats.module';
 import { UploadsModule } from '@modules/uploads/uploads.module';
 import { BugReportModule } from './modules/bug-report/bug-report.module';
 import { ReportModule } from '@modules/report/report.module';
+import { ProfileModule } from './modules/profile/profile.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ReportModule } from '@modules/report/report.module';
     OTPModule,
     ListingsModule,
     BugReportModule,
+    ProfileModule,
   ],
   controllers: [AppController],
   providers: [AppService],

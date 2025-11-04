@@ -1,18 +1,8 @@
 model Preference {
-  id          Int         @id @default(autoincrement())
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
-  key         String
-  value       String?
-  importance  Int?        @default(3)
-  mustHave    Boolean?    @default(false)
-  visibility  Visibility? @default(PUBLIC)
-  createdAt   DateTime    @default(now())
-
-  @@unique([userId, key])
-}
-
-enum Visibility {
-  PUBLIC
-  PRIVATE
+  id          Int      @id @default(autoincrement())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String   @unique
+  preferences Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
