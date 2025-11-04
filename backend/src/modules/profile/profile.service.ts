@@ -13,66 +13,24 @@ export class ProfileService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Get current user's profile
-   * TODO: Implement when user basic fields (username, firstName, lastName) are available
-   * For now, returns a placeholder
+   * Get current user's full profile
    */
   async getMe(userId: string): Promise<any> {
-    //! NULL CHECK: Validate userId is provided
-    if (!userId) {
-      throw new BadRequestException('userId is required');
-    }
-
-    // Validate user exists
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
-    }
-
-    // TODO: Return full profile with user basic info + preferences
-    // For now, return placeholder
-    return {
-      message: 'Profile endpoint - TODO: Implement when user model has username, firstName, lastName, profileImage',
-      userId: user.id,
-      email: user.email,
-    };
-  }
-
-  /**
-   * Get full profile details for a specific user
-   * Includes lifestyle and roommate preferences (only PUBLIC if different user)
-   */
-  async getProfile(dto: GetProfileDetailsDto): Promise<ProfileDetailsDto> {
-    const { userId, viewerId } = dto;
-
-    //! NULL CHECK: Validate userId is provided
-    if (!userId) {
-      throw new BadRequestException('userId is required');
-    }
-
-    // Check if viewer is viewing their own profile
-    const isSelfView = viewerId && viewerId === userId;
-
-    // Fetch user with preferences
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
+        images: {
+          orderBy: { createdAt: 'asc' },
+        },
         profilePreferences: {
           include: {
             preference: true,
           },
-          // Filter by visibility if not self-view
-          where: isSelfView ? {} : { visibility: 'PUBLIC' },
         },
         roommatePreferences: {
           include: {
             preference: true,
           },
-          // Filter by visibility if not self-view
-          where: isSelfView ? {} : { visibility: 'PUBLIC' },
         },
       },
     });
@@ -81,7 +39,36 @@ export class ProfileService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    // Transform to DTO
+    return ProfileDetailsDto.fromProfile(user);
+  }
+
+  /**
+   * Get profile details for a specific user
+   */
+  async getProfile(dto: GetProfileDetailsDto): Promise<ProfileDetailsDto> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: dto.userId },
+      include: {
+        images: {
+          orderBy: { createdAt: 'asc' },
+        },
+        profilePreferences: {
+          include: {
+            preference: true,
+          },
+        },
+        roommatePreferences: {
+          include: {
+            preference: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${dto.userId} not found`);
+    }
+
     return ProfileDetailsDto.fromProfile(user);
   }
 
@@ -93,16 +80,6 @@ export class ProfileService {
    */
   async searchUsers(dto: SearchUsersDto): Promise<SearchUsersResponseDto> {
     const { userId, page = 1, limit = 10, preferenceIds, importanceOperator, importanceValue } = dto;
-
-    //! NULL CHECK: Validate userId is provided
-    if (!userId) {
-      throw new BadRequestException('userId is required');
-    }
-
-    // Validate pagination params
-    if (page < 1 || limit < 1) {
-      throw new BadRequestException('Page and limit must be positive integers');
-    }
 
     // Calculate skip for pagination
     const skip = (page - 1) * limit;
@@ -201,15 +178,6 @@ export class ProfileService {
   async addFavorite(dto: AddFavoriteDto): Promise<{ message: string; favoriteId: string }> {
     const { userId, favoritedUserId } = dto;
 
-    //! NULL CHECK: Validate required parameters
-    if (!userId) {
-      throw new BadRequestException('userId is required');
-    }
-
-    if (!favoritedUserId) {
-      throw new BadRequestException('favoritedUserId is required');
-    }
-
     // Validate: Cannot favorite yourself
     if (userId === favoritedUserId) {
       throw new BadRequestException('Cannot favorite yourself');
@@ -259,15 +227,6 @@ export class ProfileService {
   async removeFavorite(dto: RemoveFavoriteDto): Promise<{ message: string }> {
     const { userId, favoritedUserId } = dto;
 
-    //! NULL CHECK: Validate required parameters
-    if (!userId) {
-      throw new BadRequestException('userId is required');
-    }
-
-    if (!favoritedUserId) {
-      throw new BadRequestException('favoritedUserId is required');
-    }
-
     // Find the favorite record
     const favorite = await this.prisma.favoriteMatch.findUnique({
       where: {
@@ -300,16 +259,6 @@ export class ProfileService {
    */
   async getFavorites(dto: GetFavoritesDto): Promise<GetFavoritesResponseDto> {
     const { userId, page = 1, limit = 20 } = dto;
-
-    //! NULL CHECK: Validate userId is provided
-    if (!userId) {
-      throw new BadRequestException('userId is required');
-    }
-
-    // Validate pagination params
-    if (page < 1 || limit < 1) {
-      throw new BadRequestException('Page and limit must be positive integers');
-    }
 
     // Calculate skip for pagination
     const skip = (page - 1) * limit;

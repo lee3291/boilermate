@@ -2,37 +2,85 @@
  * Profile DTOs
  */
 
+import { IsString, IsOptional, IsInt, Min, IsArray, IsEnum, IsIn } from 'class-validator';
+import { Type } from 'class-transformer';
+
 //* Get Profile Details DTO
 export class GetProfileDetailsDto {
+  @IsString()
   userId: string;
-  viewerId?: string; // Optional: for privacy filtering
+
+  @IsOptional()
+  @IsString()
+  viewerId?: string;
 }
 
 //* Search Users Query DTO
 export class SearchUsersDto {
+  @IsString()
   userId: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
   page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
   limit?: number;
-  preferenceIds?: string[]; // Filter by lifestyle preferences
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  preferenceIds?: string[];
+
+  @IsOptional()
+  @IsEnum(['equal', 'less_or_equal', 'greater_or_equal'])
   importanceOperator?: 'equal' | 'less_or_equal' | 'greater_or_equal';
-  importanceValue?: number; // 1-5
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  importanceValue?: number;
 }
 
 //* Add Favorite DTO
 export class AddFavoriteDto {
-  userId: string; // Current user ID (who is favoriting)
-  favoritedUserId: string; // User being favorited
+  @IsString()
+  userId: string;
+
+  @IsString()
+  favoritedUserId: string;
 }
 
 //* Remove Favorite DTO
 export class RemoveFavoriteDto {
-  userId: string; // Current user ID (who is unfavoriting)
-  favoritedUserId: string; // User being unfavorited
+  @IsString()
+  userId: string;
+
+  @IsString()
+  favoritedUserId: string;
 }
 
 //* Get Favorites Query DTO
 export class GetFavoritesDto {
-  userId: string; // Current user ID
-  page?: number; // Pagination page (default 1)
-  limit?: number; // Items per page (default 20)
+  @IsString()
+  userId: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  limit?: number;
 }
+
