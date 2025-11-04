@@ -1,0 +1,104 @@
+.
+├── app.controller.spec.ts
+├── app.controller.ts
+├── app.module.ts
+├── app.service.ts
+├── common
+│   ├── README.md
+│   ├── filters
+│   │   └── prisma-exception.filter.ts
+│   └── interceptors
+│       └── logging.interceptor.ts
+├── core
+│   ├── README.md
+│   └── database
+│       ├── prisma.module.ts
+│       └── prisma.service.ts
+├── main.ts
+├── modules
+│   ├── auth
+│   │   ├── auth.controller.spec.ts
+│   │   ├── auth.controller.ts
+│   │   ├── auth.module.ts
+│   │   ├── auth.service.spec.ts
+│   │   ├── auth.service.ts
+│   │   ├── decorators
+│   │   │   └── user.decorator.ts
+│   │   ├── dto
+│   │   │   ├── register.dto.ts
+│   │   │   ├── request-code.dto.ts
+│   │   │   ├── signin.dto.ts
+│   │   │   └── verify-code.dto.ts
+│   │   └── jwt.strategy.ts
+│   ├── bug-report
+│   │   ├── bug-report.controller.ts
+│   │   ├── bug-report.module.ts
+│   │   ├── bug-report.service.ts
+│   │   └── dto
+│   │       └── create-bug-report.dto.ts
+│   ├── chats
+│   │   ├── chat.gateway.ts
+│   │   ├── chats.controller.ts
+│   │   ├── chats.module.ts
+│   │   ├── chats.service.ts
+│   │   ├── dto
+│   │   │   ├── chat-response.dto.ts
+│   │   │   ├── chat.dto.ts
+│   │   │   ├── group-chat-response.dto.ts
+│   │   │   ├── group-chat.dto.ts
+│   │   │   ├── index.ts
+│   │   │   ├── message-response.dto.ts
+│   │   │   └── message.dto.ts
+│   │   ├── group-chats.service.ts
+│   │   └── interfaces
+│   │       ├── chat.interface.ts
+│   │       ├── group-chat.interface.ts
+│   │       └── index.ts
+│   ├── email-verification
+│   │   ├── email-verification.module.ts
+│   │   ├── email-verification.service.spec.ts
+│   │   └── email-verification.service.ts
+│   ├── listings
+│   │   ├── dto
+│   │   │   ├── create-listing.dto.ts
+│   │   │   └── update-listing.dto.ts
+│   │   ├── interfaces
+│   │   │   └── listing.interface.ts
+│   │   ├── listings.controller.ts
+│   │   ├── listings.module.ts
+│   │   └── listings.service.ts
+│   ├── otp
+│   │   ├── interfaces
+│   │   │   └── otp.interface.ts
+│   │   ├── otp.controller.ts
+│   │   ├── otp.module.ts
+│   │   └── otp.service.ts
+│   ├── profile
+│   │   ├── dto
+│   │   │   ├── update-avatar.dto.ts
+│   │   │   └── update-profile.dto.ts
+│   │   ├── profile.controller.spec.ts
+│   │   ├── profile.controller.ts
+│   │   ├── profile.module.ts
+│   │   ├── profile.service.spec.ts
+│   │   └── profile.service.ts
+│   ├── report
+│   │   ├── dto
+│   │   │   └── create-report.dto.ts
+│   │   ├── report.controller.ts
+│   │   ├── report.module.ts
+│   │   └── report.service.ts
+│   └── uploads
+│       ├── dto
+│       │   ├── index.ts
+│       │   ├── media-request.dto.ts
+│       │   └── media-response.dto.ts
+│       ├── interfaces
+│       │   ├── image.interface.ts
+│       │   └── index.ts
+│       ├── uploads.controller.ts
+│       ├── uploads.module.ts
+│       └── uploads.service.ts
+└── tree
+
+28 directories, 74 files
