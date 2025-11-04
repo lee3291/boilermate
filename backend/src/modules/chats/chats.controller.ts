@@ -232,10 +232,11 @@ export class ChatsController {
   @Get(':chatId/users/search')
   @HttpCode(200)
   async searchUsersForAddingToGroup(
-    @Param('chatId') chatId: string, 
+      @Param('chatId') chatId: string,
+      @Query('creatorId') creatorId: string,
     @Query('q') searchQuery: string
   ) {
-    const result = await this.groupChatsService.searchUsersForAddingToGroup(chatId, searchQuery);
+    const result = await this.groupChatsService.searchUsersForAddingToGroup(chatId, creatorId, searchQuery);
     return SearchUsersResponseDto.fromResult(result);
   }
 

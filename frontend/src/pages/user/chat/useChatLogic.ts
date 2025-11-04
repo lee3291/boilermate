@@ -588,9 +588,9 @@ export default function useChatLogic(initialUserId: string) {
   }, [currentUserId]);
 
   // Search users for adding to group (mock function for now - you can fill this in)
-  const handleSearchUsersForGroup = useCallback(async (chatId: string, searchQuery: string) => {
+  const handleSearchUsersForGroup = useCallback(async (chatId: string, currentUserId: string, searchQuery: string) => {
     try {
-      const result = await apiSearchUsersForAddingToGroup(chatId, searchQuery);
+      const result = await apiSearchUsersForAddingToGroup(chatId, currentUserId, searchQuery);
       return result.users || [];
     } catch (err: any) {
       setError(err?.message ?? 'Failed to search users');

@@ -130,12 +130,12 @@ export async function searchUsersForGroupCreation(creatorId: string, searchQuery
 // Search users to add to an existing group chat
 // Excludes users already in the group
 // Returns a list of available users matching the search query
-export async function searchUsersForAddingToGroup(chatId: string, searchQuery: string): Promise<{
+export async function searchUsersForAddingToGroup(chatId: string, creatorId: string, searchQuery: string): Promise<{
   users: Array<{ id: string; email: string }>;
 }> {
   try {
     const res = await api.get(`/chats/${encodeURIComponent(chatId)}/users/search`, { 
-      params: { q: searchQuery } 
+      params: { creatorId, q: searchQuery }
     });
     console.log('search users for adding to group', res);
     return res.data;

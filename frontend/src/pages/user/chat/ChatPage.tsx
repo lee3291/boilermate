@@ -107,7 +107,7 @@ export default function ChatPage() {
           onClose={() => logic.setShowAddMembersModal(false)}
           currentUserId={logic.currentUserId}
           chatId={logic.selectedChatId ?? ''}
-          onSearchUsers={(query) => logic.handleSearchUsersForGroup(logic.selectedChatId ?? '', query)}
+          onSearchUsers={(query) => logic.handleSearchUsersForGroup(logic.selectedChatId ?? '', logic.currentUserId, query)}
           onAddMember={logic.handleAddMember}
         />
       </div>

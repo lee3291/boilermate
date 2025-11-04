@@ -948,7 +948,6 @@ export class ChatsService {
         ],
       },
     });
-
     return !!block; // true if found, false if not
   }
 }

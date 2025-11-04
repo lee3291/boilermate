@@ -32,10 +32,10 @@ export default function MessageDisplay({
           <Message 
             key={m.id} 
             m={m} 
-            isMine={m.senderId === currentUser} 
+            isMine={m.senderId === currentUser}
+            currentUserId={currentUser}
             onEdit={onEdit} 
             onDelete={onDelete}
-            currentUserId={currentUser}
           />
         ))}
         <div ref={messagesEndRef} />

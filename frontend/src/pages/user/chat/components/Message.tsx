@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { approveMessage } from '@/services/chatService';
+import { approveMessage, isBlockedBetween } from '@/services/chatService';
 
 interface ImageDisplayProps {
     imageUrl: string;
@@ -95,20 +95,39 @@ export default function Message({ m, isMine, currentUserId, onEdit, onDelete }: 
     const hasImage = m.imageUrl && m.imageUrl.trim().length > 0;
     const hasContent = m.content && m.content.trim().length > 0;
 
+    useEffect(() => {
+        const checkBlock = async () => {
+            try {
+                const blocked = await isBlockedBetween(currentUserId, m.senderId);
+                if (blocked) {
+                    // prevent showing message from blocked user in group chat
+                    const el = document.getElementById(`msg-${m.id}`);
+                    if (el) el.style.display = 'none';
+                }
+            } catch (err) {
+                console.error('Block check failed:', err);
+            }
+        };
+        checkBlock();
+    }, [m.id, m.senderId, currentUserId]);
+
     const handleApproved = () => {};
 
     return (
-        <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} w-full mb-3`}>
+        <div id={`msg-${m.id}`} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} w-full mb-3`}>
             <div className="flex items-center gap-2" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
                 {!isMine && (
-                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                        <span className="text-xs">{m.senderId.split('-')[1]}</span>
+                    <div className="flex flex-col items-center mr-2">
+                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-[10px] text-gray-700">
+                            {m.senderId}
+                        </div>
                     </div>
                 )}
 
                 <div className="flex flex-col">
                     {m.isEdited && (!m.isDeleted || !m.isDeletedForYou) && (
-                        <div className={`text-[11px] text-gray-400 mb-0.5 ${isMine ? 'self-end' : 'self-start'}`}>edited</div>
+                        <div
+                            className={`text-[11px] text-gray-400 mb-0.5 ${isMine ? 'self-end' : 'self-start'}`}>edited</div>
                     )}
 
                     <div className="flex items-center gap-1">
@@ -171,7 +190,6 @@ export default function Message({ m, isMine, currentUserId, onEdit, onDelete }: 
                                             onApproved={handleApproved}
                                         />
                                     )}
-
                                     {hasContent && <div className={hasImage ? 'mt-2' : ''}>{m.content}</div>}
                                 </div>
                             )}
@@ -180,8 +198,10 @@ export default function Message({ m, isMine, currentUserId, onEdit, onDelete }: 
                 </div>
 
                 {isMine && (
-                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
-                        <span className="text-xs">{m.senderId.split('-')[1]}</span>
+                    <div className="flex flex-col items-center ml-2">
+                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-[10px] text-gray-700">
+                            {m.senderId}
+                        </div>
                     </div>
                 )}
             </div>
