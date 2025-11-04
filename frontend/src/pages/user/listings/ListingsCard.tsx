@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useUser } from "./temp/UserContext";
+import { useAuth } from '../../../contexts/AuthContext';
 import { Link } from "react-router-dom";
 import SaveBlack from "../../../assets/images/save-black.png";
 import SaveWhite from "../../../assets/images/save-white.png";
@@ -33,41 +33,53 @@ export default function ListingsCard({
     // null = unknown (don’t render yet), true = saved, false = not saved
     const [clicked, setClicked] = useState<boolean | null>(null);
     const [saving, setSaving] = useState(false);
-    const { user } = useUser();
+    const { user: authUser } = useAuth();
+
+    // derive a stable "username" from the auth user (same fallback order used elsewhere)
+    const listingUser = (() => {
+        if (!authUser) return null;
+        const maybeUsername = (authUser as any).username ?? (authUser as any).displayName;
+        if (typeof maybeUsername === 'string' && maybeUsername.trim()) return maybeUsername.trim();
+        if (typeof (authUser as any).email === 'string' && (authUser as any).email.includes('@')) {
+            return (authUser as any).email.split('@')[0].trim();
+        }
+        if ((authUser as any).id) return String((authUser as any).id);
+        return null;
+    })();
 
     // 1) Seed from cache to avoid white flash
     useEffect(() => {
-        if (!user?.username || !id) {
+        if (!listingUser || !id) {
             setClicked(false);
             return;
         }
-        const hint = getSavedHint(user.username, id); // true | undefined
+        const hint = getSavedHint(listingUser, id); // true | undefined
         if (hint === true) setClicked(true); // show black immediately
         else setClicked(null);               // keep hidden until we check
-    }, [user, id]);
+    }, [listingUser, id]);
 
     // 2) Confirm from network (only if unknown or hint was missing)
     useEffect(() => {
         let cancelled = false;
         (async () => {
-            if (!user?.username || !id) return;
+            if (!listingUser || !id) return;
             if (clicked === true) return; // already confident from cache
             try {
-                const res = await getSavedListings(user.username, 1, 100);
+                const res = await getSavedListings(listingUser, 1, 100);
                 if (cancelled) return;
                 const isSaved = res.listings.some((l) => l.id === id);
                 setClicked(isSaved);
-                setSavedHint(user.username, id, isSaved);
+                setSavedHint(listingUser, id, isSaved);
             } catch {
                 // don’t block UI; assume not saved if unknown
                 if (!cancelled) setClicked(false);
             }
         })();
         return () => { cancelled = true; };
-    }, [user, id]); // intentionally not depending on `clicked`
+    }, [listingUser, id]); // intentionally not depending on `clicked`
 
     const onToggleSave = async () => {
-        if (!user?.username) {
+        if (!listingUser) {
             alert("Please sign in to save listings.");
             return;
         }
@@ -75,15 +87,15 @@ export default function ListingsCard({
         const next = !current;
 
         setClicked(next);
-        setSavedHint(user.username, id, next);
+        setSavedHint(listingUser, id, next);
         setSaving(true);
         try {
-            await toggleSave(id, user.username, next);
+            await toggleSave(id, listingUser, next);
         } catch (e: any) {
             // revert on failure
             const revert = !next;
             setClicked(revert);
-            setSavedHint(user.username, id, revert);
+            setSavedHint(listingUser, id, revert);
             console.error(e);
             alert(e?.message || "Could not update saved status.");
         } finally {

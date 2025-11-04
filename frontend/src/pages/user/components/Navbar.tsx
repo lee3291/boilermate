@@ -1,17 +1,28 @@
 import accountIcon from '@/assets/images/account.png';
-import { useUser } from '../listings/temp/UserContext';
+import { useAuth } from '../../../contexts/AuthContext';
 
 export default function Navbar() {
-  type navItem = { label: string; href: string };
+    type navItem = { label: string; href: string };
 
-  const NAV_ITEMS: navItem[] = [
-    { label: 'Dashboard', href: '/dashboard' },
-    { label: 'Listings', href: '/listings' },
-    { label: 'Roomates', href: '/roomates' },
-    { label: 'Messages', href: '/messages' },
-  ];
+    const NAV_ITEMS: navItem[] = [
+        { label: 'Dashboard', href: '/dashboard' },
+        { label: 'Listings', href: '/listings' },
+        { label: 'Roomates', href: '/roomates' },
+        { label: 'Messages', href: '/messages' },
+    ];
 
-    const { user } = useUser();
+    const { user: authUser } = useAuth();
+
+    const displayName = (() => {
+        if (!authUser) return 'Account';
+        const maybeUsername = (authUser as any).username ?? (authUser as any).displayName;
+        if (typeof maybeUsername === 'string' && maybeUsername.trim()) return maybeUsername.trim();
+        if (typeof (authUser as any).email === 'string' && (authUser as any).email.includes('@')) {
+            return (authUser as any).email.split('@')[0].trim();
+        }
+        if ((authUser as any).id) return String((authUser as any).id);
+        return 'Account';
+    })();
 
     return (
         <div className='sticky top-0 z-50 w-full pt-7'>
@@ -39,12 +50,13 @@ export default function Navbar() {
                         ))}
                     </ul>
 
-                    <a href='/temp-account' className='flex items-center gap-2'>
+                    <a href='/profile' className='flex items-center gap-2'>
                         <img src={accountIcon} className='h-6 w-auto' />
-                        <p className='font-sans text-[16px]'>{user?.username || 'Account'}</p>
+                        <p className='font-sans text-[16px]'>{displayName}</p>
                     </a>
                 </div>
             </nav>
         </div>
     );
 }
+
