@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getProfileDetails, toggleFavorite } from '../../../services/profileService';
+import { getProfileDetails, toggleFavorite, toggleVote } from '../../../services/profileService';
 import type { ProfileDetails } from '../../../types/profile';
 import Navbar from '../components/Navbar';
 import ProfileHeader from '../preferences/components/ProfileHeader';
@@ -20,6 +20,7 @@ export default function ProfileViewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFavorited, setIsFavorited] = useState(false);
+  const [myVote, setMyVote] = useState<'LIKE' | 'DISLIKE' | null>(null);
 
   // TODO: Replace with actual viewerId from auth context
   const viewerId = '1'; // Hardcoded for now
@@ -46,6 +47,9 @@ export default function ProfileViewPage() {
         
         // Set favorite status from backend response
         setIsFavorited(data.isFavoritedByMe || false);
+        
+        // Set vote status from backend response
+        setMyVote(data.myVoteType || null);
       } catch (err: any) {
         setError(err?.message || 'Failed to load profile');
         console.error('Error fetching profile:', err);
@@ -66,6 +70,19 @@ export default function ProfileViewPage() {
     } catch (err: any) {
       console.error('Error toggling favorite:', err);
       const errorMessage = err?.response?.data?.message || err?.message || 'Failed to update favorite status';
+      alert(errorMessage);
+    }
+  };
+
+  const handleToggleVote = async (voteType: 'LIKE' | 'DISLIKE') => {
+    if (!userId) return;
+    
+    try {
+      await toggleVote(viewerId, userId, myVote, voteType);
+      setMyVote(myVote === voteType ? null : voteType);
+    } catch (err: any) {
+      console.error('Error toggling vote:', err);
+      const errorMessage = err?.response?.data?.message || err?.message || 'Failed to update vote';
       alert(errorMessage);
     }
   };
@@ -117,7 +134,7 @@ export default function ProfileViewPage() {
       <Navbar />
 
       <div className="mx-auto max-w-4xl px-4 py-8">
-        {/* Back button and Favorite button */}
+        {/* Back button and Action buttons */}
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={() => navigate('/roommates')}
@@ -126,19 +143,78 @@ export default function ProfileViewPage() {
             ← Back to Roommates
           </button>
           
-          <button
-            onClick={handleToggleFavorite}
-            className="px-6 py-3 rounded-full bg-white shadow-lg hover:shadow-xl transition-all flex items-center gap-2 border-2 border-gray-200 hover:scale-105"
-            title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-          >
-            <span className="text-2xl">
-              {isFavorited ? '❤️' : '🤍'}
-            </span>
-            <span className="text-sm font-semibold text-gray-700">
-              {isFavorited ? 'Favorited' : 'Add to Favorites'}
-            </span>
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Vote Buttons */}
+            <button
+              onClick={() => handleToggleVote('LIKE')}
+              className={`px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 border-2 hover:scale-105 ${
+                myVote === 'LIKE'
+                  ? 'bg-green-500 border-green-600 text-white'
+                  : 'bg-white border-gray-200 text-gray-700'
+              }`}
+              title="Like"
+            >
+              <span className="text-xl">👍</span>
+              <span className="text-sm font-semibold">
+                {myVote === 'LIKE' ? 'Liked' : 'Like'}
+              </span>
+            </button>
+
+            <button
+              onClick={() => handleToggleVote('DISLIKE')}
+              className={`px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 border-2 hover:scale-105 ${
+                myVote === 'DISLIKE'
+                  ? 'bg-red-500 border-red-600 text-white'
+                  : 'bg-white border-gray-200 text-gray-700'
+              }`}
+              title="Dislike"
+            >
+              <span className="text-xl">👎</span>
+              <span className="text-sm font-semibold">
+                {myVote === 'DISLIKE' ? 'Disliked' : 'Dislike'}
+              </span>
+            </button>
+
+            {/* Favorite Button */}
+            <button
+              onClick={handleToggleFavorite}
+              className={`px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 border-2 hover:scale-105 ${
+                isFavorited
+                  ? 'bg-pink-50 border-pink-300'
+                  : 'bg-white border-gray-200'
+              }`}
+              title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+            >
+              <span className="text-xl">
+                {isFavorited ? '❤️' : '🤍'}
+              </span>
+              <span className="text-sm font-semibold text-gray-700">
+                {isFavorited ? 'Favorited' : 'Favorite'}
+              </span>
+            </button>
+          </div>
         </div>
+
+        {/* Vote Stats Display */}
+        {profile && (profile.likesReceived !== undefined || profile.dislikesReceived !== undefined) && (
+          <div className="mb-4 p-4 bg-white rounded-lg shadow border border-gray-200">
+            <div className="flex items-center justify-center gap-6 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">👍</span>
+                <span className="font-semibold text-green-600">
+                  {profile.likesReceived || 0} Likes
+                </span>
+              </div>
+              <div className="h-4 w-px bg-gray-300"></div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">👎</span>
+                <span className="font-semibold text-red-600">
+                  {profile.dislikesReceived || 0} Dislikes
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Profile Header */}
         <ProfileHeader user={mockUser} />

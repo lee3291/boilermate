@@ -36,6 +36,7 @@ export default function RoommatesPage() {
     handleSetViewMode,
     handleClearFilters,
     handleToggleFavorite,
+    handleToggleVote,
     handleTogglePreference,
     handleToggleCategory,
     handleSetImportanceOperator,
@@ -122,6 +123,7 @@ export default function RoommatesPage() {
                 profile={profile}
                 onViewProfile={handleViewProfile}
                 onToggleFavorite={handleToggleFavorite}
+                onToggleVote={handleToggleVote}
                 isOwnProfile={profile.id === userId}
               />
             ))}

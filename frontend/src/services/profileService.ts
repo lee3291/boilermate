@@ -14,7 +14,15 @@ import type {
   AddFavoriteRequest,
   AddFavoriteResponse,
   RemoveFavoriteRequest,
-  RemoveFavoriteResponse
+  RemoveFavoriteResponse,
+  VoteUserRequest,
+  VoteUserResponse,
+  RemoveVoteRequest,
+  RemoveVoteResponse,
+  GetMyVotesRequest,
+  GetMyVotesResponse,
+  GetVoteStatsRequest,
+  VoteStatsResponse
 } from '../types/profile';
 
 const BASE_URL = '/profile';
@@ -129,4 +137,77 @@ export const toggleFavorite = async (
   }
   
   console.log('toggleFavorite completed successfully');
+};
+
+/**
+ * Vote on a user (LIKE or DISLIKE)
+ */
+export const voteUser = async (
+  request: VoteUserRequest
+): Promise<VoteUserResponse> => {
+  const response = await api.post(`${BASE_URL}/votes`, request);
+  return response.data;
+};
+
+/**
+ * Remove a vote from a user
+ */
+export const removeVote = async (
+  request: RemoveVoteRequest
+): Promise<RemoveVoteResponse> => {
+  const { voterId, votedUserId } = request;
+  
+  const params = { voterId };
+  
+  const response = await api.delete(`${BASE_URL}/votes/${votedUserId}`, { params });
+  return response.data;
+};
+
+/**
+ * Get all votes cast by current user
+ */
+export const getMyVotes = async (
+  request: GetMyVotesRequest
+): Promise<GetMyVotesResponse> => {
+  const { voterId, voteType, page = 1, limit = 20 } = request;
+  
+  const params: any = { voterId, page, limit };
+  
+  if (voteType) {
+    params.voteType = voteType;
+  }
+  
+  const response = await api.get(`${BASE_URL}/votes/my-votes`, { params });
+  return response.data;
+};
+
+/**
+ * Get vote statistics for a user
+ */
+export const getVoteStats = async (
+  request: GetVoteStatsRequest
+): Promise<VoteStatsResponse> => {
+  const { userId } = request;
+  
+  const response = await api.get(`${BASE_URL}/votes/stats/${userId}`);
+  return response.data;
+};
+
+/**
+ * Toggle vote for a user
+ * Convenience function that adds, updates, or removes vote
+ */
+export const toggleVote = async (
+  voterId: string,
+  votedUserId: string,
+  currentVote: 'LIKE' | 'DISLIKE' | null,
+  newVote: 'LIKE' | 'DISLIKE'
+): Promise<void> => {
+  if (currentVote === newVote) {
+    // Remove vote if clicking the same button
+    await removeVote({ voterId, votedUserId });
+  } else {
+    // Add or update vote
+    await voteUser({ voterId, votedUserId, voteType: newVote });
+  }
 };

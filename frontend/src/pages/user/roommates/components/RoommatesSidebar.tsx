@@ -1,6 +1,6 @@
 interface RoommatesSidebarProps {
-  viewMode: 'search' | 'favorites';
-  onSetViewMode: (mode: 'search' | 'favorites') => void;
+  viewMode: 'search' | 'favorites' | 'liked' | 'disliked';
+  onSetViewMode: (mode: 'search' | 'favorites' | 'liked' | 'disliked') => void;
   total: number;
   page: number;
   pageSize: number;
@@ -40,7 +40,7 @@ export default function RoommatesSidebar({
         {/* Favorites Mode Button */}
         <button
           onClick={() => onSetViewMode('favorites')}
-          className={`w-full p-3 rounded-lg border-2 transition ${
+          className={`w-full p-3 rounded-lg border-2 transition mb-3 ${
             viewMode === 'favorites'
               ? 'bg-red-50 border-red-300 text-red-900'
               : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
@@ -55,10 +55,46 @@ export default function RoommatesSidebar({
           )}
         </button>
 
+        {/* Liked Mode Button */}
+        <button
+          onClick={() => onSetViewMode('liked')}
+          className={`w-full p-3 rounded-lg border-2 transition mb-3 ${
+            viewMode === 'liked'
+              ? 'bg-green-50 border-green-300 text-green-900'
+              : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          <div className='flex items-center justify-between'>
+            <span className='text-sm font-semibold'>👍 Liked</span>
+            {viewMode === 'liked' && <span className='text-xl'>✓</span>}
+          </div>
+          {viewMode === 'liked' && (
+            <p className='text-xs text-green-700 mt-1'>{total} liked</p>
+          )}
+        </button>
+
+        {/* Disliked Mode Button */}
+        <button
+          onClick={() => onSetViewMode('disliked')}
+          className={`w-full p-3 rounded-lg border-2 transition ${
+            viewMode === 'disliked'
+              ? 'bg-orange-50 border-orange-300 text-orange-900'
+              : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          <div className='flex items-center justify-between'>
+            <span className='text-sm font-semibold'>👎 Disliked</span>
+            {viewMode === 'disliked' && <span className='text-xl'>✓</span>}
+          </div>
+          {viewMode === 'disliked' && (
+            <p className='text-xs text-orange-700 mt-1'>{total} disliked</p>
+          )}
+        </button>
+
         {viewMode === 'search' && (
           <div className='mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200'>
             <p className='text-xs text-gray-600'>
-              Click the heart icon on any profile to add them to your favorites!
+              Click the heart icon to favorite or thumbs up/down to vote!
             </p>
           </div>
         )}
@@ -66,7 +102,7 @@ export default function RoommatesSidebar({
         {/* Stats */}
         <div className='mt-6 pt-6 border-t border-gray-200'>
           <div className='text-xs text-gray-500 mb-2'>
-            {viewMode === 'favorites' ? 'Favorites' : 'Search Results'}
+            {viewMode === 'favorites' ? 'Favorites' : viewMode === 'liked' ? 'Liked' : viewMode === 'disliked' ? 'Disliked' : 'Search Results'}
           </div>
           {!loading && (
             <div className='text-sm font-semibold text-gray-800'>
