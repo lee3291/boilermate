@@ -69,13 +69,15 @@ const VerificationPage: React.FC = () => {
 
   const renderStatusContent = () => {
     if (loading) {
-      return <p>Loading status...</p>;
+      return <p className='text-maingray'>Loading status...</p>;
     }
     if (error) {
       return <p className='text-red-500'>{error}</p>;
     }
     if (!status) {
-      return <p>Could not load verification status.</p>;
+      return (
+        <p className='text-maingray'>Could not load verification status.</p>
+      );
     }
 
     switch (status.status) {
@@ -83,10 +85,10 @@ const VerificationPage: React.FC = () => {
         return (
           <form onSubmit={handleSubmit} className='space-y-6'>
             <div>
-              <h3 className='text-lg font-medium text-gray-900'>
+              <h3 className='text-maingray text-lg font-medium'>
                 Upload your ID
               </h3>
-              <p className='mt-2 text-sm text-gray-600'>
+              <p className='text-maingray/80 mt-2 text-sm'>
                 Please upload a clear picture of your Purdue University ID card
                 to get a verified badge on your profile.
               </p>
@@ -94,7 +96,7 @@ const VerificationPage: React.FC = () => {
             <div>
               <label
                 htmlFor='id-upload'
-                className='block text-sm font-medium text-gray-700'
+                className='text-maingray block text-sm font-medium'
               >
                 ID Card Image
               </label>
@@ -105,12 +107,12 @@ const VerificationPage: React.FC = () => {
                   type='file'
                   accept='image/*'
                   onChange={handleFileChange}
-                  className='block w-full text-sm text-gray-500 file:mr-4 file:rounded-full file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-600 hover:file:bg-indigo-100'
+                  className='text-maingray file:border-grayline file:bg-maingray-dark hover:file:underline block w-full text-sm file:mr-4 file:rounded-lg file:border-1 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-black'
                   disabled={uploading}
                 />
               </div>
               {selectedFile && (
-                <p className='mt-2 text-sm text-gray-500'>
+                <p className='text-maingray/70 mt-2 text-sm'>
                   Selected: {selectedFile.name}
                 </p>
               )}
@@ -119,7 +121,7 @@ const VerificationPage: React.FC = () => {
               <button
                 type='submit'
                 disabled={uploading || !selectedFile}
-                className='flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none disabled:bg-gray-400'
+                className='font-sourceserif4-18pt-regular border-grayline bg-mainbrown text-maingray mt-4 w-full rounded-lg border py-2 text-lg transition-colors hover:underline disabled:opacity-70'
               >
                 {uploading ? 'Uploading...' : 'Submit for Verification'}
               </button>
@@ -129,10 +131,10 @@ const VerificationPage: React.FC = () => {
       case 'PENDING':
         return (
           <div className='text-center'>
-            <h3 className='text-lg font-medium text-gray-900'>
+            <h3 className='text-maingray text-lg font-medium'>
               Verification Pending
             </h3>
-            <p className='mt-2 text-sm text-gray-600'>
+            <p className='text-maingray/80 mt-2 text-sm'>
               Your ID has been submitted and is under review. This usually takes
               1-2 business days.
             </p>
@@ -140,7 +142,7 @@ const VerificationPage: React.FC = () => {
         );
       case 'APPROVED':
         return (
-          <div className='text-center text-green-600'>
+          <div className='text-center text-green-400'>
             <h3 className='text-lg font-medium'>You are Verified!</h3>
             <p className='mt-2 text-sm'>
               A verified badge will now be displayed on your profile.
@@ -149,7 +151,7 @@ const VerificationPage: React.FC = () => {
         );
       case 'DECLINED':
         return (
-          <div className='text-center text-red-600'>
+          <div className='text-center text-red-400'>
             <h3 className='text-lg font-medium'>Verification Declined</h3>
             <p className='mt-2 text-sm'>
               {status.reason ||
@@ -164,15 +166,15 @@ const VerificationPage: React.FC = () => {
   };
 
   return (
-    <div className='flex min-h-screen flex-col justify-center bg-gray-50 py-12 sm:px-6 lg:px-8'>
+    <div className='bg-mainbrown flex min-h-screen flex-col justify-center p-4'>
       <div className='sm:mx-auto sm:w-full sm:max-w-md'>
-        <h2 className='mt-6 text-center text-3xl font-extrabold text-gray-900'>
+        <h2 className='font-sourceserif4-18pt-regular text-maingray mt-6 text-center text-3xl'>
           Account Verification
         </h2>
       </div>
 
       <div className='mt-8 sm:mx-auto sm:w-full sm:max-w-md'>
-        <div className='bg-white px-4 py-8 shadow sm:rounded-lg sm:px-10'>
+        <div className='border-grayline bg-sharkgray-light rounded-lg border px-4 py-8 sm:px-10'>
           {renderStatusContent()}
         </div>
       </div>

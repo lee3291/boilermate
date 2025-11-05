@@ -1,4 +1,5 @@
 import React from 'react';
+import { twMerge } from 'tailwind-merge';
 
 type InputFieldProps = {
   label: string;
@@ -8,6 +9,7 @@ type InputFieldProps = {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   required?: boolean;
+  className?: string;
 };
 
 const InputField = ({
@@ -18,16 +20,20 @@ const InputField = ({
   onChange,
   placeholder,
   required = false,
+  className,
 }: InputFieldProps) => {
   return (
     <div className='mb-4'>
-      <label htmlFor={id} className='mb-2 block text-gray-700'>
+      <label htmlFor={id} className='text-maingray mb-2 block'>
         {label}
       </label>
       <input
         type={type}
         id={id}
-        className='w-full rounded-lg border px-3 py-2'
+        className={twMerge(
+          'w-full rounded-lg border border-grayline bg-maingray-dark px-3 py-2 text-black placeholder:text-gray-500 focus:placeholder-transparent',
+          className,
+        )}
         value={value}
         onChange={onChange}
         placeholder={placeholder}
