@@ -19,11 +19,23 @@ export default function useRoommatesLogic(initialUserId: string) {
   // View mode: 'search', 'favorites', 'liked', or 'disliked'
   const [viewMode, setViewMode] = useState<'search' | 'favorites' | 'liked' | 'disliked'>('search');
   
-  // Preference filtering
+  // Preference filtering - pending state (before apply)
   const [allPreferences, setAllPreferences] = useState<GetPreferencesResponse>({ preferences: [] });
   const [selectedPreferences, setSelectedPreferences] = useState<string[]>([]);
   const [importanceOperator, setImportanceOperator] = useState<'equal' | 'less_or_equal' | 'greater_or_equal'>('greater_or_equal');
-  const [importanceValue, setImportanceValue] = useState<number>(3);
+  const [importanceValue, setImportanceValue] = useState<number>(1);
+  
+  // Applied filters (actually used in search)
+  const [appliedFilters, setAppliedFilters] = useState<{
+    preferenceIds: string[];
+    importanceOperator: 'equal' | 'less_or_equal' | 'greater_or_equal';
+    importanceValue: number;
+  }>({
+    preferenceIds: [],
+    importanceOperator: 'greater_or_equal',
+    importanceValue: 1,
+  });
+  
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   // Fetch master preference list
@@ -69,14 +81,14 @@ export default function useRoommatesLogic(initialUserId: string) {
         setTotal(response.total);
         setTotalPages(response.totalPages);
       } else {
-        // Fetch search results
+        // Fetch search results - use APPLIED filters
         const response: SearchUsersResponse = await searchUsers({
           userId: currentUserId,
           page,
           limit: PAGE_SIZE,
-          preferenceIds: selectedPreferences.length > 0 ? selectedPreferences : undefined,
-          importanceOperator: selectedPreferences.length > 0 ? importanceOperator : undefined,
-          importanceValue: selectedPreferences.length > 0 ? importanceValue : undefined,
+          preferenceIds: appliedFilters.preferenceIds.length > 0 ? appliedFilters.preferenceIds : undefined,
+          importanceOperator: appliedFilters.preferenceIds.length > 0 ? appliedFilters.importanceOperator : undefined,
+          importanceValue: appliedFilters.preferenceIds.length > 0 ? appliedFilters.importanceValue : undefined,
         });
         
         setProfiles(response.profiles);
@@ -89,16 +101,34 @@ export default function useRoommatesLogic(initialUserId: string) {
     } finally {
       setLoading(false);
     }
-  }, [currentUserId, page, selectedPreferences, importanceOperator, importanceValue, viewMode]);
+  }, [currentUserId, page, appliedFilters, viewMode]);
 
   useEffect(() => {
     fetchProfiles();
   }, [fetchProfiles]);
 
+  const handleApplyFilters = useCallback((filters: {
+    preferenceIds: string[];
+    importanceOperator: 'equal' | 'less_or_equal' | 'greater_or_equal';
+    importanceValue: number;
+  }) => {
+    setAppliedFilters(filters);
+    setSelectedPreferences(filters.preferenceIds);
+    setImportanceOperator(filters.importanceOperator);
+    setImportanceValue(filters.importanceValue);
+    setPage(1); // Reset to first page when filters change
+  }, []);
+
   const handleClearFilters = useCallback(() => {
+    const emptyFilters = {
+      preferenceIds: [],
+      importanceOperator: 'greater_or_equal' as const,
+      importanceValue: 1,
+    };
     setSelectedPreferences([]);
     setImportanceOperator('greater_or_equal');
-    setImportanceValue(3);
+    setImportanceValue(1);
+    setAppliedFilters(emptyFilters);
     setPage(1);
   }, []);
 
@@ -238,6 +268,7 @@ export default function useRoommatesLogic(initialUserId: string) {
     // actions
     setPage,
     handleSetViewMode,
+    handleApplyFilters,
     handleClearFilters,
     handleToggleFavorite,
     handleToggleVote,

@@ -34,6 +34,7 @@ export default function RoommatesPage() {
     expandedCategories,
     setPage,
     handleSetViewMode,
+    handleApplyFilters,
     handleClearFilters,
     handleToggleFavorite,
     handleToggleVote,
@@ -75,12 +76,7 @@ export default function RoommatesPage() {
           selectedPreferences={selectedPreferences}
           importanceOperator={importanceOperator}
           importanceValue={importanceValue}
-          expandedCategories={expandedCategories}
-          onTogglePreference={handleTogglePreference}
-          onToggleCategory={handleToggleCategory}
-          onSetImportanceOperator={handleSetImportanceOperator}
-          onSetImportanceValue={handleSetImportanceValue}
-          onClearFilters={handleClearFilters}
+          onApplyFilters={handleApplyFilters}
         />
       )}
 

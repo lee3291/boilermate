@@ -62,17 +62,20 @@ export const searchUsers = async (
   
   const params: any = { userId, page, limit };
   
+  // Only add filter params if preferences are selected
   if (preferenceIds && preferenceIds.length > 0) {
-    params.preferenceIds = preferenceIds;
+    params.preferenceIds = preferenceIds.join(','); // Send as comma-separated string
+    
+    if (importanceOperator) {
+      params.importanceOperator = importanceOperator;
+    }
+    
+    if (importanceValue !== undefined) {
+      params.importanceValue = importanceValue;
+    }
   }
   
-  if (importanceOperator) {
-    params.importanceOperator = importanceOperator;
-  }
-  
-  if (importanceValue !== undefined) {
-    params.importanceValue = importanceValue;
-  }
+  console.log('Search params:', params);
   
   const response = await api.get(`${BASE_URL}/search`, { params });
   return response.data;

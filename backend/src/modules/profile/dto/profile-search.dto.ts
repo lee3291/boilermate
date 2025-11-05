@@ -24,9 +24,8 @@ export class SearchUsersDto {
   limit?: number;
 
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  preferenceIds?: string[];
+  @IsString()
+  preferenceIds?: string; // Changed to string (comma-separated)
 
   @IsOptional()
   @IsEnum(['equal', 'less_or_equal', 'greater_or_equal'])

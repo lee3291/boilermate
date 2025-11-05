@@ -152,7 +152,17 @@ export class ProfileService {
     // Ensure page and limit are numbers (workaround until ValidationPipe is active)
     const page = Number(dto.page) || 1;
     const limit = Number(dto.limit) || 10;
-    const { userId, preferenceIds, importanceOperator, importanceValue } = dto;
+    const { userId, preferenceIds: preferenceIdsString, importanceOperator, importanceValue: importanceValueRaw } = dto;
+
+    // Parse comma-separated preferenceIds string into array
+    const preferenceIds = preferenceIdsString 
+      ? preferenceIdsString.split(',').map(id => id.trim()).filter(id => id.length > 0)
+      : [];
+
+    // Ensure importanceValue is a number
+    const importanceValue = importanceValueRaw ? Number(importanceValueRaw) : undefined;
+
+    console.log('Search filters:', { preferenceIds, importanceOperator, importanceValue });
 
     // Calculate skip for pagination
     const skip = (page - 1) * limit;
@@ -163,7 +173,7 @@ export class ProfileService {
     };
 
     // If filtering by specific preferences
-    if (preferenceIds && preferenceIds.length > 0) {
+    if (preferenceIds.length > 0) {
       const importanceCondition = this.buildImportanceCondition(importanceOperator, importanceValue);
       
       whereClause.profilePreferences = {
