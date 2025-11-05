@@ -133,6 +133,7 @@ export default function CreateListingModal({
                 moveInEnd: toISODateOrNull(moveInEnd),
                 status: "ACTIVE",
                 roommates: roommatesInt,
+                mediaUrls: [],
             };
 
             const res = await fetch(`${API_BASE}/listings`, {
@@ -142,7 +143,8 @@ export default function CreateListingModal({
             });
 
             if (!res.ok) {
-                throw new Error(`Failed with status ${res.status}`);
+                const msg = await res.text().catch(() => "");
+                throw new Error(`Failed with status ${res.status}${msg ? `: ${msg}` : ""}`);
             }
 
             const created = await res.json().catch(() => ({}));

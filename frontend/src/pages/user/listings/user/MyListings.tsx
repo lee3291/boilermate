@@ -75,7 +75,7 @@ export default function MyListings() {
                 {error && <div className="mt-8 text-red-600">{String(error?.message || error)}</div>}
 
                 {!isLoading && !error && me && mine.length > 0 && (
-                    <div className="mt-8 flex flex-wrap justify-between gap-y-10">
+                    <div className="mt-8 flex flex-wrap justify-evenly gap-y-10">
                         {mine.map((l: any) => (
                             <ListingsCard
                                 key={String(l.id ?? l._id ?? Math.random())}
