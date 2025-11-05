@@ -11,7 +11,7 @@ import { ChatsModule } from '@modules/chats/chats.module';
 import { UploadsModule } from '@modules/uploads/uploads.module';
 import { BugReportModule } from './modules/bug-report/bug-report.module';
 import { ReportModule } from '@modules/report/report.module';
-
+import { ReCaptchaModule } from '@modules/reCaptcha/reCaptcha.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -26,6 +26,8 @@ import { ReportModule } from '@modules/report/report.module';
     OTPModule,
     ListingsModule,
     BugReportModule,
+    ReportModule,
+    ReCaptchaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -30,6 +30,8 @@ import ReportTestPage from './pages/report/ReportTestPage.tsx';
 import ProtectedRoute from './components/ProtectedRoute';
 import UserProfilePage from './pages/user/UserProfilePage';
 
+import ReCaptchaPage from './pages/reCaptcha/reCaptchaForm';
+
 const router = createBrowserRouter([
   // Public routes
   {
@@ -56,6 +58,10 @@ const router = createBrowserRouter([
   {
     path: '/reset-password',
     element: <ResetPasswordPage />,
+  },
+  {
+    path: '/verify-captcha',
+    element: <ReCaptchaPage />,
   },
 
   // Protected routes
