@@ -75,15 +75,58 @@ export default function ProfileViewPage() {
   };
 
   const handleToggleVote = async (voteType: 'LIKE' | 'DISLIKE') => {
-    if (!userId) return;
+    if (!userId || !profile) return;
     
     try {
-      await toggleVote(viewerId, userId, myVote, voteType);
-      setMyVote(myVote === voteType ? null : voteType);
+      const oldVote = myVote;
+      const newVote = myVote === voteType ? null : voteType;
+      
+      // Optimistically update local state
+      setMyVote(newVote);
+      
+      // Update vote counts optimistically
+      setProfile(prev => {
+        if (!prev) return prev;
+        
+        let likesReceived = prev.likesReceived || 0;
+        let dislikesReceived = prev.dislikesReceived || 0;
+        
+        // Remove old vote count
+        if (oldVote === 'LIKE') {
+          likesReceived = Math.max(0, likesReceived - 1);
+        } else if (oldVote === 'DISLIKE') {
+          dislikesReceived = Math.max(0, dislikesReceived - 1);
+        }
+        
+        // Add new vote count
+        if (newVote === 'LIKE') {
+          likesReceived += 1;
+        } else if (newVote === 'DISLIKE') {
+          dislikesReceived += 1;
+        }
+        
+        return {
+          ...prev,
+          likesReceived,
+          dislikesReceived,
+        };
+      });
+      
+      // Make API call
+      await toggleVote(viewerId, userId, oldVote, voteType);
     } catch (err: any) {
       console.error('Error toggling vote:', err);
       const errorMessage = err?.response?.data?.message || err?.message || 'Failed to update vote';
       alert(errorMessage);
+      
+      // Revert on error - refetch profile
+      try {
+        const data = await getProfileDetails({ userId, viewerId });
+        setProfile(data);
+        setMyVote(data.myVoteType || null);
+      } catch (refetchErr) {
+        console.error('Error refetching profile:', refetchErr);
+      }
     }
   };
 

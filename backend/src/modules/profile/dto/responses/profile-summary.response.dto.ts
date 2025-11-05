@@ -21,6 +21,9 @@ export class ProfileSummaryDto {
   // Favorite status - whether current user has favorited this profile
   @Expose() isFavoritedByMe?: boolean;
 
+  // Vote status - current user's vote on this profile
+  @Expose() myVoteType?: 'LIKE' | 'DISLIKE' | null;
+
   // Vote counts - how many likes/dislikes this user has received
   @Expose() likesReceived?: number;
   @Expose() dislikesReceived?: number;
@@ -28,6 +31,7 @@ export class ProfileSummaryDto {
   static fromProfile(
     profile: any, 
     isFavoritedByMe?: boolean,
+    myVoteType?: 'LIKE' | 'DISLIKE' | null,
     likesReceived?: number,
     dislikesReceived?: number
   ): ProfileSummaryDto {
@@ -41,6 +45,7 @@ export class ProfileSummaryDto {
     dto.lifestylePreferencesCount = profile._count?.profilePreferences || 0;
     dto.roommatePreferencesCount = profile._count?.roommatePreferences || 0;
     dto.isFavoritedByMe = isFavoritedByMe || false;
+    dto.myVoteType = myVoteType || null;
     dto.likesReceived = likesReceived;
     dto.dislikesReceived = dislikesReceived;
     return dto;

@@ -59,6 +59,20 @@ export default function ProfileCard({ profile, onViewProfile, onToggleFavorite, 
             </div>
           </div>
 
+          {/* Vote Stats */}
+          {(profile.likesReceived !== undefined || profile.dislikesReceived !== undefined) && (
+            <div className="pt-3 flex gap-4 text-sm">
+              <div className="flex items-center gap-1">
+                <span className="text-lg">👍</span>
+                <span className="font-roboto-bold text-green-600">{profile.likesReceived || 0}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-lg">👎</span>
+                <span className="font-roboto-bold text-red-600">{profile.dislikesReceived || 0}</span>
+              </div>
+            </div>
+          )}
+
           {profile.bio && (
             <p className="pt-3 font-roboto-light text-sm text-wrap line-clamp-3">
               {profile.bio}

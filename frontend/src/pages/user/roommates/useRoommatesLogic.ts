@@ -133,16 +133,41 @@ export default function useRoommatesLogic(initialUserId: string) {
     newVote: 'LIKE' | 'DISLIKE'
   ) => {
     try {
-      await toggleVote(currentUserId, profileId, currentVote, newVote);
+      const finalVote = currentVote === newVote ? null : newVote;
       
-      // Update the profile in the current list
+      // Optimistically update the profile in the current list
       setProfiles(prevProfiles =>
-        prevProfiles.map(p =>
-          p.id === profileId
-            ? { ...p, myVoteType: currentVote === newVote ? null : newVote }
-            : p
-        )
+        prevProfiles.map(p => {
+          if (p.id !== profileId) return p;
+          
+          let likesReceived = p.likesReceived || 0;
+          let dislikesReceived = p.dislikesReceived || 0;
+          
+          // Remove old vote count
+          if (currentVote === 'LIKE') {
+            likesReceived = Math.max(0, likesReceived - 1);
+          } else if (currentVote === 'DISLIKE') {
+            dislikesReceived = Math.max(0, dislikesReceived - 1);
+          }
+          
+          // Add new vote count
+          if (finalVote === 'LIKE') {
+            likesReceived += 1;
+          } else if (finalVote === 'DISLIKE') {
+            dislikesReceived += 1;
+          }
+          
+          return {
+            ...p,
+            myVoteType: finalVote,
+            likesReceived,
+            dislikesReceived,
+          };
+        })
       );
+      
+      // Make API call
+      await toggleVote(currentUserId, profileId, currentVote, newVote);
       
       // If in vote view and removing/changing vote type, handle accordingly
       if ((viewMode === 'liked' || viewMode === 'disliked') && (currentVote === newVote || currentVote !== null)) {
@@ -152,8 +177,11 @@ export default function useRoommatesLogic(initialUserId: string) {
     } catch (err: any) {
       console.error('Error toggling vote:', err);
       setError('Failed to update vote');
+      
+      // On error, refetch to get correct state
+      fetchProfiles();
     }
-  }, [currentUserId, viewMode]);
+  }, [currentUserId, viewMode, fetchProfiles]);
 
   const handleTogglePreference = useCallback((prefId: string) => {
     setSelectedPreferences(prev => 
