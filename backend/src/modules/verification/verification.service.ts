@@ -7,6 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { UploadsService } from '../uploads/uploads.service';
 import { CreateVerificationRequestDto } from './dto/create-verification-request.dto';
+import type { VerificationStatus } from '@prisma/client';
 
 @Injectable()
 export class VerificationService {
@@ -78,5 +79,25 @@ export class VerificationService {
     });
 
     return newRequest;
+  }
+
+  async getVerificationRequests(status?: VerificationStatus) {
+    return this.prisma.verificationRequest.findMany({
+      where: {
+        ...(status && { status }),
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            profileInfo: true,
+          },
+        },
+      },
+    });
   }
 }
