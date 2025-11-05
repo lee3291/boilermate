@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useUser } from "./temp/UserContext";
+import { useAuth } from "../../../contexts/AuthContext";
 import { X, Upload } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
@@ -15,7 +15,7 @@ export default function CreateListingModal({
     onClose,
     onCreated,
 }: CreateListingModalProps) {
-    const { user } = useUser();
+    const { user, loading } = useAuth();
     const [title, setTitle] = useState("");
     const [price, setPrice] = useState<string>("");
     const [roommates, setRoommates] = useState<string>("1");
@@ -29,6 +29,20 @@ export default function CreateListingModal({
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
     const initialInputRef = useRef<HTMLInputElement | null>(null);
+
+    const deriveUsername = () => {
+        if (!user) return null;
+        // prefer explicit username/displayName if present, otherwise use email local-part, otherwise id
+        // note: AuthContext currently provides email and id; this covers both cases.
+        // cast to string and trim defensively
+        // @ts-ignore - user type may not have .displayName/.username; check them safely at runtime
+        const maybeUsername = (user.username || user.displayName) as string | undefined;
+        if (maybeUsername && maybeUsername.trim()) return maybeUsername.trim();
+        if (user.email && user.email.includes("@")) return user.email.split("@")[0].trim();
+        if (user.id) return String(user.id);
+        return null;
+    };
+
 
     useEffect(() => {
         if (open) {
@@ -95,10 +109,23 @@ export default function CreateListingModal({
             return;
         }
 
+        if (loading) {
+            setError("Still checking authentication — please try again in a moment.");
+            setSubmitting(false);
+            return;
+        }
+        const listingUser = deriveUsername();
+        if (!listingUser) {
+            setError("You must be logged in to create a listing.");
+            setSubmitting(false);
+            return;
+        }
+
+
         try {
             const payload = {
                 title: title.trim(),
-                user: user?.username.trim(),
+                user: listingUser,
                 description: description.trim(),
                 price: Math.round(Number(price || 0) * 100), // cents, matches Int in schema
                 location: location.trim(),
@@ -106,6 +133,7 @@ export default function CreateListingModal({
                 moveInEnd: toISODateOrNull(moveInEnd),
                 status: "ACTIVE",
                 roommates: roommatesInt,
+                mediaUrls: [],
             };
 
             const res = await fetch(`${API_BASE}/listings`, {
@@ -115,7 +143,8 @@ export default function CreateListingModal({
             });
 
             if (!res.ok) {
-                throw new Error(`Failed with status ${res.status}`);
+                const msg = await res.text().catch(() => "");
+                throw new Error(`Failed with status ${res.status}${msg ? `: ${msg}` : ""}`);
             }
 
             const created = await res.json().catch(() => ({}));

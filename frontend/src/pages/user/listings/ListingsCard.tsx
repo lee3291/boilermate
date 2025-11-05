@@ -1,11 +1,15 @@
-import { useEffect, useState } from "react";
-import { useUser } from "./temp/UserContext";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from '../../../contexts/AuthContext';
 import SaveBlack from "../../../assets/images/save-black.png";
 import SaveWhite from "../../../assets/images/save-white.png";
 import { toggleSave } from "../../../services/saves";
 import { getSavedListings } from "../../../services/savedListings";
 import { getSavedHint, setSavedHint } from "../../../services/savedCache";
+
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+
+type ListingStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 
 type ListingsCardProps = {
     id: string;
@@ -17,6 +21,10 @@ type ListingsCardProps = {
     location: string;
     moveInStart: string;
     moveInEnd: string;
+    status?: ListingStatus;
+    widthClass?: string;
+    widthStyle?: string;
+    saveEnabled?: boolean;
 };
 
 export default function ListingsCard({
@@ -29,45 +37,64 @@ export default function ListingsCard({
     location,
     moveInStart,
     moveInEnd,
+    status, // NEW
+    widthClass = "w-140",
+    widthStyle,
+    saveEnabled = true,
 }: ListingsCardProps) {
-    // null = unknown (don’t render yet), true = saved, false = not saved
     const [clicked, setClicked] = useState<boolean | null>(null);
     const [saving, setSaving] = useState(false);
-    const { user } = useUser();
+    const { user: authUser } = useAuth();
 
-    // 1) Seed from cache to avoid white flash
+    const viewerUsername = useMemo(() => {
+        if (!authUser) return null;
+        const maybeUsername = (authUser as any).username ?? (authUser as any).displayName;
+        if (typeof maybeUsername === "string" && maybeUsername.trim()) return maybeUsername.trim();
+        if (typeof (authUser as any).email === "string" && (authUser as any).email.includes("@")) {
+            return (authUser as any).email.split("@")[0].trim();
+        }
+        if ((authUser as any).id) return String((authUser as any).id);
+        return null;
+    }, [authUser]);
+
+    // seed saved-state from cache
     useEffect(() => {
-        if (!user?.username || !id) {
+        if (!saveEnabled) {
             setClicked(false);
             return;
         }
-        const hint = getSavedHint(user.username, id); // true | undefined
-        if (hint === true) setClicked(true); // show black immediately
-        else setClicked(null);               // keep hidden until we check
-    }, [user, id]);
+        if (!viewerUsername || !id) {
+            setClicked(false);
+            return;
+        }
+        const hint = getSavedHint(viewerUsername, id);
+        if (hint === true) setClicked(true);
+        else setClicked(null);
+    }, [viewerUsername, id, saveEnabled]);
 
-    // 2) Confirm from network (only if unknown or hint was missing)
+    // confirm saved-state from network
     useEffect(() => {
+        if (!saveEnabled) return;
         let cancelled = false;
         (async () => {
-            if (!user?.username || !id) return;
-            if (clicked === true) return; // already confident from cache
+            if (!viewerUsername || !id) return;
+            if (clicked === true) return;
             try {
-                const res = await getSavedListings(user.username, 1, 100);
+                const res = await getSavedListings(viewerUsername, 1, 100);
                 if (cancelled) return;
-                const isSaved = res.listings.some((l) => l.id === id);
+                const isSaved = res.listings.some((l: any) => l.id === id);
                 setClicked(isSaved);
-                setSavedHint(user.username, id, isSaved);
+                setSavedHint(viewerUsername, id, isSaved);
             } catch {
-                // don’t block UI; assume not saved if unknown
                 if (!cancelled) setClicked(false);
             }
         })();
         return () => { cancelled = true; };
-    }, [user, id]); // intentionally not depending on `clicked`
+    }, [viewerUsername, id, saveEnabled]);
 
     const onToggleSave = async () => {
-        if (!user?.username) {
+        if (!saveEnabled) return;
+        if (!viewerUsername) {
             alert("Please sign in to save listings.");
             return;
         }
@@ -75,15 +102,14 @@ export default function ListingsCard({
         const next = !current;
 
         setClicked(next);
-        setSavedHint(user.username, id, next);
+        setSavedHint(viewerUsername, id, next);
         setSaving(true);
         try {
-            await toggleSave(id, user.username, next);
+            await toggleSave(id, viewerUsername, next);
         } catch (e: any) {
-            // revert on failure
             const revert = !next;
             setClicked(revert);
-            setSavedHint(user.username, id, revert);
+            setSavedHint(viewerUsername, id, revert);
             console.error(e);
             alert(e?.message || "Could not update saved status.");
         } finally {
@@ -91,23 +117,108 @@ export default function ListingsCard({
         }
     };
 
-    const icon =
-        clicked === null ? (
-            <div className={`h-6 w-6 opacity-0`} />
-        ) : (
-                <img
-                    src={clicked ? SaveBlack : SaveWhite}
-                    className={`h-6 w-auto cursor-pointer select-none ${saving ? "opacity-60 pointer-events-none" : ""}`}
-                    alt={clicked ? "Saved" : "Save"}
-                    onClick={onToggleSave}
-                    draggable={false}
-                    />
-            );
+    // ----- Owner counts (read-only on card; no increments here) -----
+    const [viewCount, setViewCount] = useState<number | null>(null);
+    const [uniqueCount, setUniqueCount] = useState<number | null>(null);
+
+    const isOwner = useMemo(() => {
+        const a = String(author || "").trim().toLowerCase();
+        const v = String(viewerUsername || "").trim().toLowerCase();
+        return !!a && !!v && a === v;
+    }, [author, viewerUsername]);
+
+    useEffect(() => {
+        if (!isOwner) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch(`${API_BASE}/listings/${id}/views/counts`);
+                if (!res.ok) return;
+                const json = await res.json();
+                if (!cancelled) {
+                    setViewCount(json.viewCount ?? 0);
+                    setUniqueCount(json.uniqueCount ?? 0);
+                }
+            } catch {}
+        })();
+        return () => { cancelled = true; };
+    }, [isOwner, id]);
+
+    // ---------- Owner status control (dropdown) ----------
+    const [statusSaving, setStatusSaving] = useState(false);
+    const [statusError, setStatusError] = useState<string | null>(null);
+    const [listingStatus, setListingStatus] = useState<ListingStatus>(status ?? 'ACTIVE');
+
+    // keep local state in sync if parent prop changes
+    useEffect(() => {
+        if (status) setListingStatus(status);
+    }, [status]);
+
+    const updateStatus = async (next: ListingStatus) => {
+        setStatusError(null);
+        const prev = listingStatus;
+        setListingStatus(next);       // optimistic
+        setStatusSaving(true);
+        try {
+            const res = await fetch(`${API_BASE}/listings/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: next }),
+            });
+            if (!res.ok) {
+                throw new Error(`Server returned ${res.status}`);
+            }
+        } catch (e: any) {
+            setListingStatus(prev);   // revert on error
+            setStatusError(e?.message || 'Failed to update status');
+        } finally {
+            setStatusSaving(false);
+        }
+    };
+
+    const statusControl = isOwner ? (
+        <div className="mt-10 flex items-center gap-3">
+            <label className="text-sm text-gray-600">Status:</label>
+            <div className="relative">
+                <select
+                    className="h-12 min-w-48 appearance-none rounded-4xl border-1 border-black bg-white px-5 pr-9 text-[16px] font-roboto-regular cursor-pointer"
+                    value={listingStatus}
+                    onChange={(e) => updateStatus(e.target.value as ListingStatus)}
+                    disabled={statusSaving}
+                    aria-label="Set listing status"
+                >
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="INACTIVE">PAUSED</option>
+                    <option value="ARCHIVED">EXPIRED</option>
+                </select>
+                {/* caret */}
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-700">▾</span>
+            </div>
+            {statusSaving && <span className="text-xs text-gray-500">Saving…</span>}
+            {statusError && <span className="text-xs text-red-600">{statusError}</span>}
+        </div>
+    ) : null;
+
+    const icon = !saveEnabled ? (
+        <div className="h-6 w-6" />
+    ) : clicked === null ? (
+        <div className="h-6 w-6 opacity-0" />
+    ) : (
+        <img
+            src={clicked ? SaveBlack : SaveWhite}
+            className={`h-6 w-auto cursor-pointer select-none ${saving ? "opacity-60 pointer-events-none" : ""}`}
+            alt={clicked ? "Saved" : "Save"}
+            onClick={onToggleSave}
+            draggable={false}
+        />
+    );
+
+    const style = widthStyle ? { width: widthStyle } : undefined;
 
     return (
         <div>
-            <div className="absolute h-100 w-140 z-0 bg-black/20 blur-[5px] rounded-lg" />
-            <div className="relative h-100 w-140 z-10 border-black border-[1.5px] bg-white rounded-lg">
+            <div className={`absolute h-100 ${widthClass} z-0 bg-black/20 blur-[5px] rounded-lg`} style={style} />
+            <div className={`relative h-100 ${widthClass} z-10 border-black border-[1.5px] bg-white rounded-lg`} style={style}>
                 <div className="py-5 px-5">
                     <div className="flex justify-between">
                         <h1 className="font-roboto-regular text-3xl tracking-[-0.4pt]">{title}</h1>
@@ -122,19 +233,35 @@ export default function ListingsCard({
                     <h1 className="pt-2 text-gray-500 font-roboto-italic text-lg">Created by {author}</h1>
                     <h1 className="pt-2 text-gray-500 font-roboto-italic text-lg">Looking for {roommates} roommates(s)</h1>
                     <h1 className="text-gray-500 font-roboto-bold text-lg">{price}</h1>
+
+                    {isOwner && (
+                        <div className="mt-1 text-xs text-gray-500 font-roboto-italic text-[16px]">
+                            Views: {viewCount ?? "—"}{typeof uniqueCount === "number" ? ` (${uniqueCount} unique)` : ""}
+                        </div>
+                    )}
+
                     <h1 className="pt-2 font-roboto-light text-lg text-wrap">{body}</h1>
 
                     <div className="flex justify-start gap-3">
-                        <button className="mt-10 h-12 w-35 bg-black text-white font-roboto-light rounded-4xl cursor-pointer">
-                            Apply to join
-                        </button>
-                        <button className="mt-10 h-12 w-30 bg-white text-black border-black border-1 font-roboto-light rounded-4xl cursor-pointer">
-                            Contact
-                        </button>
+                        {/* If owner: show status dropdown; else: show Apply/Contact */}
+                        {isOwner ? (
+                            <>
+                                {statusControl}
+                            </>
+                        ) : (
+                            <>
+                                <button className="mt-10 h-12 w-35 bg-black text-white font-roboto-light rounded-4xl cursor-pointer">
+                                    Apply to join
+                                </button>
+                                <button className="mt-10 h-12 w-30 bg-white text-black border-black border-1 font-roboto-light rounded-4xl cursor-pointer">
+                                    Contact
+                                </button>
+                            </>
+                        )}
 
                         <Link
                             to={`/listings/${id}`}
-                            state={{ id, title, author, price, body, location, moveInStart, moveInEnd, roommates }}
+                            state={{ id, title, author, price, body, location, moveInStart, moveInEnd, roommates, status: listingStatus }}
                             rel="noopener noreferrer"
                             className="ml-2 mt-13 hover:underline-offset-4 hover:underline font-roboto-light text-gray-500 cursor-pointer"
                         >
