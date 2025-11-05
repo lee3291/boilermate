@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { getPublicProfile } from '../../services/profile.service';
 import type { ProfileData } from '../../types/profile';
+import { UsernameDisplay } from '@/components/UsernameDisplay';
 
 const PublicProfilePage: React.FC = () => {
   const { username } = useParams<{ username: string }>();
@@ -44,9 +45,10 @@ const PublicProfilePage: React.FC = () => {
     <div className='min-h-screen bg-gray-100 py-12'>
       <div className='mx-auto w-full max-w-lg'>
         <div className='rounded-lg bg-white p-10 shadow-md'>
-          <h2 className='text-center text-3xl font-bold text-gray-900'>
-            {profile.username}'s Profile
-          </h2>
+          <div className="flex justify-center items-center">
+            <UsernameDisplay user={profile} className="text-3xl font-bold text-gray-900" />
+            <h2 className='text-3xl font-bold text-gray-900'>'s Profile</h2>
+          </div>
           <div className='mt-8 space-y-6'>
             <div>
               <h3 className='text-lg font-medium text-gray-900'>Bio</h3>

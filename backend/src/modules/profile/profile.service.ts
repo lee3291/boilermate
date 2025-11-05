@@ -32,6 +32,7 @@ export class ProfileService {
       searchStatus,
       preferences,
       avatarURL,
+      isVerified,
     } = user;
     const username = email.split('@')[0];
 
@@ -55,6 +56,7 @@ export class ProfileService {
       bio,
       searchStatus,
       avatarURL,
+      isVerified,
       ...flatPreferences,
     };
   }
@@ -75,7 +77,7 @@ export class ProfileService {
       throw new NotFoundException('User not found');
     }
 
-    const { id, email, bio, searchStatus, preferences, avatarURL } = user;
+    const { id, email, bio, searchStatus, preferences, avatarURL, isVerified } = user;
 
     const preference = preferences[0]; // Take the first preference object
     const flatPreferences =
@@ -98,6 +100,7 @@ export class ProfileService {
       bio,
       searchStatus,
       avatarURL,
+      isVerified,
       ...flatPreferences,
     };
   }

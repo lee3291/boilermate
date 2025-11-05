@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import Avatar from '../../components/Avatar';
 import { getProfile } from '../../services/profile.service';
 import type { ProfileData } from '../../types/profile';
+import { UsernameDisplay } from '@/components/UsernameDisplay';
 
 const UserProfilePage = () => {
   const { user, logout } = useAuth();
@@ -60,9 +61,10 @@ const UserProfilePage = () => {
                 className='h-32 w-32 rounded-full object-cover'
               />
             </div>
-            <h1 className='mb-2 text-4xl font-bold'>
-              Welcome, {profile.username}!
-            </h1>
+            <div className="flex justify-center items-center mb-2">
+              <h1 className='text-4xl font-bold mr-2'>Welcome, </h1>
+              <UsernameDisplay user={profile} className="text-4xl font-bold" />
+            </div>
             <p className='mb-8 text-lg text-gray-600'>
               You are signed in as {profile.email}.
             </p>
