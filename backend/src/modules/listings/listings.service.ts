@@ -4,6 +4,11 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../core/database/prisma.service';
+import { Prisma } from '@prisma/client';
+
+// -------------------------
+// Types
+// -------------------------
 
 type LegacyCreateListingDto = {
     // FIRST SERVICE DTO (loosely typed; we normalize below)
@@ -136,7 +141,7 @@ export class ListingsService {
     }
 
     // =========================================================
-    // "SECOND SERVICE" API (kept intact)
+    // "SECOND SERVICE" API (kept intact) + Views
     // =========================================================
 
     async findActive() {
@@ -293,6 +298,91 @@ export class ListingsService {
         return { username, listings, page, pageSize, total };
     }
 
+    // -------------------------
+    // Views (new)
+    // -------------------------
+
+    /** Increment general views and optionally record a per-username unique view. */
+    async recordView(args: { listingId: string; username?: string }) {
+        const { listingId, username } = args;
+
+        // ensure listing exists
+        const listing = await this.prisma.listing.findUnique({
+            where: { id: listingId },
+            select: { id: true },
+        });
+        if (!listing) throw new NotFoundException('Listing not found');
+
+        // always increment general views
+        const increment = this.prisma.listing.update({
+            where: { id: listingId },
+            data: { viewCount: { increment: 1 } },
+            select: { id: true, viewCount: true },
+        });
+
+        // build a strictly-typed Prisma transaction array
+        const ops: Prisma.PrismaPromise<any>[] = [increment];
+
+        if (username && username.trim().length > 0) {
+            ops.push(
+                this.prisma.listingView.upsert({
+                    where: {
+                        username_listingId: {
+                            username: username.trim(),
+                            listingId,
+                        },
+                    },
+                    update: {}, // idempotent
+                    create: { username: username.trim(), listingId },
+                }),
+            );
+        }
+
+        const [after] = await this.prisma.$transaction(ops);
+
+        return { listingId: after.id, viewCount: after.viewCount };
+    }
+
+
+
+    /** Return both totals in one go. */
+    async getViewCounts(listingId: string): Promise<{ listingId: string; viewCount: number; uniqueCount: number }> {
+        const listing = await this.prisma.listing.findUnique({
+            where: { id: listingId },
+            select: { id: true, viewCount: true },
+        });
+        if (!listing) throw new NotFoundException('Listing not found');
+
+        const uniqueCount = await this.prisma.listingView.count({ where: { listingId } });
+        return { listingId, viewCount: listing.viewCount, uniqueCount };
+    }
+
+    /** Return general view count only. */
+    async getViewCount(listingId: string): Promise<{ listingId: string; count: number }> {
+        const listing = await this.prisma.listing.findUnique({
+            where: { id: listingId },
+            select: { id: true, viewCount: true },
+        });
+        if (!listing) throw new NotFoundException('Listing not found');
+        return { listingId, count: listing.viewCount };
+    }
+
+    /** Return unique (per-username) views only. */
+    async getUniqueViewCount(listingId: string): Promise<{ listingId: string; count: number }> {
+        // If listing doesn't exist, mirror other getters and throw 404
+        const exists = await this.prisma.listing.findUnique({
+            where: { id: listingId },
+            select: { id: true },
+        });
+        if (!exists) throw new NotFoundException('Listing not found');
+
+        const count = await this.prisma.listingView.count({ where: { listingId } });
+        return { listingId, count };
+    }
+
+    // -------------------------
+    // Legacy helpers
+    // -------------------------
 
     /** Legacy: findOne by "listingID" (maps to `id`) */
     async findOne(listingID: string): Promise<ListingResponse> {
@@ -355,11 +445,12 @@ export class ListingsService {
         });
         return this.toListingResponse(deleted);
     }
-     /**
-     * Get all listings
+
+    /**
+     * Get all listings (minimal data for maps)
      */
     async findAll() {
-        //Extract 3 attributes to show in the gg map
+        // Extract 3 attributes to show in the gg map
         const listings = await this.prisma.listing.findMany({
             select: {
                 title: true,

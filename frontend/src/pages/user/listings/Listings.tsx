@@ -198,6 +198,15 @@ export default function Listings() {
                         </button>
 
                         <a
+                            className='mt-2 flex justify-center items-center h-12 w-60 cursor-pointer rounded-[100px] border border-black bg-white font-sans transition hover:bg-gray-100'
+                            href='/mylistings'
+                        >
+                            <span>
+                                Your Listings
+                            </span>
+                        </a>
+
+                        <a
                             className='hover:bg-maingray mt-2 h-12 w-60 cursor-pointer rounded-[100px] border bg-black pt-[11px] text-center font-sans text-white transition'
                             href='/saved'
                         >
