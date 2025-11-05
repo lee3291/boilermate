@@ -3,6 +3,7 @@ model VerificationRequest {
   userId       String
   user         User               @relation("UserVerificationRequests", fields: [userId], references: [id])
   idImageURL   String
+  idImageKey   String             @unique // To securely delete the object later
   status       VerificationStatus @default(PENDING)
   reason       String?
   reviewedById String?
