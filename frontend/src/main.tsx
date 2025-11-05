@@ -35,6 +35,8 @@ import UserProfilePage from './pages/user/UserProfilePage';
 import PublicProfilePage from './pages/user/PublicProfilePage';
 
 import EditProfilePage from './pages/user/EditProfilePage';
+import VerificationPage from './pages/user/VerificationPage';
+import VerificationDashboard from './pages/admin/VerificationDashboard';
 
 const router = createBrowserRouter([
   // Public routes
@@ -79,6 +81,10 @@ const router = createBrowserRouter([
       {
         path: '/profile/edit',
         element: <EditProfilePage />,
+      },
+      {
+        path: '/verification',
+        element: <VerificationPage />,
       },
       {
         path: '/bug-report',
@@ -133,6 +139,10 @@ const router = createBrowserRouter([
       {
         path: '/bug-reports',
         element: <BugReportsDashboard />,
+      },
+      {
+        path: '/admin/verification-requests',
+        element: <VerificationDashboard />,
       },
     ],
   },

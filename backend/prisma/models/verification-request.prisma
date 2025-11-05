@@ -1,0 +1,19 @@
+model VerificationRequest {
+  id           String             @id @default(uuid())
+  userId       String
+  user         User               @relation("UserVerificationRequests", fields: [userId], references: [id])
+  idImageURL   String
+  idImageKey   String             @unique // To securely delete the object later
+  status       VerificationStatus @default(PENDING)
+  reason       String?
+  reviewedById String?
+  reviewedBy   User?              @relation("AdminVerificationReviews", fields: [reviewedById], references: [id])
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  DECLINED
+}

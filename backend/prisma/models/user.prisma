@@ -9,8 +9,11 @@ model User {
   isVerified    Boolean       @default(false)
   status        UserStatus?   @default(ACTIVE)
   searchStatus  SearchStatus? @default(LOOKING)
+  role          Role          @default(USER)
   preferences   Preference[]
   listings      Listing[]
+  verificationRequests VerificationRequest[] @relation("UserVerificationRequests")
+  verificationReviews  VerificationRequest[] @relation("AdminVerificationReviews")
 
   // RELATIONS for the new chat system
   // Connects the user to all the chats they are a member or invitee of.
@@ -37,4 +40,9 @@ enum SearchStatus {
   LOOKING
   NOT_LOOKING
   HIDDEN
+}
+
+enum Role {
+  USER
+  ADMIN
 }

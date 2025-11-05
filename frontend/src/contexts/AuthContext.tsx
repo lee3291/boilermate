@@ -28,22 +28,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (token) {
       try {
-        const decoded: { sub: string; email: string; avatarURL?: string } =
-          jwtDecode(token);
+        // Decode the JWT to extract user information, including the role.
+        const decoded: {
+          sub: string;
+          email: string;
+          avatarURL?: string;
+          // The 'role' is included in the JWT payload upon login.
+          role: string;
+        } = jwtDecode(token);
+        // Set the user state with the decoded information.
         setUser({
           id: decoded.sub,
           email: decoded.email,
           avatarURL: decoded.avatarURL,
+          // Storing the role in the AuthContext makes it accessible globally.
+          role: decoded.role,
         });
         localStorage.setItem('access_token', token);
       } catch (error) {
         console.error('Failed to decode token:', error);
-        setUser(null);
-        localStorage.removeItem('access_token');
       }
-    } else {
-      setUser(null);
-      localStorage.removeItem('access_token');
     }
     setLoading(false);
   }, [token]);
