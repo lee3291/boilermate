@@ -97,7 +97,76 @@ export class VerificationService {
             profileInfo: true,
           },
         },
+        reviewedBy: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
       },
+    });
+  }
+
+  async updateVerificationStatus(
+    requestId: string,
+    adminId: string,
+    dto: { status: VerificationStatus; reason?: string },
+  ) {
+    const { status, reason } = dto;
+
+    const request = await this.prisma.verificationRequest.findUnique({
+      where: { id: requestId },
+    });
+
+    if (!request) {
+      throw new NotFoundException('Verification request not found.');
+    }
+
+    // Use a transaction to ensure data consistency
+    return this.prisma.$transaction(async (tx) => {
+      // Update the verification request
+      const updatedRequest = await tx.verificationRequest.update({
+        where: { id: requestId },
+        data: {
+          status,
+          reason,
+          reviewedBy: { connect: { id: adminId } },
+        },
+        // Include the user details in the response to ensure the frontend
+        // has the necessary data to re-render the row without crashing.
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              profileInfo: true,
+            },
+          },
+          reviewedBy: {
+            select: {
+              id: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      // If approved, update the user's verification status
+      if (status === 'APPROVED') {
+        await tx.user.update({
+          where: { id: request.userId },
+          data: { isVerified: true },
+        });
+      } else if (status === 'DECLINED') {
+        // If a request is declined, we can also set isVerified to false,
+        // in case a previously approved user is re-evaluated.
+        await tx.user.update({
+          where: { id: request.userId },
+          data: { isVerified: false },
+        });
+      }
+
+      return updatedRequest;
     });
   }
 }

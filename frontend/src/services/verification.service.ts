@@ -48,3 +48,32 @@ export const createVerificationRequest = async (idImageKey: string) => {
   const response = await api.post('/verification', { idImageKey });
   return response.data;
 };
+
+/**
+ * Fetches all verification requests for the admin dashboard.
+ * @param status An optional status to filter the requests by.
+ */
+export const getVerificationRequests = async (status?: string) => {
+  const response = await api.get('/verification/admin/requests', {
+    params: { status },
+  });
+  return response.data;
+};
+
+/**
+ * Updates the status of a verification request.
+ * @param requestId The ID of the request to update.
+ * @param status The new status ('APPROVED' or 'DECLINED').
+ * @param reason An optional reason for declining.
+ */
+export const updateVerificationStatus = async (
+  requestId: string,
+  status: 'APPROVED' | 'DECLINED',
+  reason?: string,
+) => {
+  const response = await api.patch(
+    `/verification/admin/requests/${requestId}`,
+    { status, reason },
+  );
+  return response.data;
+};

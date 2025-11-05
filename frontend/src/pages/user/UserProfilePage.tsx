@@ -95,6 +95,20 @@ const UserProfilePage = () => {
             >
               Edit Profile
             </Link>
+            <Link
+              to='/verification'
+              className='ml-4 rounded-lg bg-green-500 px-6 py-2 text-white hover:bg-green-600'
+            >
+              Verify Account
+            </Link>
+            {user?.role === 'ADMIN' && (
+              <Link
+                to='/admin/verification-requests'
+                className='mt-4 block w-full rounded-lg bg-blue-500 px-6 py-2 text-white hover:bg-blue-600'
+              >
+                Admin Dashboard
+              </Link>
+            )}
           </>
         ) : (
           <p className='mb-8 text-lg text-gray-600'>You are not signed in.</p>
