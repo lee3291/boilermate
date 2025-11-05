@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { useAuth } from "../../../contexts/AuthContext";
+import ShareButtons from "./components/ShareButtons";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
@@ -99,6 +100,17 @@ export default function ListingDetails() {
                         <button className="mt-10 h-12 w-30 bg-white text-black border-black border-1 font-roboto-light rounded-4xl cursor-pointer">
                             Contact
                         </button>
+
+                        <ShareButtons
+                            id={id}
+                            title={title}
+                            author={author}
+                            price={price}
+                            body={body}
+                            location={location}
+                            moveInStart={moveInStart}
+                            moveInEnd={moveInEnd}
+                        />
                     </div>
                 </div>
 

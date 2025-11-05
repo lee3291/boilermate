@@ -6,6 +6,13 @@ import useSWR from "swr";
 import { fetcher } from "../../../../services/listingsFetcher";
 import { Link } from "react-router-dom";
 
+type ListingStatus = "ACTIVE" | "INACTIVE" | "ARCHIVED";
+
+function toListingStatus(v: unknown): ListingStatus {
+    const u = String(v ?? "ACTIVE").toUpperCase();
+    return u === "ACTIVE" || u === "INACTIVE" || u === "ARCHIVED" ? (u as ListingStatus) : "ACTIVE";
+}
+
 function normalize(v: unknown) {
     if (v == null) return null;
     const s = String(v).trim();
@@ -21,13 +28,11 @@ function emailLocalPart(e?: string | null) {
 export default function MyListings() {
     const { user: authUser } = useAuth();
 
-    // Collect multiple identifiers for the current user (username, id, email local-part)
     const me = useMemo(() => {
         if (!authUser) return null;
         const username = (authUser as any).username ?? (authUser as any).displayName;
         const id = (authUser as any).id ?? (authUser as any).uid;
         const email = (authUser as any).email;
-
         return {
             username: normalize(username),
             id: normalize(id),
@@ -35,54 +40,17 @@ export default function MyListings() {
         };
     }, [authUser]);
 
-    const { data, error, isLoading } = useSWR("/listings/active", fetcher);
+    const apiUsername = useMemo(() => {
+        if (!me) return null;
+        return me.username ?? me.emailLocal ?? me.id ?? null;
+    }, [me]);
 
-    // Robust match against many possible shapes: user string, user object, separate fields
-    const mine = useMemo(() => {
-        if (!data || !me) return [];
+    const { data, error, isLoading } = useSWR(
+        apiUsername ? `/listings/users/${encodeURIComponent(apiUsername)}/listings` : null,
+        fetcher
+    );
 
-        const matchesMe = (l: any) => {
-            // candidate strings we can compare to our identifiers
-            const cand: (string | null)[] = [];
-
-            // 1) Flat fields often seen
-            cand.push(normalize(l.author));
-            cand.push(normalize(l.owner));
-            cand.push(normalize(l.createdBy));
-            cand.push(normalize(l.username));
-            cand.push(normalize(l.user));          // <-- if backend stores a plain username here
-            cand.push(normalize(l.userId));
-            cand.push(normalize(l.createdById));
-
-            // 2) Nested "user" object
-            if (l.user && typeof l.user === "object") {
-                cand.push(normalize(l.user.username));
-                cand.push(normalize(l.user.id ?? l.user._id));
-                cand.push(normalize(emailLocalPart(l.user.email)));
-            }
-
-            // 3) Sometimes authorship is under "createdBy"/"owner" objects
-            if (l.createdBy && typeof l.createdBy === "object") {
-                cand.push(normalize(l.createdBy.username));
-                cand.push(normalize(l.createdBy.id ?? l.createdBy._id));
-                cand.push(normalize(emailLocalPart(l.createdBy.email)));
-            }
-            if (l.owner && typeof l.owner === "object") {
-                cand.push(normalize(l.owner.username));
-                cand.push(normalize(l.owner.id ?? l.owner._id));
-                cand.push(normalize(emailLocalPart(l.owner.email)));
-            }
-
-            const set = new Set(cand.filter(Boolean) as string[]);
-            return (
-                (me.username && set.has(me.username)) ||
-                    (me.id && set.has(me.id)) ||
-                    (me.emailLocal && set.has(me.emailLocal))
-            );
-        };
-
-        return (data as any[]).filter(matchesMe);
-    }, [data, me]);
+    const mine = useMemo(() => (Array.isArray(data) ? data : []), [data]);
 
     return (
         <div className="h-full w-full min-h-screen">
@@ -124,12 +92,17 @@ export default function MyListings() {
                                                 : undefined)) ??
                                         "Unknown"
                                 )}
-                                price={typeof l.price === "number" ? `$${(l.price / 100).toFixed(2)}` : String(l.price ?? "")}
+                                price={
+                                    typeof l.price === "number"
+                                        ? `$${(l.price / 100).toFixed(2)}`
+                                        : String(l.price ?? "")
+                                }
                                 roommates={String(l.roommates ?? "")}
                                 body={String(l.body ?? l.description ?? "")}
                                 location={String(l.location ?? "")}
                                 moveInStart={String(l.moveInStart ?? "")}
                                 moveInEnd={String(l.moveInEnd ?? "")}
+                                status={toListingStatus(l.status)}
                                 widthClass="w-120"
                                 saveEnabled={false}
                                 />
