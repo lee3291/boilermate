@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
-import { useAuth } from '../../../contexts/AuthContext';
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from '../../../contexts/AuthContext';
 import SaveBlack from "../../../assets/images/save-black.png";
 import SaveWhite from "../../../assets/images/save-white.png";
 import { toggleSave } from "../../../services/saves";
 import { getSavedListings } from "../../../services/savedListings";
 import { getSavedHint, setSavedHint } from "../../../services/savedCache";
+
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 type ListingsCardProps = {
     id: string;
@@ -17,6 +19,9 @@ type ListingsCardProps = {
     location: string;
     moveInStart: string;
     moveInEnd: string;
+    widthClass?: string;
+    widthStyle?: string;
+    saveEnabled?: boolean;
 };
 
 export default function ListingsCard({
@@ -29,57 +34,63 @@ export default function ListingsCard({
     location,
     moveInStart,
     moveInEnd,
+    widthClass = "w-140",
+    widthStyle,
+    saveEnabled = true,
 }: ListingsCardProps) {
-    // null = unknown (don’t render yet), true = saved, false = not saved
     const [clicked, setClicked] = useState<boolean | null>(null);
     const [saving, setSaving] = useState(false);
     const { user: authUser } = useAuth();
 
-    // derive a stable "username" from the auth user (same fallback order used elsewhere)
-    const listingUser = (() => {
+    const viewerUsername = useMemo(() => {
         if (!authUser) return null;
         const maybeUsername = (authUser as any).username ?? (authUser as any).displayName;
-        if (typeof maybeUsername === 'string' && maybeUsername.trim()) return maybeUsername.trim();
-        if (typeof (authUser as any).email === 'string' && (authUser as any).email.includes('@')) {
-            return (authUser as any).email.split('@')[0].trim();
+        if (typeof maybeUsername === "string" && maybeUsername.trim()) return maybeUsername.trim();
+        if (typeof (authUser as any).email === "string" && (authUser as any).email.includes("@")) {
+            return (authUser as any).email.split("@")[0].trim();
         }
         if ((authUser as any).id) return String((authUser as any).id);
         return null;
-    })();
+    }, [authUser]);
 
-    // 1) Seed from cache to avoid white flash
+    // seed saved-state from cache
     useEffect(() => {
-        if (!listingUser || !id) {
+        if (!saveEnabled) {
             setClicked(false);
             return;
         }
-        const hint = getSavedHint(listingUser, id); // true | undefined
-        if (hint === true) setClicked(true); // show black immediately
-        else setClicked(null);               // keep hidden until we check
-    }, [listingUser, id]);
+        if (!viewerUsername || !id) {
+            setClicked(false);
+            return;
+        }
+        const hint = getSavedHint(viewerUsername, id);
+        if (hint === true) setClicked(true);
+        else setClicked(null);
+    }, [viewerUsername, id, saveEnabled]);
 
-    // 2) Confirm from network (only if unknown or hint was missing)
+    // confirm saved-state from network
     useEffect(() => {
+        if (!saveEnabled) return;
         let cancelled = false;
         (async () => {
-            if (!listingUser || !id) return;
-            if (clicked === true) return; // already confident from cache
+            if (!viewerUsername || !id) return;
+            if (clicked === true) return;
             try {
-                const res = await getSavedListings(listingUser, 1, 100);
+                const res = await getSavedListings(viewerUsername, 1, 100);
                 if (cancelled) return;
-                const isSaved = res.listings.some((l) => l.id === id);
+                const isSaved = res.listings.some((l: any) => l.id === id);
                 setClicked(isSaved);
-                setSavedHint(listingUser, id, isSaved);
+                setSavedHint(viewerUsername, id, isSaved);
             } catch {
-                // don’t block UI; assume not saved if unknown
                 if (!cancelled) setClicked(false);
             }
         })();
         return () => { cancelled = true; };
-    }, [listingUser, id]); // intentionally not depending on `clicked`
+    }, [viewerUsername, id, saveEnabled]);
 
     const onToggleSave = async () => {
-        if (!listingUser) {
+        if (!saveEnabled) return;
+        if (!viewerUsername) {
             alert("Please sign in to save listings.");
             return;
         }
@@ -87,15 +98,14 @@ export default function ListingsCard({
         const next = !current;
 
         setClicked(next);
-        setSavedHint(listingUser, id, next);
+        setSavedHint(viewerUsername, id, next);
         setSaving(true);
         try {
-            await toggleSave(id, listingUser, next);
+            await toggleSave(id, viewerUsername, next);
         } catch (e: any) {
-            // revert on failure
             const revert = !next;
             setClicked(revert);
-            setSavedHint(listingUser, id, revert);
+            setSavedHint(viewerUsername, id, revert);
             console.error(e);
             alert(e?.message || "Could not update saved status.");
         } finally {
@@ -103,23 +113,53 @@ export default function ListingsCard({
         }
     };
 
-    const icon =
-        clicked === null ? (
-            <div className={`h-6 w-6 opacity-0`} />
+    // ----- Owner counts (read-only on card; no increments here) -----
+    const [viewCount, setViewCount] = useState<number | null>(null);
+    const [uniqueCount, setUniqueCount] = useState<number | null>(null);
+
+    const isOwner = useMemo(() => {
+        const a = String(author || "").trim().toLowerCase();
+        const v = String(viewerUsername || "").trim().toLowerCase();
+        return !!a && !!v && a === v;
+    }, [author, viewerUsername]);
+
+    useEffect(() => {
+        if (!isOwner) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch(`${API_BASE}/listings/${id}/views/counts`);
+                if (!res.ok) return;
+                const json = await res.json();
+                if (!cancelled) {
+                    setViewCount(json.viewCount ?? 0);
+                    setUniqueCount(json.uniqueCount ?? 0);
+                }
+            } catch {}
+        })();
+        return () => { cancelled = true; };
+    }, [isOwner, id]);
+
+    const icon = !saveEnabled ? (
+        <div className="h-6 w-6" />
+    ) : clicked === null ? (
+            <div className="h-6 w-6 opacity-0" />
         ) : (
-                <img
-                    src={clicked ? SaveBlack : SaveWhite}
-                    className={`h-6 w-auto cursor-pointer select-none ${saving ? "opacity-60 pointer-events-none" : ""}`}
-                    alt={clicked ? "Saved" : "Save"}
-                    onClick={onToggleSave}
-                    draggable={false}
-                    />
-            );
+            <img
+                src={clicked ? SaveBlack : SaveWhite}
+                className={`h-6 w-auto cursor-pointer select-none ${saving ? "opacity-60 pointer-events-none" : ""}`}
+                alt={clicked ? "Saved" : "Save"}
+                onClick={onToggleSave}
+                draggable={false}
+                />
+        );
+
+    const style = widthStyle ? { width: widthStyle } : undefined;
 
     return (
         <div>
-            <div className="absolute h-100 w-140 z-0 bg-black/20 blur-[5px] rounded-lg" />
-            <div className="relative h-100 w-140 z-10 border-black border-[1.5px] bg-white rounded-lg">
+            <div className={`absolute h-100 ${widthClass} z-0 bg-black/20 blur-[5px] rounded-lg`} style={style} />
+            <div className={`relative h-100 ${widthClass} z-10 border-black border-[1.5px] bg-white rounded-lg`} style={style}>
                 <div className="py-5 px-5">
                     <div className="flex justify-between">
                         <h1 className="font-roboto-regular text-3xl tracking-[-0.4pt]">{title}</h1>
@@ -134,6 +174,13 @@ export default function ListingsCard({
                     <h1 className="pt-2 text-gray-500 font-roboto-italic text-lg">Created by {author}</h1>
                     <h1 className="pt-2 text-gray-500 font-roboto-italic text-lg">Looking for {roommates} roommates(s)</h1>
                     <h1 className="text-gray-500 font-roboto-bold text-lg">{price}</h1>
+
+                    {isOwner && (
+                        <div className="mt-1 text-xs text-gray-500 font-roboto-italic text-[16px]">
+                            Views: {viewCount ?? "—"}{typeof uniqueCount === "number" ? ` (${uniqueCount} unique)` : ""}
+                        </div>
+                    )}
+
                     <h1 className="pt-2 font-roboto-light text-lg text-wrap">{body}</h1>
 
                     <div className="flex justify-start gap-3">

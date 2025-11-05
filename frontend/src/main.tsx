@@ -99,6 +99,10 @@ const router = createBrowserRouter([
         element: <Listings />,
       },
       {
+        path: '/mylistings',
+        element: <MyListings />,
+      },
+      {
         path: '/listings/:id',
         element: <ListingDetails />,
       },
@@ -136,6 +140,7 @@ const router = createBrowserRouter([
 
 import { AuthProvider } from './contexts/AuthContext';
 import { Home } from 'lucide-react';
+import MyListings from './pages/user/listings/user/MyListings.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

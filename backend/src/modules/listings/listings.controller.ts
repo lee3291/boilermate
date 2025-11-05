@@ -119,6 +119,7 @@ export class ListingsController {
     @Post()
     async createStrict(@Body() rawBody: any) {
         // Only validate when hitting /listings (strict path)
+        assertCreateBody(rawBody);
 
         const body: CreateListingBody = {
             title: rawBody.title.trim(),
@@ -186,6 +187,39 @@ export class ListingsController {
         });
     }
 
+    // ===================== Views (new) =====================
+
+    /**
+     * Record a view. This increments general views.
+     * If a username is provided (in body), we'll also count a unique view.
+     *
+     * POST /listings/:id/views
+     * body: { username?: string }
+     */
+    @Post(':id/views')
+    recordView(@Param('id') listingId: string, @Body() body: any) {
+        const username = typeof body?.username === 'string' ? body.username.trim() : undefined;
+        return this.listingsService.recordView({ listingId, username });
+    }
+
+    /** Get both counts in one call — GET /listings/:id/views/counts */
+    @Get(':id/views/counts')
+    getViewCounts(@Param('id') listingId: string) {
+        return this.listingsService.getViewCounts(listingId);
+    }
+
+    /** GET /listings/:id/views/count — general (non-unique) views */
+    @Get(':id/views/count')
+    getViewCount(@Param('id') listingId: string) {
+        return this.listingsService.getViewCount(listingId);
+    }
+
+    /** GET /listings/:id/views/unique-count — unique (per-username) views */
+    @Get(':id/views/unique-count')
+    getUniqueViewCount(@Param('id') listingId: string) {
+        return this.listingsService.getUniqueViewCount(listingId);
+    }
+
     // ===================== Legacy API (minimal compatibility) =====================
 
     /** Legacy create: POST /listing/create (accepts legacy body, e.g. { pricing: number }) */
@@ -195,9 +229,9 @@ export class ListingsController {
         return this.listingsService.create(body);
     }
 
-    /** Legacy find all: GET /listing (returns {title, location, pricing}) */
+    /** Legacy find all: GET /listing (returns minimal fields) */
     @Get()
-    legacyFindAll() {
+    findAll() {
         return this.listingsService.findAll();
     }
 
@@ -217,11 +251,6 @@ export class ListingsController {
     @Delete(':id')
     legacyRemove(@Param('id') id: string) {
         return this.listingsService.remove(id);
-    }
-
-    @Get()
-    findAll() {
-        return this.listingsService.findAll();
     }
 }
 
