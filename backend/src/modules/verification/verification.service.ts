@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { UploadsService } from '../uploads/uploads.service';
 import { CreateVerificationRequestDto } from './dto/create-verification-request.dto';
 
@@ -12,6 +13,7 @@ export class VerificationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly uploadsService: UploadsService,
+    private readonly configService: ConfigService,
   ) {}
 
   async getVerificationStatus(userId: string) {
@@ -34,7 +36,7 @@ export class VerificationService {
   async generateVerificationUploadUrl(userId: string, contentType: string) {
     const existingRequest = await this.prisma.verificationRequest.findFirst({
       where: {
-        userId,
+        userId: userId,
         status: { in: ['PENDING', 'APPROVED'] },
       },
     });
@@ -58,12 +60,17 @@ export class VerificationService {
   ) {
     const { idImageKey } = dto;
 
+    const bucket = this.configService.get<string>('AWS_S3_BUCKET');
+    const region = this.configService.get<string>('AWS_REGION');
+
     // Construct the full URL from the key
-    const idImageURL = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${idImageKey}`;
+    const idImageURL = `https://${bucket}.s3.${region}.amazonaws.com/${idImageKey}`;
 
     const newRequest = await this.prisma.verificationRequest.create({
       data: {
-        userId,
+        user: {
+          connect: { id: userId },
+        },
         idImageURL,
         idImageKey, // Storing the key is useful for deletion later
         status: 'PENDING',

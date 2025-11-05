@@ -4,7 +4,6 @@ import { VerificationService } from './verification.service';
 import { GenerateUploadUrlDto } from './dto/generate-upload-url.dto';
 import { CreateVerificationRequestDto } from './dto/create-verification-request.dto';
 import { GetUser } from '../auth/decorators/get-user.decorator';
-import type { User } from '@prisma/client';
 
 @Controller('verification')
 @UseGuards(AuthGuard('jwt'))
@@ -12,23 +11,26 @@ export class VerificationController {
   constructor(private readonly verificationService: VerificationService) {}
 
   @Get('status')
-  getStatus(@GetUser() user: User) {
-    return this.verificationService.getVerificationStatus(user.id);
+  getStatus(@GetUser('userId') userId: string) {
+    return this.verificationService.getVerificationStatus(userId);
   }
 
   @Post('upload-url')
-  generateUploadUrl(@GetUser() user: User, @Body() dto: GenerateUploadUrlDto) {
+  generateUploadUrl(
+    @GetUser('userId') userId: string,
+    @Body() dto: GenerateUploadUrlDto,
+  ) {
     return this.verificationService.generateVerificationUploadUrl(
-      user.id,
+      userId,
       dto.contentType,
     );
   }
 
   @Post()
   createRequest(
-    @GetUser() user: User,
+    @GetUser('userId') userId: string,
     @Body() dto: CreateVerificationRequestDto,
   ) {
-    return this.verificationService.createVerificationRequest(user.id, dto);
+    return this.verificationService.createVerificationRequest(userId, dto);
   }
 }
