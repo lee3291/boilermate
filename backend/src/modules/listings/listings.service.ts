@@ -1,23 +1,14 @@
-import {
-    Injectable,
-    BadRequestException,
-    NotFoundException,
-} from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../core/database/prisma.service';
 import { Prisma } from '@prisma/client';
 
-// -------------------------
-// Types
-// -------------------------
-
 type LegacyCreateListingDto = {
-    // FIRST SERVICE DTO (loosely typed; we normalize below)
     title: string;
     user?: string;
     description?: string;
     roommates?: number;
-    pricing?: number; // legacy float
-    price?: number;   // new int
+    pricing?: number;
+    price?: number;
     location?: string;
     mediaUrls?: string[];
     status?: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
@@ -26,12 +17,11 @@ type LegacyCreateListingDto = {
 };
 
 type CreateListingDetails = {
-    // SECOND SERVICE input
     title: string;
     user?: string;
     description?: string;
     roommates?: number;
-    price?: number;   // preferred (int)
+    price?: number;
     location?: string;
     mediaUrls?: string[];
     status?: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
@@ -44,7 +34,6 @@ type ListingResponse = {
     title: string;
     user: string;
     description: string | null;
-    // expose BOTH for compatibility (frontends can pick whichever they use)
     price: number | null;
     roommates: number | null;
     pricing: number | null;
@@ -52,23 +41,18 @@ type ListingResponse = {
     mediaUrls: string[];
     status: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
     viewCount: number;
-    moveInStart: string | null; // YYYY-MM-DD or null
-    moveInEnd: string | null;   // YYYY-MM-DD or null
+    moveInStart: string | null;
+    moveInEnd: string | null;
     createdAt: string;
     updatedAt: string;
 };
 
-// Prisma error codes
-const P2002 = 'P2002'; // unique constraint failed
-const P2025 = 'P2025'; // record not found
+const P2002 = 'P2002';
+const P2025 = 'P2025';
 
 @Injectable()
 export class ListingsService {
     constructor(private readonly prisma: PrismaService) {}
-
-    // -------------------------
-    // Helpers
-    // -------------------------
 
     private toYMD(d: Date | null): string | null {
         return d ? d.toISOString().slice(0, 10) : null;
@@ -80,7 +64,6 @@ export class ListingsService {
             title: l.title,
             user: l.user,
             description: l.description,
-            // expose both price & pricing for dual-schema compatibility
             price: typeof l.price === 'number' ? l.price : null,
             roommates: typeof l.roommates === 'number' ? l.roommates : null,
             pricing: typeof l.pricing === 'number' ? l.pricing : null,
@@ -95,12 +78,7 @@ export class ListingsService {
         };
     }
 
-    /** Accepts either FIRST-SERVICE dto or SECOND-SERVICE details and normalizes to prisma data. */
-    private normalizeCreateInput(
-        input: LegacyCreateListingDto | CreateListingDetails,
-    ) {
-        // Allow either `price` (int) or legacy `pricing` (float).
-        // We persist BOTH columns if provided; otherwise set the other to null.
+    private normalizeCreateInput(input: LegacyCreateListingDto | CreateListingDetails) {
         const price =
             typeof (input as any).price === 'number'
                 ? (input as any).price
@@ -115,34 +93,26 @@ export class ListingsService {
                 ? (input as any).price
                 : null;
 
-        const parseMaybeDate = (v: any) =>
-            v == null ? null : typeof v === 'string' ? new Date(v) : (v as Date);
+        const parseMaybeDate = (v: any) => (v == null ? null : typeof v === 'string' ? new Date(v) : (v as Date));
 
         const roommates =
-            Number.isInteger((input as any).roommates) && (input as any).roommates >= 1
-                ? (input as any).roommates
-                : undefined;
+            Number.isInteger((input as any).roommates) && (input as any).roommates >= 1 ? (input as any).roommates : undefined;
 
         return {
             title: (input as any).title,
             user: (input as any).user ?? 'Anonymous',
             description: (input as any).description ?? null,
-            price,      // int (nullable)
-            pricing,    // float (nullable)
+            price,
+            pricing,
             roommates,
             location: (input as any).location ?? null,
             mediaUrls: (input as any).mediaUrls ?? [],
             status: (input as any).status ?? 'ACTIVE',
             moveInStart: parseMaybeDate((input as any).moveInStart) ?? null,
             moveInEnd: parseMaybeDate((input as any).moveInEnd) ?? null,
-            // Backend-controlled defaults for legacy behavior:
             viewCount: 0,
         };
     }
-
-    // =========================================================
-    // "SECOND SERVICE" API (kept intact) + Views
-    // =========================================================
 
     async findActive() {
         const rows = await this.prisma.listing.findMany({
@@ -152,26 +122,13 @@ export class ListingsService {
         return rows.map((l) => this.toListingResponse(l));
     }
 
-    /** Compatible create: accepts either style of input */
-    async create(
-        input: CreateListingDetails | LegacyCreateListingDto,
-    ): Promise<{ listing: ListingResponse }> {
+    async create(input: CreateListingDetails | LegacyCreateListingDto): Promise<{ listing: ListingResponse }> {
         const data = this.normalizeCreateInput(input);
-
         const created = await this.prisma.listing.create({ data });
         return { listing: this.toListingResponse(created) };
     }
 
-    /** Save a listing for a username. Idempotent. */
-    async saveListing(args: {
-        listingId: string;
-        username: string;
-    }): Promise<{
-        listingId: string;
-        username: string;
-        isSaved: boolean;
-        createdAt: string;
-    }> {
+    async saveListing(args: { listingId: string; username: string }) {
         const exists = await this.prisma.listing.findUnique({
             where: { id: args.listingId },
             select: { id: true },
@@ -184,7 +141,6 @@ export class ListingsService {
             const row = await this.prisma.saved.create({
                 data: { listingId: args.listingId, username: args.username },
             });
-
             return {
                 listingId: row.listingId,
                 username: row.username,
@@ -205,19 +161,14 @@ export class ListingsService {
                     listingId: args.listingId,
                     username: args.username,
                     isSaved: true,
-                    createdAt:
-                        row?.createdAt?.toISOString() ?? new Date().toISOString(),
+                    createdAt: row?.createdAt?.toISOString() ?? new Date().toISOString(),
                 };
             }
             throw err;
         }
     }
 
-    /** Unsave a listing for a username. Idempotent. */
-    async unsaveListing(args: {
-        listingId: string;
-        username: string;
-    }): Promise<{ listingId: string; username: string; isSaved: false }> {
+    async unsaveListing(args: { listingId: string; username: string }) {
         try {
             await this.prisma.saved.delete({
                 where: {
@@ -228,23 +179,17 @@ export class ListingsService {
                 },
             });
         } catch (err: any) {
-            if (err?.code !== P2025) throw err; // ignore not found
+            if (err?.code !== P2025) throw err;
         }
-        return { listingId: args.listingId, username: args.username, isSaved: false };
+        return { listingId: args.listingId, username: args.username, isSaved: false as const };
     }
 
-    /** Count total saves for a listing */
-    async countSaves(listingId: string): Promise<{ listingId: string; count: number }> {
+    async countSaves(listingId: string) {
         const count = await this.prisma.saved.count({ where: { listingId } });
         return { listingId, count };
     }
 
-    /** List usernames who saved a listing (paginated) */
-    async listSavedBy(args: {
-        listingId: string;
-        page: number;
-        pageSize: number;
-    }): Promise<{ listingId: string; usernames: string[]; page: number; pageSize: number; total: number }> {
+    async listSavedBy(args: { listingId: string; page: number; pageSize: number }) {
         const { listingId, page, pageSize } = args;
         const [total, rows] = await this.prisma.$transaction([
             this.prisma.saved.count({ where: { listingId } }),
@@ -266,18 +211,7 @@ export class ListingsService {
         };
     }
 
-    /** List full listings saved by a username (paginated) */
-    async listingsSavedByUser(args: {
-        username: string;
-        page: number;
-        pageSize: number;
-    }): Promise<{
-        username: string;
-        listings: ListingResponse[];
-        page: number;
-        pageSize: number;
-        total: number;
-    }> {
+    async listingsSavedByUser(args: { username: string; page: number; pageSize: number }) {
         const { username, page, pageSize } = args;
         const [total, saves] = await this.prisma.$transaction([
             this.prisma.saved.count({ where: { username } }),
@@ -298,29 +232,20 @@ export class ListingsService {
         return { username, listings, page, pageSize, total };
     }
 
-    // -------------------------
-    // Views (new)
-    // -------------------------
-
-    /** Increment general views and optionally record a per-username unique view. */
     async recordView(args: { listingId: string; username?: string }) {
         const { listingId, username } = args;
-
-        // ensure listing exists
         const listing = await this.prisma.listing.findUnique({
             where: { id: listingId },
             select: { id: true },
         });
         if (!listing) throw new NotFoundException('Listing not found');
 
-        // always increment general views
         const increment = this.prisma.listing.update({
             where: { id: listingId },
             data: { viewCount: { increment: 1 } },
             select: { id: true, viewCount: true },
         });
 
-        // build a strictly-typed Prisma transaction array
         const ops: Prisma.PrismaPromise<any>[] = [increment];
 
         if (username && username.trim().length > 0) {
@@ -332,21 +257,17 @@ export class ListingsService {
                             listingId,
                         },
                     },
-                    update: {}, // idempotent
+                    update: {},
                     create: { username: username.trim(), listingId },
                 }),
             );
         }
 
         const [after] = await this.prisma.$transaction(ops);
-
         return { listingId: after.id, viewCount: after.viewCount };
     }
 
-
-
-    /** Return both totals in one go. */
-    async getViewCounts(listingId: string): Promise<{ listingId: string; viewCount: number; uniqueCount: number }> {
+    async getViewCounts(listingId: string) {
         const listing = await this.prisma.listing.findUnique({
             where: { id: listingId },
             select: { id: true, viewCount: true },
@@ -357,8 +278,7 @@ export class ListingsService {
         return { listingId, viewCount: listing.viewCount, uniqueCount };
     }
 
-    /** Return general view count only. */
-    async getViewCount(listingId: string): Promise<{ listingId: string; count: number }> {
+    async getViewCount(listingId: string) {
         const listing = await this.prisma.listing.findUnique({
             where: { id: listingId },
             select: { id: true, viewCount: true },
@@ -367,9 +287,7 @@ export class ListingsService {
         return { listingId, count: listing.viewCount };
     }
 
-    /** Return unique (per-username) views only. */
-    async getUniqueViewCount(listingId: string): Promise<{ listingId: string; count: number }> {
-        // If listing doesn't exist, mirror other getters and throw 404
+    async getUniqueViewCount(listingId: string) {
         const exists = await this.prisma.listing.findUnique({
             where: { id: listingId },
             select: { id: true },
@@ -380,12 +298,7 @@ export class ListingsService {
         return { listingId, count };
     }
 
-    // -------------------------
-    // Legacy helpers
-    // -------------------------
-
-    /** Legacy: findOne by "listingID" (maps to `id`) */
-    async findOne(listingID: string): Promise<ListingResponse> {
+    async findOne(listingID: string) {
         const listing = await this.prisma.listing.findUnique({
             where: { id: listingID },
         });
@@ -393,43 +306,22 @@ export class ListingsService {
         return this.toListingResponse(listing);
     }
 
-    /** Legacy: update by "listingID" (maps to `id`) */
-    async update(
-        listingID: string,
-        dto: Partial<LegacyCreateListingDto>,
-    ): Promise<ListingResponse> {
-        // normalize partial updates; only map known fields
+    async update(listingID: string, dto: Partial<LegacyCreateListingDto>) {
         const patch: any = {};
         if ('title' in dto) patch.title = dto.title;
         if ('user' in dto) patch.user = dto.user;
         if ('description' in dto) patch.description = dto.description ?? null;
         if ('location' in dto) patch.location = dto.location ?? null;
         if ('status' in dto) patch.status = dto.status;
-
-        // keep dual column semantics
-        if (typeof dto.price === 'number') {
-            patch.price = dto.price;
-            // keep pricing in sync if you'd like (optional, minimal approach: only set provided)
-        }
-        if (typeof (dto as any).pricing === 'number') {
-            patch.pricing = (dto as any).pricing;
-        }
-
+        if (typeof dto.price === 'number') patch.price = dto.price;
+        if (typeof (dto as any).pricing === 'number') patch.pricing = (dto as any).pricing;
         if ('mediaUrls' in dto) patch.mediaUrls = dto.mediaUrls ?? [];
         if ('moveInStart' in dto)
             patch.moveInStart =
-                dto.moveInStart == null
-                    ? null
-                    : typeof dto.moveInStart === 'string'
-                    ? new Date(dto.moveInStart)
-                    : (dto.moveInStart as Date);
+                dto.moveInStart == null ? null : typeof dto.moveInStart === 'string' ? new Date(dto.moveInStart) : (dto.moveInStart as Date);
         if ('moveInEnd' in dto)
             patch.moveInEnd =
-                dto.moveInEnd == null
-                    ? null
-                    : typeof dto.moveInEnd === 'string'
-                    ? new Date(dto.moveInEnd)
-                    : (dto.moveInEnd as Date);
+                dto.moveInEnd == null ? null : typeof dto.moveInEnd === 'string' ? new Date(dto.moveInEnd) : (dto.moveInEnd as Date);
 
         const updated = await this.prisma.listing.update({
             where: { id: listingID },
@@ -438,19 +330,26 @@ export class ListingsService {
         return this.toListingResponse(updated);
     }
 
-    /** Legacy: remove by "listingID" (maps to `id`) */
-    async remove(listingID: string): Promise<ListingResponse> {
+    async remove(listingID: string) {
         const deleted = await this.prisma.listing.delete({
             where: { id: listingID },
         });
         return this.toListingResponse(deleted);
     }
 
-    /**
-     * Get all listings (minimal data for maps)
-     */
+    async findByUser(username: string, include?: ('ACTIVE' | 'INACTIVE' | 'ARCHIVED')[]) {
+        const statuses = include && include.length ? include : (['ACTIVE', 'INACTIVE', 'ARCHIVED'] as const);
+        const rows = await this.prisma.listing.findMany({
+            where: {
+                user: username,
+                status: { in: statuses as any },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+        return rows.map((l) => this.toListingResponse(l));
+    }
+
     async findAll() {
-        // Extract 3 attributes to show in the gg map
         const listings = await this.prisma.listing.findMany({
             select: {
                 title: true,
