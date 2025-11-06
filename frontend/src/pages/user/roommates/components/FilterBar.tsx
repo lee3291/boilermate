@@ -133,48 +133,58 @@ export default function FilterBar({
   const operatorLabel = importanceOperator === 'equal' ? '=' : importanceOperator === 'greater_or_equal' ? '≥' : '≤';
 
   return (
-    <div className='px-8 py-5 bg-white border-b border-gray-200'>
-      <div className='flex items-center gap-3'>
+    <div className='px-8 py-6 bg-white border-b border-gray-200'>
+      <div className='flex items-center gap-4'>
         {/* Importance Controls - Always Visible */}
-        <div className='flex items-center gap-2 h-10 px-4 rounded-lg border-2 border-blue-300 bg-blue-50'>
-          <span className='text-sm font-semibold text-blue-900'>Importance:</span>
+        <div className='flex items-center gap-3 h-12 px-5 rounded-lg border-2 border-blue-300 bg-blue-50'>
+          <span className='text-base font-semibold text-blue-900'>Importance:</span>
+          
+          {/* Operator Selector */}
           <select
             value={importanceOperator}
             onChange={(e) => setImportanceOperator(e.target.value as any)}
-            className='h-8 px-2 rounded border border-blue-300 bg-white text-sm font-medium outline-none focus:border-blue-500'
+            className='h-9 px-3 rounded border border-blue-300 bg-white text-base font-medium outline-none focus:border-blue-500'
           >
             <option value="greater_or_equal">≥</option>
             <option value="equal">=</option>
             <option value="less_or_equal">≤</option>
           </select>
-          <input
-            type='number'
-            min='1'
-            max='5'
-            step='1'
-            value={importanceValue}
-            onChange={(e) => setImportanceValue(parseInt(e.target.value))}
-            className='w-16 h-8 rounded border border-blue-300 bg-white px-2 text-sm font-bold outline-none focus:border-blue-500 text-center'
-          />
+          
+          {/* Value Selector - Button Group (1-5) */}
+          <div className='flex gap-1.5'>
+            {[1, 2, 3, 4, 5].map((num) => (
+              <button
+                key={num}
+                onClick={() => setImportanceValue(num)}
+                className={`w-9 h-9 rounded font-bold text-base transition ${
+                  importanceValue === num
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'bg-white text-gray-700 border border-blue-300 hover:bg-blue-100'
+                }`}
+              >
+                {num}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className='w-px h-8 bg-gray-300'></div>
+        <div className='w-px h-10 bg-gray-300'></div>
 
         {/* Active Filter Pills */}
         {activeFilters.map(filter => (
           <div
             key={filter.id}
-            className='relative flex items-center gap-2 h-10 px-4 rounded-lg border-2 border-gray-300 bg-white hover:border-gray-400 transition cursor-pointer'
+            className='relative flex items-center gap-2 h-12 px-5 rounded-lg border-2 border-gray-300 bg-white hover:border-gray-400 transition cursor-pointer'
             onClick={() => setOpenFilterId(openFilterId === filter.id ? null : filter.id)}
           >
-            <span className='text-sm font-semibold text-gray-700'>{filter.label}</span>
-            <span className='text-xs font-bold text-gray-600'>{getFilterSummary(filter)}</span>
+            <span className='text-base font-semibold text-gray-700'>{filter.label}</span>
+            <span className='text-sm font-bold text-gray-600'>{getFilterSummary(filter)}</span>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 handleRemoveFilter(filter.id);
               }}
-              className='ml-1 text-gray-400 hover:text-gray-600'
+              className='ml-2 text-gray-400 hover:text-gray-600 text-lg'
             >
               ✕
             </button>
@@ -185,10 +195,10 @@ export default function FilterBar({
         <div className='relative'>
           <button
             onClick={() => handleAddFilter('add-menu')}
-            className='flex items-center gap-2 h-10 px-4 rounded-lg border-2 border-dashed border-gray-300 bg-white text-gray-600 hover:border-blue-400 hover:text-blue-600 transition'
+            className='flex items-center gap-2 h-12 px-5 rounded-lg border-2 border-dashed border-gray-300 bg-white text-gray-600 hover:border-blue-400 hover:text-blue-600 transition'
           >
-            <span className='text-lg'>+</span>
-            <span className='text-sm font-semibold'>Add filter</span>
+            <span className='text-xl'>+</span>
+            <span className='text-base font-semibold'>Add filter</span>
           </button>
 
           {/* Add Filter Menu - Improved Dropdown */}
@@ -241,8 +251,8 @@ export default function FilterBar({
         </div>
 
         {/* Show/Hide Controls */}
-        <div className='ml-auto flex items-center gap-3'>
-          <div className='text-sm text-gray-600'>
+        <div className='ml-auto flex items-center gap-4'>
+          <div className='text-base text-gray-600'>
             {selectedPreferences.length > 0 && (
               <span className='font-semibold'>{selectedPreferences.length} preferences selected</span>
             )}
@@ -251,7 +261,7 @@ export default function FilterBar({
           {activeFilters.length > 0 && (
             <button
               onClick={handleHideAll}
-              className='text-sm font-semibold text-red-600 hover:text-red-700'
+              className='text-base font-semibold text-red-600 hover:text-red-700'
             >
               Clear All
             </button>
@@ -259,7 +269,7 @@ export default function FilterBar({
 
           <button
             onClick={handleApply}
-            className='h-10 px-6 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition shadow-lg hover:shadow-xl'
+            className='h-12 px-7 rounded-lg bg-blue-600 text-white text-base font-semibold hover:bg-blue-700 transition shadow-lg hover:shadow-xl'
           >
             Apply Filters
           </button>

@@ -73,11 +73,17 @@ export class ProfileService {
   /**
    * Get profile details for a specific user
    * Includes favorite status if viewerId is provided
+   * IMPORTANT: Only returns PUBLIC preferences when viewed by others
    */
   async getProfile(dto: GetProfileDetailsDto): Promise<ProfileDetailsDto> {
     const { userId, viewerId } = dto;
 
+    // Determine if this is self-view or other-view
+    const isSelfView = viewerId === userId;
+
     // Fetch user profile
+    // If viewing own profile, show all preferences
+    // If viewing someone else's profile, only show PUBLIC preferences
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -85,11 +91,13 @@ export class ProfileService {
           orderBy: { createdAt: 'asc' },
         },
         profilePreferences: {
+          where: isSelfView ? undefined : { visibility: 'PUBLIC' },
           include: {
             preference: true,
           },
         },
         roommatePreferences: {
+          where: isSelfView ? undefined : { visibility: 'PUBLIC' },
           include: {
             preference: true,
           },
@@ -186,14 +194,19 @@ export class ProfileService {
     }
 
     // Fetch users with filters
+    // Note: _count only includes PUBLIC preferences since we're viewing others' profiles
     const [users, total, myFavorites, myVotes] = await Promise.all([
       this.prisma.user.findMany({
         where: whereClause,
         include: {
           _count: {
             select: {
-              profilePreferences: true,
-              roommatePreferences: true,
+              profilePreferences: {
+                where: { visibility: 'PUBLIC' },
+              },
+              roommatePreferences: {
+                where: { visibility: 'PUBLIC' },
+              },
             },
           },
         },
@@ -398,6 +411,7 @@ export class ProfileService {
     const skip = (page - 1) * limit;
 
     // Fetch favorite matches with favorited user details
+    // Note: _count only includes PUBLIC preferences since we're viewing others' profiles
     const [favoriteMatches, total] = await Promise.all([
       this.prisma.favoriteMatch.findMany({
         where: {
@@ -408,8 +422,12 @@ export class ProfileService {
             include: {
               _count: {
                 select: {
-                  profilePreferences: true,
-                  roommatePreferences: true,
+                  profilePreferences: {
+                    where: { visibility: 'PUBLIC' },
+                  },
+                  roommatePreferences: {
+                    where: { visibility: 'PUBLIC' },
+                  },
                 },
               },
             },
@@ -606,6 +624,7 @@ export class ProfileService {
     }
 
     // Fetch votes with voted user details
+    // Note: _count only includes PUBLIC preferences since we're viewing others' profiles
     const [votes, total] = await Promise.all([
       this.prisma.userVote.findMany({
         where: whereClause,
@@ -614,8 +633,12 @@ export class ProfileService {
             include: {
               _count: {
                 select: {
-                  profilePreferences: true,
-                  roommatePreferences: true,
+                  profilePreferences: {
+                    where: { visibility: 'PUBLIC' },
+                  },
+                  roommatePreferences: {
+                    where: { visibility: 'PUBLIC' },
+                  },
                 },
               },
             },
