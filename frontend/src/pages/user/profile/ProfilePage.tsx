@@ -1,24 +1,37 @@
 /**
- * PreferencesPage - Main page for user preferences
- * Beautiful Tinder-inspired design with 4 sections:
- * 1. Profile Header (name + mock image + personal info)
+ * ProfilePage - Main page for user profile management
+ * Beautiful Tinder-inspired design with sections:
+ * 1. Profile Header (avatar + name + vote stats)
  * 2. Bio Section (user introduction)
  * 3. Lifestyle Preferences (I am...)
  * 4. Roommate Preferences (I want...)
+ * 
+ * Features:
+ * - Avatar upload capability (AvatarUploader component)
+ * - Vote stats display (likes/dislikes received from /profile/me endpoint)
+ * - Full preference management
+ * 
+ * Recent Changes:
+ * - Renamed from PreferencesPage to ProfilePage (more semantic)
+ * - Added AvatarUploader component for avatar changes
+ * - Integrated vote stats from backend (/profile/me)
+ * - Added handleAvatarChange handler (ready for AWS S3 integration)
+ * - Stats display shows likes, dislikes, and approval percentage
  */
 
 import { useState } from 'react';
 import Navbar from '../components/Navbar';
-import usePreferencesLogic from './usePreferencesLogic';
+import useProfileLogic from './useProfileLogic';
 import ProfileHeader from './components/ProfileHeader';
 import BioSection from './components/BioSection';
 import LifestyleSection from './components/LifestyleSection';
 import RoommateSection from './components/RoommateSection';
 
-export default function PreferencesPage() {
-  const logic = usePreferencesLogic('1'); // Initialize with user ID 1
+export default function ProfilePage() {
+  const logic = useProfileLogic('1'); // Initialize with user ID 1
 
   // Mock user data (replace with real data from backend later)
+  // TODO: Use logic.profileData once backend returns complete user info
   const [mockUser] = useState({
     id: logic.currentUserId,
     name: 'Alex Johnson',
@@ -57,8 +70,12 @@ export default function PreferencesPage() {
           </div>
         )}
 
-        {/* Section 1: Profile Header (Name + Image + Personal Info) */}
-        <ProfileHeader user={mockUser} />
+        {/* Section 1: Profile Header (Name + Image + Personal Info + Vote Stats) */}
+        <ProfileHeader 
+          user={mockUser}
+          voteStats={logic.voteStats}
+          onAvatarChange={logic.handleAvatarChange}
+        />
 
         {/* Section 2: Bio Section */}
         <BioSection bio={mockUser.bio} />

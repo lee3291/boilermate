@@ -5,7 +5,7 @@ export default function Navbar() {
   type navItem = { label: string; href: string };
 
   const NAV_ITEMS: navItem[] = [
-    { label: 'Profile', href: '/preferences' },
+    { label: 'Profile', href: '/profile' },
     { label: 'Dashboard', href: '/dashboard' },
     { label: 'Listings', href: '/listings' },
     { label: 'Roomates', href: '/roommates' },

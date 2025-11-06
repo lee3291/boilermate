@@ -1,6 +1,10 @@
 /**
- * usePreferencesLogic - Custom hook for preferences page
- * Manages state and logic for user profile preferences (I am...) and roommate preferences (I want...)
+ * useProfileLogic - Custom hook for profile page
+ * Manages state and logic for:
+ * - User profile data (name, bio, avatar, stats)
+ * - User profile preferences (I am...)
+ * - Roommate preferences (I want...)
+ * - Vote stats (likes/dislikes received)
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -10,10 +14,20 @@ import type {
   RoommatePreference,
 } from '@/types/preferences/preference';
 import * as preferencesService from '@/services/preferencesService';
+import * as profileService from '@/services/profileService';
 
-export default function usePreferencesLogic(initialUserId: string) {
+export default function useProfileLogic(initialUserId: string) {
   // User state
   const [currentUserId, setCurrentUserId] = useState<string>(initialUserId);
+
+  // Profile data (from /profile/me endpoint)
+  const [profileData, setProfileData] = useState<any>(null);
+  
+  // Vote stats (likes/dislikes received)
+  const [voteStats, setVoteStats] = useState<{
+    likesReceived: number;
+    dislikesReceived: number;
+  }>({ likesReceived: 0, dislikesReceived: 0 });
 
   // Master preferences list (all available options)
   const [allPreferences, setAllPreferences] = useState<Preference[]>([]);
@@ -23,12 +37,38 @@ export default function usePreferencesLogic(initialUserId: string) {
   const [roommatePreferences, setRoommatePreferences] = useState<RoommatePreference[]>([]);
 
   // Loading states
+  const [loadingProfile, setLoadingProfile] = useState(false);
   const [loadingMasterList, setLoadingMasterList] = useState(false);
   const [loadingUserProfile, setLoadingUserProfile] = useState(false);
   const [loadingRoommate, setLoadingRoommate] = useState(false);
 
   // Error state
   const [error, setError] = useState<string | null>(null);
+
+  /**
+   * Fetch current user's profile data including vote stats
+   * Uses /profile/me endpoint which returns ProfileDetailsDto with likesReceived/dislikesReceived
+   */
+  const fetchMyProfile = useCallback(async (userId: string) => {
+    if (!userId) return;
+    setLoadingProfile(true);
+    setError(null);
+    try {
+      const response = await profileService.getMyProfile(userId);
+      setProfileData(response);
+      
+      // Extract vote stats from response
+      setVoteStats({
+        likesReceived: response.likesReceived || 0,
+        dislikesReceived: response.dislikesReceived || 0,
+      });
+    } catch (err: any) {
+      setError(err.message || 'Failed to load profile data');
+      console.error('Error fetching profile:', err);
+    } finally {
+      setLoadingProfile(false);
+    }
+  }, []);
 
   // Fetch all available preferences (master list)
   const fetchAllPreferences = useCallback(async () => {
@@ -197,18 +237,35 @@ export default function usePreferencesLogic(initialUserId: string) {
   // Load user data when userId changes
   useEffect(() => {
     if (currentUserId) {
+      fetchMyProfile(currentUserId);
       fetchUserProfilePreferences(currentUserId);
       fetchRoommatePreferences(currentUserId);
     }
-  }, [currentUserId, fetchUserProfilePreferences, fetchRoommatePreferences]);
+  }, [currentUserId, fetchMyProfile, fetchUserProfilePreferences, fetchRoommatePreferences]);
+
+  /**
+   * Handle avatar file change
+   * TODO: Implement AWS S3 upload logic here
+   * For now, just logs the file
+   */
+  const handleAvatarChange = useCallback(async (file: File) => {
+    console.log('Avatar file selected:', file);
+    // TODO: Upload to AWS S3
+    // TODO: Update user avatar URL in backend
+    // TODO: Refresh profile data
+    alert('Avatar upload functionality will be implemented soon!');
+  }, []);
 
   return {
     // State
     currentUserId,
     setCurrentUserId,
+    profileData,
+    voteStats,
     allPreferences,
     userProfilePreferences,
     roommatePreferences,
+    loadingProfile,
     loadingMasterList,
     loadingUserProfile,
     loadingRoommate,
@@ -216,6 +273,8 @@ export default function usePreferencesLogic(initialUserId: string) {
 
     // Actions
     fetchAllPreferences,
+    fetchMyProfile,
+    handleAvatarChange,
     handleSetUserProfilePreference,
     handleUpdateUserProfilePreference,
     handleDeleteUserProfilePreference,

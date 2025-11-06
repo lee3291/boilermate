@@ -29,10 +29,13 @@ const BASE_URL = '/profile';
 
 /**
  * Get current user's profile
- * TODO: Will be fully implemented when user basic fields are available
+ * Returns profile with vote stats (likesReceived, dislikesReceived)
+ * @param userId - Current user's ID
  */
-export const getMyProfile = async (): Promise<any> => {
-  const response = await api.get(`${BASE_URL}/me`);
+export const getMyProfile = async (userId: string): Promise<any> => {
+  const response = await api.get(`${BASE_URL}/me`, {
+    params: { userId }
+  });
   return response.data;
 };
 

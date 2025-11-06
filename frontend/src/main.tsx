@@ -33,7 +33,8 @@ import ReportTestPage from './pages/report/ReportTestPage.tsx';
 
 import ProtectedRoute from './components/ProtectedRoute';
 import UserProfilePage from './pages/user/UserProfilePage';
-import PreferencesPage from './pages/user/preferences/PreferencesPage.tsx';
+// Updated: Renamed from PreferencesPage to ProfilePage (better semantic naming)
+import ProfilePage from './pages/user/profile/ProfilePage.tsx';
 import RoommatesPage from './pages/user/roommates/RoommatesPage.tsx';
 import ProfileViewPage from './pages/user/roommates/ProfileViewPage.tsx';
 
@@ -71,7 +72,17 @@ const router = createBrowserRouter([
     children: [
       {
         path: '/preferences',
-        element: <PreferencesPage />,
+        element: <ProfilePage />,
+      },
+      // Legacy route - kept for backward compatibility
+      // TODO: Remove after migrating all references to /profile
+      // {
+      //   path: '/preferences',
+      //   element: <ProfilePage />,
+      // },
+      {
+        path: '/profile',
+        element: <ProfilePage />,
       },
       {
         path: '/roommates',
@@ -81,10 +92,11 @@ const router = createBrowserRouter([
         path: '/profile/:userId',
         element: <ProfileViewPage />,
       },
-      {
-        path: '/profile',
-        element: <UserProfilePage />,
-      },
+      // Ethan profile route
+      // {
+      //   path: '/profile',
+      //   element: <UserProfilePage />,
+      // },
       {
         path: '/bug-report',
         element: <BugReportPage />,

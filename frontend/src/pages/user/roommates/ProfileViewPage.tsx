@@ -9,8 +9,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getProfileDetails, toggleFavorite, toggleVote } from '../../../services/profileService';
 import type { ProfileDetails } from '../../../types/profile';
 import Navbar from '../components/Navbar';
-import ProfileHeader from '../preferences/components/ProfileHeader';
-import BioSection from '../preferences/components/BioSection';
+import ProfileHeader from '../profile/components/ProfileHeader';
+import BioSection from '../profile/components/BioSection';
 
 export default function ProfileViewPage() {
   const { userId } = useParams<{ userId: string }>();
@@ -259,8 +259,16 @@ export default function ProfileViewPage() {
           </div>
         )}
 
-        {/* Profile Header */}
-        <ProfileHeader user={mockUser} />
+        {/* Profile Header - View-only mode (no avatar editing) */}
+        <ProfileHeader 
+          user={mockUser}
+          voteStats={{
+            likesReceived: profile.likesReceived || 0,
+            dislikesReceived: profile.dislikesReceived || 0,
+          }}
+          onAvatarChange={() => {}} // No-op for view-only mode
+          isEditable={false} // Disable avatar editing for other users' profiles
+        />
 
         {/* Bio Section */}
         {mockUser.bio && <BioSection bio={mockUser.bio} />}
