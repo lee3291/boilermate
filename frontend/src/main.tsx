@@ -38,9 +38,9 @@ import ProfilePage from './pages/user/profile/ProfilePage.tsx';
 import RoommatesPage from './pages/user/roommates/RoommatesPage.tsx';
 import ProfileViewPage from './pages/user/roommates/ProfileViewPage.tsx';
 // Ethan
-import PublicProfilePage from './pages/user/PublicProfilePage';
+//import PublicProfilePage from './pages/user/PublicProfilePage';
 
-import EditProfilePage from './pages/user/EditProfilePage';
+//import EditProfilePage from './pages/user/EditProfilePage';
 import VerificationPage from './pages/user/VerificationPage';
 import VerificationDashboard from './pages/admin/VerificationDashboard';
 
@@ -107,14 +107,14 @@ const router = createBrowserRouter([
       //   path: '/profile',
       //   element: <UserProfilePage />,
       // },
-      {
-        path: '/profile/:username',
-        element: <PublicProfilePage />,
-      },
-      {
-        path: '/profile/edit',
-        element: <EditProfilePage />,
-      },
+      // {
+      //   path: '/profile/:username',
+      //   element: <PublicProfilePage />,
+      // },
+      // {
+      //   path: '/profile/edit',
+      //   element: <EditProfilePage />,
+      // },
       {
         path: '/verification',
         element: <VerificationPage />,
