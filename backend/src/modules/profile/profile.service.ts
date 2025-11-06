@@ -16,11 +16,11 @@ export class ProfileService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
-        preferences: true, // Correct: singular, one-to-one relation
+        preferences: true,
       },
     });
 
-    if (!user) {
+    if (!user || user.status !== 'ACTIVE') {
       throw new NotFoundException('User not found');
     }
 
@@ -67,6 +67,7 @@ export class ProfileService {
         email: {
           startsWith: `${username}@`,
         },
+        status: 'ACTIVE',
       },
       include: {
         preferences: true,
