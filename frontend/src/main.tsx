@@ -38,11 +38,11 @@ import ProfilePage from './pages/user/profile/ProfilePage.tsx';
 import RoommatesPage from './pages/user/roommates/RoommatesPage.tsx';
 import ProfileViewPage from './pages/user/roommates/ProfileViewPage.tsx';
 // Ethan
-// import PublicProfilePage from './pages/user/PublicProfilePage';
+import PublicProfilePage from './pages/user/PublicProfilePage';
 
-// import EditProfilePage from './pages/user/EditProfilePage';
-// import VerificationPage from './pages/user/VerificationPage';
-// import VerificationDashboard from './pages/admin/VerificationDashboard';
+import EditProfilePage from './pages/user/EditProfilePage';
+import VerificationPage from './pages/user/VerificationPage';
+import VerificationDashboard from './pages/admin/VerificationDashboard';
 
 const router = createBrowserRouter([
   // Public routes
