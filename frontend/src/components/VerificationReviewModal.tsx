@@ -56,23 +56,18 @@ const VerificationReviewModal = ({
   };
 
   return (
-    <div
-      className='fixed inset-0 z-50 flex items-center justify-center'
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-    >
-      <div className='relative w-full max-w-lg rounded-lg bg-white p-6'>
+    <div className='fixed inset-0 z-50 flex items-center justify-center'>
+      <div className='relative w-full max-w-lg rounded-lg border border-gray-300 bg-mainbrown p-6 text-black shadow-lg'>
         <button
           onClick={onClose}
-          className='absolute top-3 right-3 text-2xl font-bold text-gray-700'
+          className='absolute top-3 right-3 text-2xl font-bold text-gray-600 hover:text-gray-900'
           aria-label='Close modal'
         >
           &times;
         </button>
 
-        <h2 className='mb-4 text-xl font-bold text-gray-900'>
-          Review Verification
-        </h2>
-        <div className='mb-4 text-gray-800'>
+        <h2 className='mb-4 text-xl font-bold'>Review Verification</h2>
+        <div className='mb-4'>
           <p>
             <strong>User:</strong> {request.user.profileInfo?.name || 'N/A'}
           </p>
@@ -82,7 +77,7 @@ const VerificationReviewModal = ({
         </div>
 
         <div className='mb-4'>
-          <h3 className='mb-2 font-semibold text-gray-900'>ID Image:</h3>
+          <h3 className='mb-2 font-semibold'>ID Image:</h3>
           <img
             src={request.idImageURL}
             alt='User ID'
@@ -108,17 +103,14 @@ const VerificationReviewModal = ({
         )}
 
         <div className='mb-4'>
-          <label
-            htmlFor='reason'
-            className='mb-1 block font-semibold text-gray-900'
-          >
+          <label htmlFor='reason' className='mb-1 block font-semibold'>
             Reason (Required for Decline):
           </label>
           <textarea
             id='reason'
             value={isCompleted ? request.reason || '' : reason}
             onChange={(e) => setReason(e.target.value)}
-            className='w-full rounded border border-gray-300 bg-gray-50 p-2 text-gray-900 disabled:bg-gray-200'
+            className='w-full rounded border border-gray-300 bg-white p-2 text-black placeholder:text-gray-400 disabled:bg-gray-200'
             rows={3}
             placeholder='Enter reason for declining the request...'
             disabled={isCompleted}
@@ -132,14 +124,14 @@ const VerificationReviewModal = ({
             <button
               onClick={() => handleAction('DECLINED')}
               disabled={isSubmitting}
-              className='rounded bg-red-500 px-4 py-2 text-white hover:bg-red-600 disabled:bg-gray-400'
+              className='rounded bg-red-400 px-4 py-2 text-white hover:bg-red-500 disabled:bg-gray-300'
             >
               {isSubmitting ? 'Declining...' : 'Decline'}
             </button>
             <button
               onClick={() => handleAction('APPROVED')}
               disabled={isSubmitting}
-              className='rounded bg-green-500 px-4 py-2 text-white hover:bg-green-600 disabled:bg-gray-400'
+              className='rounded bg-green-400 px-4 py-2 text-white hover:bg-green-500 disabled:bg-gray-300'
             >
               {isSubmitting ? 'Approving...' : 'Approve'}
             </button>
