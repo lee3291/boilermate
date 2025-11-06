@@ -32,7 +32,7 @@ import ReportTestPage from './pages/report/ReportTestPage.tsx';
 // import ListingsCreateTest from './pages/user/ListingsTest.tsx';
 
 import ProtectedRoute from './components/ProtectedRoute';
-import UserProfilePage from './pages/user/UserProfilePage';
+// import UserProfilePage from './pages/user/UserProfilePage';
 // Updated: Renamed from PreferencesPage to ProfilePage (better semantic naming)
 import ProfilePage from './pages/user/profile/ProfilePage.tsx';
 import RoommatesPage from './pages/user/roommates/RoommatesPage.tsx';
