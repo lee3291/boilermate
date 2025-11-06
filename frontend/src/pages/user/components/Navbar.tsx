@@ -1,5 +1,5 @@
 import accountIcon from '@/assets/images/account.png';
-import { useUser } from '../listings/temp/UserContext';
+import { useAuth } from '../../../contexts/AuthContext';
 
 export default function Navbar() {
   type navItem = { label: string; href: string };
@@ -45,7 +45,6 @@ export default function Navbar() {
             <p className='font-sans text-[16px]'>{user?.username || 'Account'}</p>
           </a>
         </div>
-      </nav>
-    </div>
-  );
+    );
 }
+

@@ -27,7 +27,12 @@ model User {
   status        UserStatus?   @default(ACTIVE)
   searchStatus  SearchStatus? @default(LOOKING)
 
+  role          Role          @default(USER)
+  // Ethan
+  //preferences   Preference[]
   listings      Listing[]
+  verificationRequests VerificationRequest[] @relation("UserVerificationRequests")
+  verificationReviews  VerificationRequest[] @relation("AdminVerificationReviews")
 
   // RELATIONS for the new chat system
   // Connects the user to all the chats they are a member or invitee of.
@@ -88,4 +93,8 @@ model UserVote {
 
   // Ensures a user can only vote (like/dislike) another user once
   @@unique([voterId, votedUserId])
+}
+enum Role {
+  USER
+  ADMIN
 }

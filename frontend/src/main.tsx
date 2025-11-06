@@ -3,17 +3,17 @@ import { createRoot } from 'react-dom/client';
 import './style.css';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
-
-
 import ListingDetails from './pages/user/listings/ListingDetails.tsx';
 
 // Import all top-level views/components
 import ChatPage from './pages/user/chat/ChatPage.tsx';
 
 // Auth pages
-import LandingPage from './pages/public/LandingPage';
+// import LandingPage from './pages/public/LandingPage';
+import Homepage from './pages/home/Homepage.tsx'
 import SignInPage from './pages/public/SignInPage';
 import SignUpPage from './pages/public/SignUpPage';
+import ReactivateAccountPage from './pages/public/ReactivateAccountPage';
 
 import OTPRequestPage from './pages/resetpassword/OTPRequestPage.tsx';
 import ResetPasswordPage from './pages/resetpassword/ResetPasswordPage.tsx';
@@ -37,12 +37,18 @@ import UserProfilePage from './pages/user/UserProfilePage';
 import ProfilePage from './pages/user/profile/ProfilePage.tsx';
 import RoommatesPage from './pages/user/roommates/RoommatesPage.tsx';
 import ProfileViewPage from './pages/user/roommates/ProfileViewPage.tsx';
+// Ethan
+// import PublicProfilePage from './pages/user/PublicProfilePage';
+
+// import EditProfilePage from './pages/user/EditProfilePage';
+// import VerificationPage from './pages/user/VerificationPage';
+// import VerificationDashboard from './pages/admin/VerificationDashboard';
 
 const router = createBrowserRouter([
   // Public routes
   {
     path: '/',
-    element: <LandingPage />,
+    element: <Homepage />,
     errorElement: <div>404 Page Not Found</div>,
   },
   {
@@ -52,6 +58,10 @@ const router = createBrowserRouter([
   {
     path: '/signup',
     element: <SignUpPage />,
+  },
+  {
+    path: '/reactivate-account',
+    element: <ReactivateAccountPage />,
   },
   {
     path: '/otp-request',
@@ -98,6 +108,18 @@ const router = createBrowserRouter([
       //   element: <UserProfilePage />,
       // },
       {
+        path: '/profile/:username',
+        element: <PublicProfilePage />,
+      },
+      {
+        path: '/profile/edit',
+        element: <EditProfilePage />,
+      },
+      {
+        path: '/verification',
+        element: <VerificationPage />,
+      },
+      {
         path: '/bug-report',
         element: <BugReportPage />,
       },
@@ -114,6 +136,10 @@ const router = createBrowserRouter([
       {
         path: '/listings',
         element: <Listings />,
+      },
+      {
+        path: '/mylistings',
+        element: <MyListings />,
       },
       {
         path: '/listings/:id',
@@ -137,7 +163,7 @@ const router = createBrowserRouter([
       },
       {
         path: '/reporttest',
-        element: <ReportTestPage/>,
+        element: <ReportTestPage />,
       },
       {
         path: '/user-reports',
@@ -147,11 +173,17 @@ const router = createBrowserRouter([
         path: '/bug-reports',
         element: <BugReportsDashboard />,
       },
+      {
+        path: '/admin/verification-requests',
+        element: <VerificationDashboard />,
+      },
     ],
   },
 ]);
 
 import { AuthProvider } from './contexts/AuthContext';
+import { Home } from 'lucide-react';
+import MyListings from './pages/user/listings/user/MyListings.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -161,4 +193,4 @@ createRoot(document.getElementById('root')!).render(
       {/* </AuthProvider> */}
     </UserProvider>
   </StrictMode>,
-)
+);

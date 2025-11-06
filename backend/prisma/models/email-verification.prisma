@@ -1,7 +1,7 @@
 model EmailVerification {
   id         String   @id @default(uuid())
   email      String   @unique
-  code       String   @db.VarChar(6)
+  code       String
   expiresAt  DateTime
   verifiedAt DateTime?
   createdAt  DateTime @default(now())

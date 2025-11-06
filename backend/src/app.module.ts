@@ -13,6 +13,9 @@ import { BugReportModule } from './modules/bug-report/bug-report.module';
 import { ReportModule } from '@modules/report/report.module';
 import { PreferencesModule } from '@modules/preferences/preferences.module';
 import { ProfileModule } from '@modules/profile/profile.module';
+// Ethan
+// import { ProfileModule } from './modules/profile/profile.module';
+// import { VerificationModule } from './modules/verification/verification.module';
 
 @Module({
   imports: [
@@ -30,6 +33,8 @@ import { ProfileModule } from '@modules/profile/profile.module';
     OTPModule,
     ListingsModule,
     BugReportModule,
+    ProfileModule,
+    VerificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -5,9 +5,6 @@ CREATE TYPE "ChatParticipantStatus" AS ENUM ('PENDING', 'ACCEPTED', 'DECLINED');
 CREATE TYPE "ListingStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'ARCHIVED');
 
 -- CreateEnum
-CREATE TYPE "Visibility" AS ENUM ('PUBLIC', 'PRIVATE');
-
--- CreateEnum
 CREATE TYPE "UserStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'SUSPENDED');
 
 -- CreateEnum
@@ -64,7 +61,7 @@ CREATE TABLE "UserMessageStatus" (
 CREATE TABLE "EmailVerification" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "code" VARCHAR(6) NOT NULL,
+    "code" TEXT NOT NULL,
     "expiresAt" TIMESTAMP(3) NOT NULL,
     "verifiedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -118,12 +115,9 @@ CREATE TABLE "Saved" (
 CREATE TABLE "Preference" (
     "id" SERIAL NOT NULL,
     "userId" TEXT NOT NULL,
-    "key" TEXT NOT NULL,
-    "value" TEXT,
-    "importance" INTEGER DEFAULT 3,
-    "mustHave" BOOLEAN DEFAULT false,
-    "visibility" "Visibility" DEFAULT 'PUBLIC',
+    "preferences" JSONB NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Preference_pkey" PRIMARY KEY ("id")
 );
@@ -203,7 +197,7 @@ CREATE INDEX "Saved_username_idx" ON "Saved"("username");
 CREATE INDEX "Saved_listingId_idx" ON "Saved"("listingId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Preference_userId_key_key" ON "Preference"("userId", "key");
+CREATE UNIQUE INDEX "Preference_userId_key" ON "Preference"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");

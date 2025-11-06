@@ -1,6 +1,7 @@
 import { PrismaService } from '@core/database/prisma.service';
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -38,7 +39,34 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = { sub: user.id, email: user.email };
+    if (user.status === 'INACTIVE') {
+      // User is deactivated. Issue a short-lived token for the reactivation process.
+      const reactivationPayload = {
+        sub: user.id,
+        email: user.email,
+        purpose: 'reactivation',
+      };
+      const reactivationToken = await this.jwtService.signAsync(
+        reactivationPayload,
+        {
+          expiresIn: '10m', // This token is valid for 10 minutes
+        },
+      );
+      return { status: 'deactivated', reactivationToken };
+    }
+
+    if (user.status === 'SUSPENDED') {
+      throw new ForbiddenException(
+        'Your account has been suspended. Please contact customer support.',
+      );
+    }
+
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      avatarURL: user.avatarURL,
+      role: user.role,
+    };
     return {
       access_token: await this.jwtService.signAsync(payload),
     };
@@ -84,5 +112,40 @@ export class AuthService {
     });
 
     return { id: user.id, email: user.email };
+  }
+
+  async requestReactivationCode(email: string) {
+    // This method assumes the user's identity has been verified by the ReactivationGuard.
+    // It simply sends a new verification code to the user's email.
+    return this.emailVerificationService.createVerification(email);
+  }
+
+  async reactivateAccount(userId: string, email: string, code: string) {
+    // 1. Verify the OTP code
+    await this.emailVerificationService.verifyCode(email, code);
+
+    // 2. Reactivate the account
+    await this.prisma.user.update({
+      where: { id: userId, status: 'INACTIVE' },
+      data: { status: 'ACTIVE' },
+    });
+
+    // 3. Return a new session token
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user) {
+      // This should theoretically never happen if the reactivation token was valid
+      throw new UnauthorizedException('User not found after reactivation.');
+    }
+
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      avatarURL: user.avatarURL,
+      role: user.role,
+    };
+    return {
+      access_token: await this.jwtService.signAsync(payload),
+    };
   }
 }
