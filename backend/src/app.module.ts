@@ -15,7 +15,7 @@ import { PreferencesModule } from '@modules/preferences/preferences.module';
 import { ProfileModule } from '@modules/profile/profile.module';
 // Ethan
 // import { ProfileModule } from './modules/profile/profile.module';
-// import { VerificationModule } from './modules/verification/verification.module';
+import { VerificationModule } from './modules/verification/verification.module';
 
 @Module({
   imports: [
