@@ -13,6 +13,7 @@ import ChatPage from './pages/user/chat/ChatPage.tsx';
 import Homepage from './pages/home/Homepage.tsx'
 import SignInPage from './pages/public/SignInPage';
 import SignUpPage from './pages/public/SignUpPage';
+import ReactivateAccountPage from './pages/public/ReactivateAccountPage';
 
 import OTPRequestPage from './pages/resetpassword/OTPRequestPage.tsx';
 import ResetPasswordPage from './pages/resetpassword/ResetPasswordPage.tsx';
@@ -52,6 +53,10 @@ const router = createBrowserRouter([
   {
     path: '/signup',
     element: <SignUpPage />,
+  },
+  {
+    path: '/reactivate-account',
+    element: <ReactivateAccountPage />,
   },
   {
     path: '/otp-request',

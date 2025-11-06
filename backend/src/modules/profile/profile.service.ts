@@ -77,7 +77,8 @@ export class ProfileService {
       throw new NotFoundException('User not found');
     }
 
-    const { id, email, bio, searchStatus, preferences, avatarURL, isVerified } = user;
+    const { id, email, bio, searchStatus, preferences, avatarURL, isVerified } =
+      user;
 
     const preference = preferences[0]; // Take the first preference object
     const flatPreferences =
@@ -199,5 +200,12 @@ export class ProfileService {
     });
 
     return { avatarURL };
+  }
+
+  async deactivateAccount(userId: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { status: 'INACTIVE' },
+    });
   }
 }

@@ -2,9 +2,9 @@ import React, { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import InputField from '../../components/InputField';
 import { signIn } from '../../services/auth.service';
-
 import { useAuth } from '../../contexts/AuthContext';
 import HomeNavbar from '../home/components/HomeNavbar';
+import { isAxiosError } from 'axios';
 
 const SignInPage = () => {
   const navigate = useNavigate();
@@ -20,10 +20,23 @@ const SignInPage = () => {
     setError(null);
     try {
       const data = await signIn({ email, password });
-      login(data.access_token);
-      navigate('/profile');
+      if (data.status === 'deactivated') {
+        navigate('/reactivate-account', {
+          state: { reactivationToken: data.reactivationToken },
+        });
+      } else if (data.access_token) {
+        login(data.access_token);
+        navigate('/profile');
+      }
     } catch (err) {
-      setError('Failed to sign in. Please check your credentials.');
+      if (isAxiosError(err) && err.response) {
+        setError(
+          err.response.data.message ||
+            'Failed to sign in. Please check your credentials.',
+        );
+      } else {
+        setError('Failed to sign in. An unexpected error occurred.');
+      }
     } finally {
       setIsLoading(false);
     }

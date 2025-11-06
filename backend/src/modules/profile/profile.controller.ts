@@ -1,4 +1,14 @@
-import { Controller, Get, Patch, Body, UseGuards, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Body,
+  UseGuards,
+  Param,
+  Post,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -36,5 +46,12 @@ export class ProfileController {
     @Body() updateAvatarDto: UpdateAvatarDto,
   ) {
     return this.profileService.updateAvatar(user.userId, updateAvatarDto);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('deactivate')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deactivateAccount(@User() user: { userId: string }) {
+    await this.profileService.deactivateAccount(user.userId);
   }
 }
