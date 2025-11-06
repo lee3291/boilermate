@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Navbar from './components/Navbar';
 import {
   getVerificationStatus,
   getUploadUrl,
@@ -107,7 +108,7 @@ const VerificationPage: React.FC = () => {
                   type='file'
                   accept='image/*'
                   onChange={handleFileChange}
-                  className='text-maingray file:border-grayline file:bg-maingray-dark hover:file:underline block w-full text-sm file:mr-4 file:rounded-lg file:border-1 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-black'
+                  className='text-maingray file:border-grayline file:bg-maingray-dark block w-full text-sm file:mr-4 file:rounded-lg file:border-1 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-black hover:file:underline'
                   disabled={uploading}
                 />
               </div>
@@ -166,16 +167,19 @@ const VerificationPage: React.FC = () => {
   };
 
   return (
-    <div className='bg-mainbrown flex min-h-screen flex-col justify-center p-4'>
-      <div className='sm:mx-auto sm:w-full sm:max-w-md'>
-        <h2 className='font-sourceserif4-18pt-regular text-maingray mt-6 text-center text-3xl'>
-          Account Verification
-        </h2>
-      </div>
+    <div className='bg-mainbrown flex min-h-screen flex-col'>
+      <Navbar />
+      <div className='flex flex-1 flex-col justify-center p-4'>
+        <div className='sm:mx-auto sm:w-full sm:max-w-md'>
+          <h2 className='font-sourceserif4-18pt-regular text-maingray mt-6 text-center text-3xl'>
+            Account Verification
+          </h2>
+        </div>
 
-      <div className='mt-8 sm:mx-auto sm:w-full sm:max-w-md'>
-        <div className='border-grayline bg-sharkgray-light rounded-lg border px-4 py-8 sm:px-10'>
-          {renderStatusContent()}
+        <div className='mt-8 sm:mx-auto sm:w-full sm:max-w-md'>
+          <div className='border-grayline bg-sharkgray-light rounded-lg border px-4 py-8 sm:px-10'>
+            {renderStatusContent()}
+          </div>
         </div>
       </div>
     </div>

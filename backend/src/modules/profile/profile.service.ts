@@ -16,11 +16,11 @@ export class ProfileService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
-        preferences: true, // Correct: singular, one-to-one relation
+        preferences: true,
       },
     });
 
-    if (!user) {
+    if (!user || user.status !== 'ACTIVE') {
       throw new NotFoundException('User not found');
     }
 
@@ -67,6 +67,7 @@ export class ProfileService {
         email: {
           startsWith: `${username}@`,
         },
+        status: 'ACTIVE',
       },
       include: {
         preferences: true,
@@ -77,7 +78,8 @@ export class ProfileService {
       throw new NotFoundException('User not found');
     }
 
-    const { id, email, bio, searchStatus, preferences, avatarURL, isVerified } = user;
+    const { id, email, bio, searchStatus, preferences, avatarURL, isVerified } =
+      user;
 
     const preference = preferences[0]; // Take the first preference object
     const flatPreferences =
@@ -199,5 +201,12 @@ export class ProfileService {
     });
 
     return { avatarURL };
+  }
+
+  async deactivateAccount(userId: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { status: 'INACTIVE' },
+    });
   }
 }
