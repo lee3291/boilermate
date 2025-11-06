@@ -5,6 +5,7 @@ import type {
   VerificationStatus,
 } from '@/types/verification';
 import VerificationReviewModal from '@/components/VerificationReviewModal';
+import HomeNavbar from '../home/components/HomeNavbar';
 
 const VerificationDashboard = () => {
   const [requests, setRequests] = useState<VerificationRequest[]>([]);
@@ -55,77 +56,84 @@ const VerificationDashboard = () => {
   };
 
   return (
-    <div className='container mx-auto p-4'>
-      <h1 className='mb-4 text-2xl font-bold'>Verification Requests</h1>
-      <div className='mb-4'>
-        <label htmlFor='status-filter' className='mr-2'>
-          Filter by status:
-        </label>
-        <select
-          id='status-filter'
-          value={statusFilter}
-          onChange={(e) =>
-            setStatusFilter(e.target.value as VerificationStatus | 'ALL')
-          }
-          className='bg-background text-foreground rounded border p-2'
-        >
-          <option value='ALL'>All</option>
-          <option value='PENDING'>Pending</option>
-          <option value='APPROVED'>Approved</option>
-          <option value='DECLINED'>Declined</option>
-        </select>
-      </div>
-
-      {isLoading && <p>Loading...</p>}
-      {error && <p className='text-red-500'>{error}</p>}
-
-      {!isLoading && !error && (
-        <div className='overflow-x-auto'>
-          <table className='bg-background min-w-full border'>
-            <thead>
-              <tr className='border-b'>
-                <th className='p-3 text-left'>User</th>
-                <th className='p-3 text-left'>Email</th>
-                <th className='p-3 text-left'>Status</th>
-                <th className='p-3 text-left'>Submitted At</th>
-                <th className='p-3 text-left'>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {requests.map((req) => (
-                <tr key={req.id} className='border-b'>
-                  <td className='p-3'>{req.user.profileInfo?.name || 'N/A'}</td>
-                  <td className='p-3'>{req.user.email}</td>
-                  <td
-                    className={`p-3 font-semibold ${statusColors[req.status]}`}
-                  >
-                    {req.status}
-                  </td>
-                  <td className='p-3'>
-                    {new Date(req.createdAt).toLocaleString()}
-                  </td>
-                  <td className='p-3'>
-                    <button
-                      onClick={() => setSelectedRequest(req)}
-                      className='text-blue-500 hover:underline'
-                    >
-                      Review
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+    <div className='bg-mainbrown min-h-screen'>
+      <HomeNavbar />
+      <div className='text-maingray container mx-auto p-4'>
+        <h1 className='mb-4 text-2xl font-bold'>Verification Requests</h1>
+        <div className='mb-4'>
+          <label htmlFor='status-filter' className='mr-2'>
+            Filter by status:
+          </label>
+          <select
+            id='status-filter'
+            value={statusFilter}
+            onChange={(e) =>
+              setStatusFilter(e.target.value as VerificationStatus | 'ALL')
+            }
+            className='bg-sharkgray-light text-maingray rounded border border-gray-600 p-2'
+          >
+            <option value='ALL'>All</option>
+            <option value='PENDING'>Pending</option>
+            <option value='APPROVED'>Approved</option>
+            <option value='DECLINED'>Declined</option>
+          </select>
         </div>
-      )}
 
-      {selectedRequest && (
-        <VerificationReviewModal
-          request={selectedRequest}
-          onClose={handleModalClose}
-          onUpdate={handleUpdateRequest}
-        />
-      )}
+        {isLoading && <p>Loading...</p>}
+        {error && <p className='text-red-500'>{error}</p>}
+
+        {!isLoading && !error && (
+          <div className='overflow-x-auto'>
+            <table className='bg-sharkgray-light min-w-full border border-gray-700'>
+              <thead>
+                <tr className='border-b border-gray-700'>
+                  <th className='p-3 text-left'>User</th>
+                  <th className='p-3 text-left'>Email</th>
+                  <th className='p-3 text-left'>Status</th>
+                  <th className='p-3 text-left'>Submitted At</th>
+                  <th className='p-3 text-left'>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {requests.map((req) => (
+                  <tr key={req.id} className='border-b border-gray-700'>
+                    <td className='p-3'>
+                      {req.user.profileInfo?.name || 'N/A'}
+                    </td>
+                    <td className='p-3'>{req.user.email}</td>
+                    <td
+                      className={`p-3 font-semibold ${
+                        statusColors[req.status]
+                      }`}
+                    >
+                      {req.status}
+                    </td>
+                    <td className='p-3'>
+                      {new Date(req.createdAt).toLocaleString()}
+                    </td>
+                    <td className='p-3'>
+                      <button
+                        onClick={() => setSelectedRequest(req)}
+                        className='text-blue-400 hover:underline'
+                      >
+                        Review
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {selectedRequest && (
+          <VerificationReviewModal
+            request={selectedRequest}
+            onClose={handleModalClose}
+            onUpdate={handleUpdateRequest}
+          />
+        )}
+      </div>
     </div>
   );
 };
