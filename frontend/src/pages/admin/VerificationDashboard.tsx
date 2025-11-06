@@ -5,7 +5,7 @@ import type {
   VerificationStatus,
 } from '@/types/verification';
 import VerificationReviewModal from '@/components/VerificationReviewModal';
-import HomeNavbar from '../home/components/HomeNavbar';
+import Navbar from '../user/components/Navbar';
 
 const VerificationDashboard = () => {
   const [requests, setRequests] = useState<VerificationRequest[]>([]);
@@ -57,7 +57,7 @@ const VerificationDashboard = () => {
 
   return (
     <div className='bg-mainbrown min-h-screen'>
-      <HomeNavbar />
+      <Navbar />
       <div className='text-maingray container mx-auto p-4'>
         <h1 className='mb-4 text-2xl font-bold'>Verification Requests</h1>
         <div className='mb-4'>
