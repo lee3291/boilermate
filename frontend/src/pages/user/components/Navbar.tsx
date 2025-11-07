@@ -12,7 +12,11 @@ export default function Navbar() {
     { label: 'Messages', href: '/messages' },
   ];
 
-  const { user: authUser } = useAuth();
+  const { user: authUser, logout } = useAuth();
+  const handleSignOut = () => {
+    logout();
+    window.location.href = '/signin';
+  };
 
   const displayName = (() => {
     if (!authUser) return 'Account';
@@ -45,7 +49,7 @@ export default function Navbar() {
 
           <ul className='hidden items-center gap-6 text-[16px] md:flex'>
             {NAV_ITEMS.map((item) => (
-              <li>
+              <li key={item.href}>
                 <a
                   href={item.href}
                   className='text-gray-600 transition-colors hover:text-black'
@@ -56,10 +60,33 @@ export default function Navbar() {
             ))}
           </ul>
 
-          <a href='/profile' className='flex items-center gap-2'>
-            <img src={accountIcon} className='h-6 w-auto' />
-            <p className='font-sans text-[16px]'>{displayName}</p>
-          </a>
+          <div className='flex items-center gap-4'>
+            <a href='/profile' className='flex items-center gap-2'>
+              <img src={accountIcon} className='h-6 w-auto' />
+              <p className='font-sans text-[16px]'>{displayName}</p>
+            </a>
+            <button
+              onClick={handleSignOut}
+              className='flex items-center gap-2 rounded bg-transparent px-0 py-0 font-sans text-[14px] text-black transition-colors hover:opacity-80 focus:outline-none'
+              style={{ minWidth: '70px' }}
+            >
+              <svg
+                xmlns='http://www.w3.org/2000/svg'
+                className='h-6 w-auto'
+                fill='none'
+                viewBox='0 0 24 24'
+                stroke='currentColor'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1'
+                />
+              </svg>
+              <p className='font-sans text-[14px]'>Sign Out</p>
+            </button>
+          </div>
         </div>
       </nav>
     </div>
