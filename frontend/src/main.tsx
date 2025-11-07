@@ -28,6 +28,7 @@ import BugReportsDashboard from './pages/admin/BugReportDashboard.tsx';
 import ReportBug from './pages/bug-report/ReportBug.tsx';
 
 import UserReportForm from "./pages/user-report/UserReportForm.tsx";
+import RequireAdmin from "./components/RequireAdmin";
 // import ListingsCreateTest from './pages/user/ListingsTest.tsx';
 
 import ProtectedRoute from './components/ProtectedRoute';
@@ -47,6 +48,8 @@ import ReCaptchaPage from './pages/reCaptcha/reCaptchaForm';
 
 import AnnouncementsDashboard from './pages/admin/AnnouncementsDashboard.tsx';
 import UserAnnouncements from "./pages/admin/UserAnnouncements";
+import AdminDashboard from "./pages/admin/AdminDashboard.tsx";
+
 
 
 const router = createBrowserRouter([
@@ -137,6 +140,11 @@ const router = createBrowserRouter([
         element: <UserReportForm /> 
       }, 
       {
+        path: "/admin/dashboard",
+        element: <AdminDashboard />,
+      },
+
+      {
         path: '/listing-map',
         element: <ListingMap />,
       },
@@ -173,11 +181,19 @@ const router = createBrowserRouter([
 
       {
         path: '/user-reports',
-        element: <UserReportsDashboard />,
+        element: (
+          <RequireAdmin>
+              <UserReportsDashboard />
+          </RequireAdmin> 
+        ),
       },
       {
         path: '/admin/bug-dashboard',
-        element: <BugDashboard />,
+        element: ( 
+          <RequireAdmin>
+            <BugDashboard />
+          </RequireAdmin>
+        ),
       },
       {
         path: '/admin/verification-requests',
@@ -185,7 +201,11 @@ const router = createBrowserRouter([
       },
       {
         path: '/announcements',
-        element: <AnnouncementsDashboard />,
+        element: (
+          <RequireAdmin>
+            <AnnouncementsDashboard />
+          </RequireAdmin>
+       ),
       },
       {
         path: "/announcementspage",
