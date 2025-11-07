@@ -1,8 +1,10 @@
 import accountIcon from '@/assets/images/account.png';
 import { useAuth } from '../../../contexts/AuthContext';
 
+
 export default function Navbar() {
     type navItem = { label: string; href: string };
+    const { user } = useAuth();
 
     const NAV_ITEMS: navItem[] = [
         { label: 'Dashboard', href: '/dashboard' },
@@ -10,7 +12,14 @@ export default function Navbar() {
         { label: 'Listings', href: '/listings' },
         { label: 'Roommates', href: '/roommates' },
         { label: 'Messages', href: '/messages' },
+        { label: 'Announcements', href: '/announcementspage' },
+        { label: 'User Report', href: '/report-user' },
+        { label: 'Bug Report', href: '/report-bug' },
     ];
+
+    if (user?.role === "ADMIN") {
+        NAV_ITEMS.push({ label: "Admin", href: "/admin/dashboard" });
+    }
 
     const { user: authUser } = useAuth();
 
