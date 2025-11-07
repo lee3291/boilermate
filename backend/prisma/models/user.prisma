@@ -69,6 +69,11 @@ model User {
   votesCast     UserVote[]      @relation("VotingUser")
   // Votes this user has received
   votesReceived UserVote[]      @relation("VotedUser")
+
+
+    // Relations for announcements
+  announcements             Announcement[]             @relation("UserAnnouncements")
+  announcementNotifications AnnouncementNotification[] @relation("UserAnnouncementNotifications")
 }
 
 model FavoriteMatch {
@@ -98,6 +103,9 @@ model UserVote {
 
   // Ensures a user can only vote (like/dislike) another user once
   @@unique([voterId, votedUserId])
+
+
+
 }
 enum Role {
   USER

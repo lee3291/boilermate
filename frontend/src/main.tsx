@@ -45,6 +45,10 @@ import VerificationDashboard from './pages/admin/VerificationDashboard';
 
 import ReCaptchaPage from './pages/reCaptcha/reCaptchaForm';
 
+import AnnouncementsDashboard from './pages/admin/AnnouncementsDashboard.tsx';
+import UserAnnouncements from "./pages/admin/UserAnnouncements";
+
+
 const router = createBrowserRouter([
   // Public routes
   {
@@ -182,6 +186,15 @@ const router = createBrowserRouter([
         path: '/admin/verification-requests',
         element: <VerificationDashboard />,
       },
+      {
+        path: '/announcements',
+        element: <AnnouncementsDashboard />,
+      },
+      {
+        path: "/announcementspage",
+        element: <UserAnnouncements />,
+      },
+
     ],
   },
 ]);
