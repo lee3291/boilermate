@@ -1,3 +1,20 @@
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum SearchStatus {
+  LOOKING
+  NOT_LOOKING
+  HIDDEN
+}
+
+enum VoteType {
+  LIKE
+  DISLIKE
+}
+
 model User {
   id            String        @id @default(uuid())
   email         String        @unique
@@ -9,8 +26,13 @@ model User {
   isVerified    Boolean       @default(false)
   status        UserStatus?   @default(ACTIVE)
   searchStatus  SearchStatus? @default(LOOKING)
-  preferences   Preference[]
+
+  role          Role          @default(USER)
+  // Ethan
+  //preferences   Preference[]
   listings      Listing[]
+  verificationRequests VerificationRequest[] @relation("UserVerificationRequests")
+  verificationReviews  VerificationRequest[] @relation("AdminVerificationReviews")
 
   // RELATIONS for the new chat system
   // Connects the user to all the chats they are a member or invitee of.
@@ -30,18 +52,56 @@ model User {
   // Block/Unblock in chat
   usersBlocked   UserBlocking[] @relation("UserBlocked")      // users that this user has blocked
   blockedByUsers UserBlocking[] @relation("UserBlockedBy")   // users who blocked this user
+
+  // Links to preferences describing this user ("I am...")
+  profilePreferences UserProfilePreference[]
+
+  // Links to preferences this user wants in a roommate ("I want...")
+  roommatePreferences RoommatePreference[]
+
+  // A list of all the favorites this user has made
+  favoritesMade FavoriteMatch[] @relation("FavoritingUser")
+
+  // A list of all the users who have favorited this user
+  favoritedBy FavoriteMatch[] @relation("FavoritedUser")
+
+  // Votes this user has cast
+  votesCast     UserVote[]      @relation("VotingUser")
+  // Votes this user has received
+  votesReceived UserVote[]      @relation("VotedUser")
 }
 
-enum UserStatus {
-  ACTIVE
-  INACTIVE
-  SUSPENDED
+model FavoriteMatch {
+  id                   String @id @default(uuid())
+  userId               String // The user who is doing the favoriting
+  favoritedUserId      String // The user who is being favorited
+  createdAt            DateTime @default(now())
+
+  // RELATIONS
+  user                 User @relation("FavoritingUser", fields: [userId], references: [id])
+  favoritedUser        User @relation("FavoritedUser", fields: [favoritedUserId], references: [id])
+
+  // Ensures a user cannot favorite the same person more than once
+  @@unique([userId, favoritedUserId])
 }
 
-enum SearchStatus {
-  LOOKING
-  NOT_LOOKING
-  HIDDEN
+model UserVote {
+  id                  String   @id @default(uuid())
+  voteType            VoteType // This is either LIKE or DISLIKE
+  voterId             String // The user who is casting the vote
+  votedUserId         String // The user who is receiving the vote
+  createdAt           DateTime @default(now())
+
+  // RELATIONS
+  voter               User @relation("VotingUser", fields: [voterId], references: [id])
+  votedUser           User @relation("VotedUser", fields: [votedUserId], references: [id])
+
+  // Ensures a user can only vote (like/dislike) another user once
+  @@unique([voterId, votedUserId])
+}
+enum Role {
+  USER
+  ADMIN
 }
 
 

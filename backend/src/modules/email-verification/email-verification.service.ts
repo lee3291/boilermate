@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { addMinutes, isBefore } from 'date-fns';
 import { randomInt } from 'crypto';
+import { sendMail } from './mail.util';
 
 @Injectable()
 export class EmailVerificationService {
@@ -26,8 +27,17 @@ export class EmailVerificationService {
       create: { email, code, expiresAt },
     });
 
-    // TODO: integrate email sending service later
-    console.log(`[DEBUG] Verification Code for ${email}: ${code}`);
+    // Use environment variable to switch between test and real email sending
+    if (process.env.OTP_MODE === 'production') {
+      await sendMail({
+        to: email,
+        subject: 'Your BoilerMate Verification Code',
+        text: `Your verification code is: ${code}. It expires in 10 minutes.`,
+      });
+    } else {
+      // Default: log to server for testing
+      console.log(`[DEBUG] Verification Code for ${email}: ${code}`);
+    }
 
     return { message: 'Verification code sent successfully.' };
   }

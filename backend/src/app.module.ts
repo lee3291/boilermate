@@ -12,6 +12,12 @@ import { UploadsModule } from '@modules/uploads/uploads.module';
 import { BugReportModule } from './modules/bug-report/bug-report.module';
 import { ReportModule } from '@modules/report/report.module';
 import { ReCaptchaModule } from '@modules/reCaptcha/reCaptcha.module';
+import { PreferencesModule } from '@modules/preferences/preferences.module';
+import { ProfileModule } from '@modules/profile/profile.module';
+// Ethan
+// import { ProfileModule } from './modules/profile/profile.module';
+import { VerificationModule } from './modules/verification/verification.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -21,6 +27,8 @@ import { ReCaptchaModule } from '@modules/reCaptcha/reCaptcha.module';
     PrismaModule, // Database module
     ChatsModule, // Chat feature module
     UploadsModule, // Image upload module
+    PreferencesModule, // Preferences module (I am.../I want...)
+    ProfileModule, // Profile and roommate matching module
     AuthModule,
     EmailVerificationModule,
     OTPModule,
@@ -28,6 +36,8 @@ import { ReCaptchaModule } from '@modules/reCaptcha/reCaptcha.module';
     BugReportModule,
     ReportModule,
     ReCaptchaModule,
+    ProfileModule,
+    VerificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

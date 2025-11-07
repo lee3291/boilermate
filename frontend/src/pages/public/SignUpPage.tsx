@@ -4,6 +4,7 @@ import InputField from '../../components/InputField';
 import { requestCode, verifyCode, register } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { signIn } from '../../services/auth.service';
+import HomeNavbar from '../home/components/HomeNavbar';
 
 type Step = 1 | 2 | 3;
 
@@ -95,7 +96,7 @@ const SignUpPage = () => {
             <button
               type='submit'
               disabled={isLoading}
-              className='mt-2 w-full rounded-lg bg-blue-500 py-2 text-white hover:bg-blue-600 disabled:opacity-50'
+              className='font-sourceserif4-18pt-regular border-grayline bg-mainbrown text-maingray mt-4 w-full rounded-lg border py-2 text-lg transition-colors hover:underline disabled:opacity-50'
             >
               {isLoading ? 'Sending...' : 'Send Verification Code'}
             </button>
@@ -104,7 +105,7 @@ const SignUpPage = () => {
       case 2:
         return (
           <form onSubmit={handleVerifyCode}>
-            <p className='mb-4 text-center text-sm'>
+            <p className='text-maingray mb-4 text-center text-sm'>
               A verification code was sent to <strong>{email}</strong>.
             </p>
             <InputField
@@ -119,7 +120,7 @@ const SignUpPage = () => {
             <button
               type='submit'
               disabled={isLoading}
-              className='mt-2 w-full rounded-lg bg-blue-500 py-2 text-white hover:bg-blue-600 disabled:opacity-50'
+              className='font-sourceserif4-18pt-regular border-grayline bg-mainbrown text-maingray mt-4 w-full rounded-lg border py-2 text-lg transition-colors hover:underline disabled:opacity-50'
             >
               {isLoading ? 'Verifying...' : 'Verify Code'}
             </button>
@@ -147,7 +148,7 @@ const SignUpPage = () => {
             <button
               type='submit'
               disabled={isLoading}
-              className='mt-2 w-full rounded-lg bg-blue-500 py-2 text-white hover:bg-blue-600 disabled:opacity-50'
+              className='font-sourceserif4-18pt-regular border-grayline bg-mainbrown text-maingray mt-4 w-full rounded-lg border py-2 text-lg transition-colors hover:underline disabled:opacity-50'
             >
               {isLoading ? 'Creating Account...' : 'Create Account'}
             </button>
@@ -159,16 +160,19 @@ const SignUpPage = () => {
   };
 
   return (
-    <div className='flex min-h-screen justify-center bg-gray-100 py-12'>
-      <div
-        className='w-full max-w-md rounded-lg bg-white p-8 shadow-md'
-        style={{ height: 'fit-content' }}
-      >
-        <h1 className='mb-6 text-center text-2xl font-bold'>
-          Create Your Account
-        </h1>
-        {error && <p className='mb-4 text-center text-red-500'>{error}</p>}
-        {renderStep()}
+    <div className='bg-mainbrown flex min-h-screen flex-col items-center p-4'>
+      <HomeNavbar />
+      <div className='flex w-full grow items-center justify-center'>
+        <div
+          className='border-grayline bg-sharkgray-light w-full max-w-md rounded-lg border p-8'
+          style={{ height: 'fit-content' }}
+        >
+          <h1 className='font-sourceserif4-18pt-regular text-maingray mb-6 text-center text-3xl'>
+            Create Your Account
+          </h1>
+          {error && <p className='mb-4 text-center text-red-500'>{error}</p>}
+          {renderStep()}
+        </div>
       </div>
     </div>
   );

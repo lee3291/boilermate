@@ -6,13 +6,13 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+    origin: 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
   });
-  
+
   // enable interceptor globally
   app.useGlobalInterceptors(new LoggingInterceptor());
-
 
   await app.listen(process.env.PORT ?? 3000);
 }

@@ -13,6 +13,15 @@ CREATE TYPE "UserStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'SUSPENDED');
 -- CreateEnum
 CREATE TYPE "SearchStatus" AS ENUM ('LOOKING', 'NOT_LOOKING', 'HIDDEN');
 
+-- CreateEnum
+CREATE TYPE "VoteType" AS ENUM ('LIKE', 'DISLIKE');
+
+-- CreateEnum
+CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN');
+
+-- CreateEnum
+CREATE TYPE "VerificationStatus" AS ENUM ('PENDING', 'APPROVED', 'DECLINED');
+
 -- CreateTable
 CREATE TABLE "Chat" (
     "id" TEXT NOT NULL,
@@ -64,7 +73,7 @@ CREATE TABLE "UserMessageStatus" (
 CREATE TABLE "EmailVerification" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "code" VARCHAR(6) NOT NULL,
+    "code" TEXT NOT NULL,
     "expiresAt" TIMESTAMP(3) NOT NULL,
     "verifiedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -115,17 +124,45 @@ CREATE TABLE "Saved" (
 );
 
 -- CreateTable
-CREATE TABLE "Preference" (
-    "id" SERIAL NOT NULL,
-    "userId" TEXT NOT NULL,
-    "key" TEXT NOT NULL,
-    "value" TEXT,
-    "importance" INTEGER DEFAULT 3,
-    "mustHave" BOOLEAN DEFAULT false,
-    "visibility" "Visibility" DEFAULT 'PUBLIC',
+CREATE TABLE "ListingView" (
+    "username" TEXT NOT NULL,
+    "listingId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
+    CONSTRAINT "ListingView_pkey" PRIMARY KEY ("username","listingId")
+);
+
+-- CreateTable
+CREATE TABLE "Preference" (
+    "id" TEXT NOT NULL,
+    "category" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+    "value" TEXT NOT NULL,
+    "mustHave" BOOLEAN NOT NULL DEFAULT false,
+
     CONSTRAINT "Preference_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "UserProfilePreference" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "preferenceId" TEXT NOT NULL,
+    "importance" INTEGER NOT NULL DEFAULT 3,
+    "visibility" "Visibility" NOT NULL DEFAULT 'PUBLIC',
+
+    CONSTRAINT "UserProfilePreference_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "RoommatePreference" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "preferenceId" TEXT NOT NULL,
+    "importance" INTEGER NOT NULL DEFAULT 3,
+    "visibility" "Visibility" NOT NULL DEFAULT 'PUBLIC',
+
+    CONSTRAINT "RoommatePreference_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -165,8 +202,45 @@ CREATE TABLE "User" (
     "isVerified" BOOLEAN NOT NULL DEFAULT false,
     "status" "UserStatus" DEFAULT 'ACTIVE',
     "searchStatus" "SearchStatus" DEFAULT 'LOOKING',
+    "role" "Role" NOT NULL DEFAULT 'USER',
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "FavoriteMatch" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "favoritedUserId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "FavoriteMatch_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "UserVote" (
+    "id" TEXT NOT NULL,
+    "voteType" "VoteType" NOT NULL,
+    "voterId" TEXT NOT NULL,
+    "votedUserId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "UserVote_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "VerificationRequest" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "idImageURL" TEXT NOT NULL,
+    "idImageKey" TEXT NOT NULL,
+    "status" "VerificationStatus" NOT NULL DEFAULT 'PENDING',
+    "reason" TEXT,
+    "reviewedById" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "VerificationRequest_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -203,10 +277,31 @@ CREATE INDEX "Saved_username_idx" ON "Saved"("username");
 CREATE INDEX "Saved_listingId_idx" ON "Saved"("listingId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Preference_userId_key_key" ON "Preference"("userId", "key");
+CREATE INDEX "ListingView_username_idx" ON "ListingView"("username");
+
+-- CreateIndex
+CREATE INDEX "ListingView_listingId_idx" ON "ListingView"("listingId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Preference_category_value_key" ON "Preference"("category", "value");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "UserProfilePreference_userId_preferenceId_key" ON "UserProfilePreference"("userId", "preferenceId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "RoommatePreference_userId_preferenceId_key" ON "RoommatePreference"("userId", "preferenceId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "FavoriteMatch_userId_favoritedUserId_key" ON "FavoriteMatch"("userId", "favoritedUserId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "UserVote_voterId_votedUserId_key" ON "UserVote"("voterId", "votedUserId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "VerificationRequest_idImageKey_key" ON "VerificationRequest"("idImageKey");
 
 -- AddForeignKey
 ALTER TABLE "Chat" ADD CONSTRAINT "Chat_creatorId_fkey" FOREIGN KEY ("creatorId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -242,4 +337,34 @@ ALTER TABLE "Listing" ADD CONSTRAINT "Listing_userId_fkey" FOREIGN KEY ("userId"
 ALTER TABLE "Saved" ADD CONSTRAINT "Saved_listingId_fkey" FOREIGN KEY ("listingId") REFERENCES "Listing"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Preference" ADD CONSTRAINT "Preference_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ListingView" ADD CONSTRAINT "ListingView_listingId_fkey" FOREIGN KEY ("listingId") REFERENCES "Listing"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserProfilePreference" ADD CONSTRAINT "UserProfilePreference_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserProfilePreference" ADD CONSTRAINT "UserProfilePreference_preferenceId_fkey" FOREIGN KEY ("preferenceId") REFERENCES "Preference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "RoommatePreference" ADD CONSTRAINT "RoommatePreference_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "RoommatePreference" ADD CONSTRAINT "RoommatePreference_preferenceId_fkey" FOREIGN KEY ("preferenceId") REFERENCES "Preference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "FavoriteMatch" ADD CONSTRAINT "FavoriteMatch_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "FavoriteMatch" ADD CONSTRAINT "FavoriteMatch_favoritedUserId_fkey" FOREIGN KEY ("favoritedUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserVote" ADD CONSTRAINT "UserVote_voterId_fkey" FOREIGN KEY ("voterId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserVote" ADD CONSTRAINT "UserVote_votedUserId_fkey" FOREIGN KEY ("votedUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "VerificationRequest" ADD CONSTRAINT "VerificationRequest_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "VerificationRequest" ADD CONSTRAINT "VerificationRequest_reviewedById_fkey" FOREIGN KEY ("reviewedById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
