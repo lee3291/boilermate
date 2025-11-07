@@ -163,7 +163,7 @@ export class ProfileService {
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
-    if (user.status !== 'ACTIVE') {
+    if (user.status !== 'ACTIVE' || user.searchStatus === 'HIDDEN') {
       throw new NotFoundException('Profile not found');
     }
 
