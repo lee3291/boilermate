@@ -7,7 +7,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { getProfileDetails, toggleFavorite, toggleVote } from '../../../services/profileService';
+import {
+  getProfileDetails,
+  toggleFavorite,
+  toggleVote,
+} from '../../../services/profileService';
 import type { ProfileDetails } from '../../../types/profile';
 import Navbar from '../components/Navbar';
 import ProfileHeader from '../profile/components/ProfileHeader';
@@ -17,10 +21,10 @@ export default function ProfileViewPage() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   // ProtectedRoute ensures user exists
   const viewerId = user!.id;
-  
+
   const [profile, setProfile] = useState<ProfileDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,14 +46,14 @@ export default function ProfileViewPage() {
     const fetchProfile = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         const data = await getProfileDetails({ userId, viewerId });
         setProfile(data);
-        
+
         // Set favorite status from backend response
         setIsFavorited(data.isFavoritedByMe || false);
-        
+
         // Set vote status from backend response
         setMyVote(data.myVoteType || null);
       } catch (err: any) {
@@ -65,62 +69,66 @@ export default function ProfileViewPage() {
 
   const handleToggleFavorite = async () => {
     if (!userId) return;
-    
+
     try {
       await toggleFavorite(viewerId, userId, isFavorited);
       setIsFavorited(!isFavorited);
     } catch (err: any) {
       console.error('Error toggling favorite:', err);
-      const errorMessage = err?.response?.data?.message || err?.message || 'Failed to update favorite status';
+      const errorMessage =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Failed to update favorite status';
       alert(errorMessage);
     }
   };
 
   const handleToggleVote = async (voteType: 'LIKE' | 'DISLIKE') => {
     if (!userId || !profile) return;
-    
+
     try {
       const oldVote = myVote;
       const newVote = myVote === voteType ? null : voteType;
-      
+
       // Optimistically update local state
       setMyVote(newVote);
-      
+
       // Update vote counts optimistically
-      setProfile(prev => {
+      setProfile((prev) => {
         if (!prev) return prev;
-        
+
         let likesReceived = prev.likesReceived || 0;
         let dislikesReceived = prev.dislikesReceived || 0;
-        
+
         // Remove old vote count
         if (oldVote === 'LIKE') {
           likesReceived = Math.max(0, likesReceived - 1);
         } else if (oldVote === 'DISLIKE') {
           dislikesReceived = Math.max(0, dislikesReceived - 1);
         }
-        
+
         // Add new vote count
         if (newVote === 'LIKE') {
           likesReceived += 1;
         } else if (newVote === 'DISLIKE') {
           dislikesReceived += 1;
         }
-        
+
         return {
           ...prev,
           likesReceived,
           dislikesReceived,
         };
       });
-      
+
       // Make API call
       await toggleVote(viewerId, userId, oldVote, voteType);
     } catch (err: any) {
       console.error('Error toggling vote:', err);
-      const errorMessage = err?.response?.data?.message || err?.message || 'Failed to update vote';
+      const errorMessage =
+        err?.response?.data?.message || err?.message || 'Failed to update vote';
       alert(errorMessage);
-      
+
       // Revert on error - refetch profile
       try {
         const data = await getProfileDetails({ userId, viewerId });
@@ -134,10 +142,10 @@ export default function ProfileViewPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
+      <div className='min-h-screen bg-linear-to-br from-pink-50 via-white to-purple-50'>
         <Navbar />
-        <div className="mx-auto max-w-4xl px-4 py-8">
-          <div className="text-center text-gray-600">Loading profile...</div>
+        <div className='mx-auto max-w-4xl px-4 py-8'>
+          <div className='text-center text-gray-600'>Loading profile...</div>
         </div>
       </div>
     );
@@ -145,14 +153,14 @@ export default function ProfileViewPage() {
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
+      <div className='min-h-screen bg-linear-to-br from-pink-50 via-white to-purple-50'>
         <Navbar />
-        <div className="mx-auto max-w-4xl px-4 py-8">
-          <div className="rounded-xl bg-red-50 border border-red-200 p-6 text-center">
-            <p className="text-red-600">⚠️ {error || 'Profile not found'}</p>
+        <div className='mx-auto max-w-4xl px-4 py-8'>
+          <div className='rounded-xl border border-red-200 bg-red-50 p-6 text-center'>
+            <p className='text-red-600'>⚠️ {error || 'Profile not found'}</p>
             <button
               onClick={() => navigate('/roommates')}
-              className="mt-4 px-6 py-2 bg-black text-white rounded-full hover:bg-gray-800 transition"
+              className='mt-4 rounded-full bg-black px-6 py-2 text-white transition hover:bg-gray-800'
             >
               Back to Roommates
             </button>
@@ -162,60 +170,51 @@ export default function ProfileViewPage() {
     );
   }
 
-    // Mock user data for ProfileHeader (replace with real data when user model has these fields)
-  const displayName = profile.email.split('@')[0]; // Use email username for now
-  const mockUser = {
-    id: profile.id,
-    name: displayName, // TODO: Use real username/firstName/lastName when available
-    age: profile.age || 0,
-    major: profile.major || '',
-    year: profile.year || '',
-    profileImage: 'https://i.pravatar.cc/300?u=' + profile.id, // Mock avatar based on ID
-    bio: profile.bio || '',
-  };
+  // Mock user data for ProfileHeader (replace with real data when user model has these fields)
+  // Use real profile data from backend
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
+    <div className='min-h-screen bg-linear-to-br from-pink-50 via-white to-purple-50'>
       <Navbar />
 
-      <div className="mx-auto max-w-4xl px-4 py-8">
+      <div className='mx-auto max-w-4xl px-4 py-8'>
         {/* Back button and Action buttons */}
-        <div className="flex items-center justify-between mb-4">
+        <div className='mb-4 flex items-center justify-between'>
           <button
             onClick={() => navigate('/roommates')}
-            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition flex items-center gap-2"
+            className='flex items-center gap-2 px-4 py-2 text-sm text-gray-600 transition hover:text-gray-900'
           >
             ← Back to Roommates
           </button>
-          
-          <div className="flex items-center gap-3">
+
+          <div className='flex items-center gap-3'>
             {/* Vote Buttons */}
             <button
               onClick={() => handleToggleVote('LIKE')}
-              className={`px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 border-2 hover:scale-105 ${
+              className={`flex items-center gap-2 rounded-full border-2 px-4 py-3 shadow-lg transition-all hover:scale-105 hover:shadow-xl ${
                 myVote === 'LIKE'
-                  ? 'bg-green-500 border-green-600 text-white'
-                  : 'bg-white border-gray-200 text-gray-700'
+                  ? 'border-green-600 bg-green-500 text-white'
+                  : 'border-gray-200 bg-white text-gray-700'
               }`}
-              title="Like"
+              title='Like'
             >
-              <span className="text-xl">👍</span>
-              <span className="text-sm font-semibold">
+              <span className='text-xl'>👍</span>
+              <span className='text-sm font-semibold'>
                 {myVote === 'LIKE' ? 'Liked' : 'Like'}
               </span>
             </button>
 
             <button
               onClick={() => handleToggleVote('DISLIKE')}
-              className={`px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 border-2 hover:scale-105 ${
+              className={`flex items-center gap-2 rounded-full border-2 px-4 py-3 shadow-lg transition-all hover:scale-105 hover:shadow-xl ${
                 myVote === 'DISLIKE'
-                  ? 'bg-red-500 border-red-600 text-white'
-                  : 'bg-white border-gray-200 text-gray-700'
+                  ? 'border-red-600 bg-red-500 text-white'
+                  : 'border-gray-200 bg-white text-gray-700'
               }`}
-              title="Dislike"
+              title='Dislike'
             >
-              <span className="text-xl">👎</span>
-              <span className="text-sm font-semibold">
+              <span className='text-xl'>👎</span>
+              <span className='text-sm font-semibold'>
                 {myVote === 'DISLIKE' ? 'Disliked' : 'Dislike'}
               </span>
             </button>
@@ -223,17 +222,15 @@ export default function ProfileViewPage() {
             {/* Favorite Button */}
             <button
               onClick={handleToggleFavorite}
-              className={`px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 border-2 hover:scale-105 ${
+              className={`flex items-center gap-2 rounded-full border-2 px-4 py-3 shadow-lg transition-all hover:scale-105 hover:shadow-xl ${
                 isFavorited
-                  ? 'bg-pink-50 border-pink-300'
-                  : 'bg-white border-gray-200'
+                  ? 'border-pink-300 bg-pink-50'
+                  : 'border-gray-200 bg-white'
               }`}
               title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
             >
-              <span className="text-xl">
-                {isFavorited ? '❤️' : '🤍'}
-              </span>
-              <span className="text-sm font-semibold text-gray-700">
+              <span className='text-xl'>{isFavorited ? '❤️' : '🤍'}</span>
+              <span className='text-sm font-semibold text-gray-700'>
                 {isFavorited ? 'Favorited' : 'Favorite'}
               </span>
             </button>
@@ -241,57 +238,80 @@ export default function ProfileViewPage() {
         </div>
 
         {/* Vote Stats Display */}
-        {profile && (profile.likesReceived !== undefined || profile.dislikesReceived !== undefined) && (
-          <div className="mb-4 p-4 bg-white rounded-lg shadow border border-gray-200">
-            <div className="flex items-center justify-center gap-6 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">👍</span>
-                <span className="font-semibold text-green-600">
-                  {profile.likesReceived || 0} Likes
-                </span>
-              </div>
-              <div className="h-4 w-px bg-gray-300"></div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl">👎</span>
-                <span className="font-semibold text-red-600">
-                  {profile.dislikesReceived || 0} Dislikes
-                </span>
+        {profile &&
+          (profile.likesReceived !== undefined ||
+            profile.dislikesReceived !== undefined) && (
+            <div className='mb-4 rounded-lg border border-gray-200 bg-white p-4 shadow'>
+              <div className='flex items-center justify-center gap-6 text-sm'>
+                <div className='flex items-center gap-2'>
+                  <span className='text-xl'>👍</span>
+                  <span className='font-semibold text-green-600'>
+                    {profile.likesReceived || 0} Likes
+                  </span>
+                </div>
+                <div className='h-4 w-px bg-gray-300'></div>
+                <div className='flex items-center gap-2'>
+                  <span className='text-xl'>👎</span>
+                  <span className='font-semibold text-red-600'>
+                    {profile.dislikesReceived || 0} Dislikes
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Profile Header - View-only mode (no avatar editing) */}
-        <ProfileHeader 
-          user={mockUser}
+        <ProfileHeader
+          user={{
+            id: profile.id,
+            legalName: profile.legalName || '',
+            email: profile.email || '',
+            name:
+              profile.name ||
+              (profile.email ? profile.email.split('@')[0] : ''),
+            profileImage:
+              profile.profileImage ||
+              `https://i.pravatar.cc/300?u=${profile.id}`,
+            phoneNumber: profile.phoneNumber || '',
+            searchStatus: profile.searchStatus || '',
+            isVerified: profile.isVerified || false,
+          }}
           voteStats={{
             likesReceived: profile.likesReceived || 0,
             dislikesReceived: profile.dislikesReceived || 0,
           }}
-          onAvatarChange={() => {}} // No-op for view-only mode
-          isEditable={false} // Disable avatar editing for other users' profiles
+          onAvatarChange={() => {}}
+          isEditable={false}
         />
 
         {/* Bio Section */}
-        {mockUser.bio && <BioSection bio={mockUser.bio} />}
+        {profile.bio && (
+          <BioSection
+            bio={profile.bio}
+            legalName={profile.legalName || ''}
+            phoneNumber={profile.phoneNumber || ''}
+            searchStatus={profile.searchStatus || ''}
+            onSave={async () => {}}
+          />
+        )}
 
         {/* Lifestyle Preferences (I am...) - READ ONLY */}
-        <div className="mb-8 rounded-2xl bg-white p-8 shadow-lg border-2 border-pink-200">
-          <div className="flex items-center justify-between mb-6">
+        <div className='mb-8 rounded-2xl border-2 border-pink-200 bg-white p-8 shadow-lg'>
+          <div className='mb-6 flex items-center justify-between'>
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              <h2 className='mb-2 text-3xl font-bold text-gray-900'>
                 💫 Lifestyle Preferences
               </h2>
-              <p className="text-gray-600">Their lifestyle and habits</p>
+              <p className='text-gray-600'>Their lifestyle and habits</p>
             </div>
           </div>
 
           {profile.lifestylePreferences.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">
+            <p className='py-8 text-center text-gray-500'>
               No lifestyle preferences added yet
             </p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
               {profile.lifestylePreferences.map((pref) => (
                 <PreferenceCard key={pref.id} preference={pref} />
               ))}
@@ -300,22 +320,22 @@ export default function ProfileViewPage() {
         </div>
 
         {/* Roommate Preferences (I want...) - READ ONLY */}
-        <div className="mb-8 rounded-2xl bg-white p-8 shadow-lg border-2 border-purple-200">
-          <div className="flex items-center justify-between mb-6">
+        <div className='mb-8 rounded-2xl border-2 border-purple-200 bg-white p-8 shadow-lg'>
+          <div className='mb-6 flex items-center justify-between'>
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              <h2 className='mb-2 text-3xl font-bold text-gray-900'>
                 🏠 Roommate Preferences
               </h2>
-              <p className="text-gray-600">Looking for in a roommate</p>
+              <p className='text-gray-600'>Looking for in a roommate</p>
             </div>
           </div>
 
           {profile.roommatePreferences.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">
+            <p className='py-8 text-center text-gray-500'>
               No roommate preferences added yet
             </p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
               {profile.roommatePreferences.map((pref) => (
                 <PreferenceCard key={pref.id} preference={pref} />
               ))}
@@ -341,7 +361,7 @@ interface PreferenceCardProps {
 
 function PreferenceCard({ preference }: PreferenceCardProps) {
   const categoryColor = getCategoryColor(preference.category);
-  
+
   // Render importance stars
   const stars = Array.from({ length: 5 }, (_, i) => {
     const filled = i < preference.importance;
@@ -353,28 +373,32 @@ function PreferenceCard({ preference }: PreferenceCardProps) {
   });
 
   return (
-    <div className="group relative rounded-xl bg-gradient-to-br from-white to-gray-50 p-4 border border-gray-200 hover:shadow-md transition-all">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold mb-2 ${categoryColor}`}>
+    <div className='group relative rounded-xl border border-gray-200 bg-linear-to-br from-white to-gray-50 p-4 transition-all hover:shadow-md'>
+      <div className='flex items-start justify-between'>
+        <div className='flex-1'>
+          <span
+            className={`mb-2 inline-block rounded-full px-3 py-1 text-xs font-semibold ${categoryColor}`}
+          >
             {preference.category}
           </span>
-          <h3 className="font-semibold text-gray-900 mb-1">{preference.label}</h3>
-          <p className="text-sm text-gray-600">{preference.value}</p>
+          <h3 className='mb-1 font-semibold text-gray-900'>
+            {preference.label}
+          </h3>
+          <p className='text-sm text-gray-600'>{preference.value}</p>
         </div>
-        
+
         {/* Visibility badge */}
         {preference.visibility === 'PRIVATE' && (
-          <span className="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+          <span className='ml-2 rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-500'>
             🔒 Private
           </span>
         )}
       </div>
-      
+
       {/* Importance stars */}
-      <div className="mt-3 flex items-center gap-1">
+      <div className='mt-3 flex items-center gap-1'>
         {stars}
-        <span className="ml-2 text-xs text-gray-500">
+        <span className='ml-2 text-xs text-gray-500'>
           ({preference.importance}/5)
         </span>
       </div>
@@ -385,14 +409,14 @@ function PreferenceCard({ preference }: PreferenceCardProps) {
 //* Helper function for category colors
 function getCategoryColor(category: string): string {
   const colors: Record<string, string> = {
-    'Sleep': 'bg-blue-100 text-blue-700',
-    'Cleanliness': 'bg-green-100 text-green-700',
-    'Social': 'bg-purple-100 text-purple-700',
-    'Noise': 'bg-yellow-100 text-yellow-700',
-    'Guests': 'bg-pink-100 text-pink-700',
-    'Lifestyle': 'bg-indigo-100 text-indigo-700',
-    'Study': 'bg-cyan-100 text-cyan-700',
-    'Diet': 'bg-orange-100 text-orange-700',
+    Sleep: 'bg-blue-100 text-blue-700',
+    Cleanliness: 'bg-green-100 text-green-700',
+    Social: 'bg-purple-100 text-purple-700',
+    Noise: 'bg-yellow-100 text-yellow-700',
+    Guests: 'bg-pink-100 text-pink-700',
+    Lifestyle: 'bg-indigo-100 text-indigo-700',
+    Study: 'bg-cyan-100 text-cyan-700',
+    Diet: 'bg-orange-100 text-orange-700',
   };
   return colors[category] || 'bg-gray-100 text-gray-700';
 }
