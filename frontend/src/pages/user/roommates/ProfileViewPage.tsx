@@ -269,9 +269,7 @@ export default function ProfileViewPage() {
             name:
               profile.name ||
               (profile.email ? profile.email.split('@')[0] : ''),
-            profileImage:
-              profile.avatarURL ||
-              `https://i.pravatar.cc/300?u=${profile.id}`,
+            profileImage: profile.avatarURL || '',
             phoneNumber: profile.phoneNumber || '',
             searchStatus: profile.searchStatus || '',
             isVerified: profile.isVerified || false,
