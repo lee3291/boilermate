@@ -50,6 +50,16 @@ export class VerificationController {
     );
   }
 
+  @Post('admin/requests/:id/remove-image')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  async removeVerificationImage(
+    @Param('id') requestId: string,
+    @GetUser('userId') adminId: string,
+  ) {
+    return this.verificationService.removeVerificationImage(requestId, adminId);
+  }
+
   @Post('upload-url')
   generateUploadUrl(
     @GetUser('userId') userId: string,

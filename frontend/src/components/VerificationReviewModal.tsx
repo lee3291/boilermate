@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import type { VerificationRequest } from '@/types/verification';
-import { updateVerificationStatus } from '@/services/verification.service';
+import {
+  updateVerificationStatus,
+  removeVerificationImage,
+} from '@/services/verification.service';
 
 interface VerificationReviewModalProps {
   request: VerificationRequest;
@@ -45,7 +48,10 @@ const VerificationReviewModal = ({
         status,
         reason,
       );
-      onUpdate(updatedRequest);
+      // Remove image after status update
+      await removeVerificationImage(request.id);
+      // Set idImageURL to null in local state for immediate UI update
+      onUpdate({ ...updatedRequest, idImageURL: null });
       onClose();
     } catch (err) {
       setError('Failed to update the request. Please try again.');
@@ -57,7 +63,7 @@ const VerificationReviewModal = ({
 
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center'>
-      <div className='relative w-full max-w-lg rounded-lg border border-gray-300 bg-mainbrown p-6 text-black shadow-lg'>
+      <div className='bg-mainbrown relative w-full max-w-lg rounded-lg border border-gray-300 p-6 text-black shadow-lg'>
         <button
           onClick={onClose}
           className='absolute top-3 right-3 text-2xl font-bold text-gray-600 hover:text-gray-900'
@@ -78,11 +84,15 @@ const VerificationReviewModal = ({
 
         <div className='mb-4'>
           <h3 className='mb-2 font-semibold'>ID Image:</h3>
-          <img
-            src={request.idImageURL}
-            alt='User ID'
-            className='max-h-80 w-full rounded-md object-contain'
-          />
+          {!isCompleted && request.idImageURL ? (
+            <img
+              src={request.idImageURL}
+              alt='User ID'
+              className='max-h-80 w-full rounded-md object-contain'
+            />
+          ) : (
+            <div className='text-gray-400 italic'>No image available.</div>
+          )}
         </div>
 
         {isCompleted && request.reviewedBy && (
