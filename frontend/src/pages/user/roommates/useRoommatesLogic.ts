@@ -6,8 +6,7 @@ import type { GetPreferencesResponse } from '@/types/preferences/preference';
 
 const PAGE_SIZE = 9; // 3x3 grid
 
-export default function useRoommatesLogic(initialUserId: string) {
-  const [currentUserId] = useState<string>(initialUserId);
+export default function useRoommatesLogic(userId: string) {
   const [profiles, setProfiles] = useState<ProfileSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +59,7 @@ export default function useRoommatesLogic(initialUserId: string) {
       if (viewMode === 'favorites') {
         // Fetch favorites
         const response: GetFavoritesResponse = await getFavorites({
-          userId: currentUserId,
+          userId,
           page,
           limit: PAGE_SIZE,
         });
@@ -71,7 +70,7 @@ export default function useRoommatesLogic(initialUserId: string) {
       } else if (viewMode === 'liked' || viewMode === 'disliked') {
         // Fetch votes
         const response: GetMyVotesResponse = await getMyVotes({
-          voterId: currentUserId,
+          voterId: userId,
           voteType: viewMode === 'liked' ? 'LIKE' : 'DISLIKE',
           page,
           limit: PAGE_SIZE,
@@ -83,7 +82,7 @@ export default function useRoommatesLogic(initialUserId: string) {
       } else {
         // Fetch search results - use APPLIED filters
         const response: SearchUsersResponse = await searchUsers({
-          userId: currentUserId,
+          userId,
           page,
           limit: PAGE_SIZE,
           preferenceIds: appliedFilters.preferenceIds.length > 0 ? appliedFilters.preferenceIds : undefined,
@@ -101,7 +100,7 @@ export default function useRoommatesLogic(initialUserId: string) {
     } finally {
       setLoading(false);
     }
-  }, [currentUserId, page, appliedFilters, viewMode]);
+  }, [userId, page, appliedFilters, viewMode]);
 
   useEffect(() => {
     fetchProfiles();
@@ -134,7 +133,7 @@ export default function useRoommatesLogic(initialUserId: string) {
 
   const handleToggleFavorite = useCallback(async (profileId: string, isFavorited: boolean) => {
     try {
-      await toggleFavorite(currentUserId, profileId, isFavorited);
+      await toggleFavorite(userId, profileId, isFavorited);
       
       // Update the profile in the current list
       setProfiles(prevProfiles =>
@@ -145,17 +144,16 @@ export default function useRoommatesLogic(initialUserId: string) {
         )
       );
       
-      // If in favorites view and removing favorite, also remove from list
+      // If we're in favorites view and user unfavorited, remove from list
       if (viewMode === 'favorites' && isFavorited) {
         setProfiles(prevProfiles => prevProfiles.filter(p => p.id !== profileId));
-        // Update total count
         setTotal(prev => prev - 1);
       }
     } catch (err: any) {
       console.error('Error toggling favorite:', err);
       setError('Failed to update favorite status');
     }
-  }, [currentUserId, viewMode]);
+  }, [userId, viewMode]);
 
   const handleToggleVote = useCallback(async (
     profileId: string, 
@@ -163,24 +161,26 @@ export default function useRoommatesLogic(initialUserId: string) {
     newVote: 'LIKE' | 'DISLIKE'
   ) => {
     try {
+      // Determine final vote (toggle off if clicking same vote)
       const finalVote = currentVote === newVote ? null : newVote;
       
-      // Optimistically update the profile in the current list
+      // Optimistically update the UI
       setProfiles(prevProfiles =>
         prevProfiles.map(p => {
           if (p.id !== profileId) return p;
           
+          // Recalculate vote counts
           let likesReceived = p.likesReceived || 0;
           let dislikesReceived = p.dislikesReceived || 0;
           
-          // Remove old vote count
+          // Remove old vote
           if (currentVote === 'LIKE') {
             likesReceived = Math.max(0, likesReceived - 1);
           } else if (currentVote === 'DISLIKE') {
             dislikesReceived = Math.max(0, dislikesReceived - 1);
           }
           
-          // Add new vote count
+          // Add new vote
           if (finalVote === 'LIKE') {
             likesReceived += 1;
           } else if (finalVote === 'DISLIKE') {
@@ -197,9 +197,9 @@ export default function useRoommatesLogic(initialUserId: string) {
       );
       
       // Make API call
-      await toggleVote(currentUserId, profileId, currentVote, newVote);
+      await toggleVote(userId, profileId, currentVote, newVote);
       
-      // If in vote view and removing/changing vote type, handle accordingly
+      // If viewing liked/disliked and user removed vote, remove from list
       if ((viewMode === 'liked' || viewMode === 'disliked') && (currentVote === newVote || currentVote !== null)) {
         setProfiles(prevProfiles => prevProfiles.filter(p => p.id !== profileId));
         setTotal(prev => prev - 1);
@@ -207,11 +207,10 @@ export default function useRoommatesLogic(initialUserId: string) {
     } catch (err: any) {
       console.error('Error toggling vote:', err);
       setError('Failed to update vote');
-      
-      // On error, refetch to get correct state
+      // Revert by refetching
       fetchProfiles();
     }
-  }, [currentUserId, viewMode, fetchProfiles]);
+  }, [userId, viewMode, fetchProfiles]);
 
   const handleTogglePreference = useCallback((prefId: string) => {
     setSelectedPreferences(prev => 
@@ -251,7 +250,6 @@ export default function useRoommatesLogic(initialUserId: string) {
 
   return {
     // state
-    currentUserId,
     profiles,
     loading,
     error,

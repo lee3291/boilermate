@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { getProfileDetails, toggleFavorite, toggleVote } from '../../../services/profileService';
 import type { ProfileDetails } from '../../../types/profile';
 import Navbar from '../components/Navbar';
@@ -15,15 +16,16 @@ import BioSection from '../profile/components/BioSection';
 export default function ProfileViewPage() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  // ProtectedRoute ensures user exists
+  const viewerId = user!.id;
   
   const [profile, setProfile] = useState<ProfileDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFavorited, setIsFavorited] = useState(false);
   const [myVote, setMyVote] = useState<'LIKE' | 'DISLIKE' | null>(null);
-
-  // TODO: Replace with actual viewerId from auth context
-  const viewerId = '1'; // Hardcoded for now
 
   // Redirect if trying to view own profile
   useEffect(() => {

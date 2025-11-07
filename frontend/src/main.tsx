@@ -78,7 +78,7 @@ const router = createBrowserRouter([
 
   // Protected routes
   {
-    // element: <ProtectedRoute />,
+    element: <ProtectedRoute />,
     children: [
       {
         path: '/preferences',
@@ -188,9 +188,9 @@ import MyListings from './pages/user/listings/user/MyListings.tsx';
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <UserProvider>
-      {/* <AuthProvider> */}
+      <AuthProvider>
         <RouterProvider router={router} />
-      {/* </AuthProvider> */}
+      </AuthProvider>
     </UserProvider>
   </StrictMode>,
 );

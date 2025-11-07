@@ -5,6 +5,7 @@
  */
 
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import useRoommatesLogic from './useRoommatesLogic';
 import Navbar from '../components/Navbar';
 import RoommatesSidebar from './components/RoommatesSidebar';
@@ -15,9 +16,10 @@ const PAGE_SIZE = 9; // 3x3 grid
 
 export default function RoommatesPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   
-  // TODO: Replace with actual userId from auth context
-  const userId = '1'; // Hardcoded for now
+  // ProtectedRoute already ensures user exists, so we can safely assert it
+  const userId = user!.id;
   
   const {
     profiles,

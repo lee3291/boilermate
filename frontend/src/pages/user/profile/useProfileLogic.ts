@@ -16,10 +16,7 @@ import type {
 import * as preferencesService from '@/services/preferencesService';
 import * as profileService from '@/services/profileService';
 
-export default function useProfileLogic(initialUserId: string) {
-  // User state
-  const [currentUserId, setCurrentUserId] = useState<string>(initialUserId);
-
+export default function useProfileLogic(userId: string) {
   // Profile data (from /profile/me endpoint)
   const [profileData, setProfileData] = useState<any>(null);
   
@@ -118,115 +115,111 @@ export default function useProfileLogic(initialUserId: string) {
   }, []);
 
   // Add/Update user profile preference
-  const handleSetUserProfilePreference = useCallback(
-    async (preferenceId: string, importance: number, visibility: string) => {
-      if (!currentUserId) return;
-      try {
-        await preferencesService.setUserProfilePreference({
-          userId: currentUserId,
-          preferenceId,
-          importance,
-          visibility,
-        });
-        // Refresh the list
-        await fetchUserProfilePreferences(currentUserId);
-      } catch (err: any) {
-        setError(err.message || 'Failed to set preference');
-        console.error('Error setting user profile preference:', err);
-      }
-    },
-    [currentUserId, fetchUserProfilePreferences]
-  );
+  const handleSetUserProfilePreference = useCallback(async (
+    preferenceId: string,
+    importance: number,
+    visibility: string
+  ) => {
+    setError(null);
+    try {
+      await preferencesService.setUserProfilePreference({
+        userId,
+        preferenceId,
+        visibility,
+        importance,
+      });
+      await fetchUserProfilePreferences(userId);
+    } catch (err: any) {
+      setError(err.message || 'Failed to set user profile preference');
+      console.error('Error setting user profile preference:', err);
+    }
+  }, [userId, fetchUserProfilePreferences]);
 
   // Update user profile preference (importance/visibility only)
-  const handleUpdateUserProfilePreference = useCallback(
-    async (preferenceId: string, importance?: number, visibility?: string) => {
-      if (!currentUserId) return;
-      try {
-        await preferencesService.updateUserProfilePreference(currentUserId, preferenceId, {
-          importance,
-          visibility,
-        });
-        // Refresh the list
-        await fetchUserProfilePreferences(currentUserId);
-      } catch (err: any) {
-        setError(err.message || 'Failed to update preference');
-        console.error('Error updating user profile preference:', err);
-      }
-    },
-    [currentUserId, fetchUserProfilePreferences]
-  );
+  const handleUpdateUserProfilePreference = useCallback(async (
+    userProfilePreferenceId: string,
+    importance: number,
+    visibility: string
+  ) => {
+    setError(null);
+    try {
+      await preferencesService.updateUserProfilePreference(userId, userProfilePreferenceId, {
+        visibility,
+        importance,
+      });
+      await fetchUserProfilePreferences(userId);
+    } catch (err: any) {
+      setError(err.message || 'Failed to update user profile preference');
+      console.error('Error updating user profile preference:', err);
+    }
+  }, [userId, fetchUserProfilePreferences]);
 
   // Remove user profile preference
-  const handleDeleteUserProfilePreference = useCallback(
-    async (preferenceId: string) => {
-      if (!currentUserId) return;
-      try {
-        await preferencesService.deleteUserProfilePreference(currentUserId, preferenceId);
-        // Refresh the list
-        await fetchUserProfilePreferences(currentUserId);
-      } catch (err: any) {
-        setError(err.message || 'Failed to delete preference');
-        console.error('Error deleting user profile preference:', err);
-      }
-    },
-    [currentUserId, fetchUserProfilePreferences]
-  );
+    const handleDeleteUserProfilePreference = useCallback(async (userProfilePreferenceId: string) => {
+    setError(null);
+    try {
+      await preferencesService.deleteUserProfilePreference(userId, userProfilePreferenceId);
+      await fetchUserProfilePreferences(userId);
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete user profile preference');
+      console.error('Error deleting user profile preference:', err);
+    }
+  }, [userId, fetchUserProfilePreferences]);
 
   // Add/Update roommate preference
   const handleSetRoommatePreference = useCallback(
     async (preferenceId: string, importance: number, visibility: string) => {
-      if (!currentUserId) return;
+      if (!userId) return;
       try {
         await preferencesService.setRoommatePreference({
-          userId: currentUserId,
+          userId: userId,
           preferenceId,
           importance,
           visibility,
         });
         // Refresh the list
-        await fetchRoommatePreferences(currentUserId);
+        await fetchRoommatePreferences(userId);
       } catch (err: any) {
         setError(err.message || 'Failed to set preference');
         console.error('Error setting roommate preference:', err);
       }
     },
-    [currentUserId, fetchRoommatePreferences]
+    [userId, fetchRoommatePreferences]
   );
 
   // Update roommate preference (importance/visibility only)
-  const handleUpdateRoommatePreference = useCallback(
-    async (preferenceId: string, importance?: number, visibility?: string) => {
-      if (!currentUserId) return;
-      try {
-        await preferencesService.updateRoommatePreference(currentUserId, preferenceId, {
-          importance,
-          visibility,
-        });
-        // Refresh the list
-        await fetchRoommatePreferences(currentUserId);
-      } catch (err: any) {
-        setError(err.message || 'Failed to update preference');
-        console.error('Error updating roommate preference:', err);
-      }
-    },
-    [currentUserId, fetchRoommatePreferences]
-  );
+  const handleUpdateRoommatePreference = useCallback(async (
+    roommatePreferenceId: string,
+    importance: number,
+    visibility: string
+  ) => {
+    setError(null);
+    try {
+      await preferencesService.updateRoommatePreference(userId, roommatePreferenceId, {
+        visibility,
+        importance,
+      });
+      await fetchRoommatePreferences(userId);
+    } catch (err: any) {
+      setError(err.message || 'Failed to update roommate preference');
+      console.error('Error updating roommate preference:', err);
+    }
+  }, [userId, fetchRoommatePreferences]);
 
   // Remove roommate preference
   const handleDeleteRoommatePreference = useCallback(
     async (preferenceId: string) => {
-      if (!currentUserId) return;
+      if (!userId) return;
       try {
-        await preferencesService.deleteRoommatePreference(currentUserId, preferenceId);
+        await preferencesService.deleteRoommatePreference(userId, preferenceId);
         // Refresh the list
-        await fetchRoommatePreferences(currentUserId);
+        await fetchRoommatePreferences(userId);
       } catch (err: any) {
         setError(err.message || 'Failed to delete preference');
         console.error('Error deleting roommate preference:', err);
       }
     },
-    [currentUserId, fetchRoommatePreferences]
+    [userId, fetchRoommatePreferences]
   );
 
   // Initialize: Load master preferences on mount
@@ -236,12 +229,10 @@ export default function useProfileLogic(initialUserId: string) {
 
   // Load user data when userId changes
   useEffect(() => {
-    if (currentUserId) {
-      fetchMyProfile(currentUserId);
-      fetchUserProfilePreferences(currentUserId);
-      fetchRoommatePreferences(currentUserId);
-    }
-  }, [currentUserId, fetchMyProfile, fetchUserProfilePreferences, fetchRoommatePreferences]);
+    fetchMyProfile(userId);
+    fetchUserProfilePreferences(userId);
+    fetchRoommatePreferences(userId);
+  }, [userId, fetchMyProfile, fetchUserProfilePreferences, fetchRoommatePreferences]);
 
   /**
    * Handle avatar file change
@@ -258,8 +249,6 @@ export default function useProfileLogic(initialUserId: string) {
 
   return {
     // State
-    currentUserId,
-    setCurrentUserId,
     profileData,
     voteStats,
     allPreferences,

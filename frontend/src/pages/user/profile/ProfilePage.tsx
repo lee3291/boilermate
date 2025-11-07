@@ -17,9 +17,11 @@
  * - Integrated vote stats from backend (/profile/me)
  * - Added handleAvatarChange handler (ready for AWS S3 integration)
  * - Stats display shows likes, dislikes, and approval percentage
+ * - Updated to use auth context instead of hardcoded user ID
  */
 
 import { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import Navbar from '../components/Navbar';
 import useProfileLogic from './useProfileLogic';
 import ProfileHeader from './components/ProfileHeader';
@@ -28,12 +30,17 @@ import LifestyleSection from './components/LifestyleSection';
 import RoommateSection from './components/RoommateSection';
 
 export default function ProfilePage() {
-  const logic = useProfileLogic('1'); // Initialize with user ID 1
+  const { user } = useAuth();
+  
+  // ProtectedRoute already ensures user exists, so we can safely assert it
+  const userId = user!.id;
+  
+  const logic = useProfileLogic(userId);
 
   // Mock user data (replace with real data from backend later)
   // TODO: Use logic.profileData once backend returns complete user info
   const [mockUser] = useState({
-    id: logic.currentUserId,
+    id: userId,
     name: 'Alex Johnson',
     age: 22,
     major: 'Computer Science',
@@ -49,19 +56,7 @@ export default function ProfilePage() {
 
       {/* Main Content - Centralized Container */}
       <div className="mx-auto max-w-4xl px-4 py-8">
-        {/* Fake User ID Tester - For Development */}
-        <div className="mb-6 rounded-xl bg-white p-4 shadow-sm border border-gray-200">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            🧪 Test User ID (Development Only)
-          </label>
-          <input
-            type="text"
-            value={logic.currentUserId}
-            onChange={(e) => logic.setCurrentUserId(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-            placeholder="Enter user ID to test"
-          />
-        </div>
+        {/* Removed: Fake User ID Tester - Now using auth context */}
 
         {/* Error Display */}
         {logic.error && (
