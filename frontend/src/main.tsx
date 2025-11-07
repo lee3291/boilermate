@@ -9,7 +9,7 @@ import ChatPage from './pages/user/chat/ChatPage.tsx';
 
 // Auth pages
 // import LandingPage from './pages/public/LandingPage';
-import Homepage from './pages/home/Homepage.tsx'
+import Homepage from './pages/home/Homepage.tsx';
 import SignInPage from './pages/public/SignInPage';
 import SignUpPage from './pages/public/SignUpPage';
 import ReactivateAccountPage from './pages/public/ReactivateAccountPage';
@@ -83,7 +83,7 @@ const router = createBrowserRouter([
 
   // Protected routes
   {
-    //element: <ProtectedRoute />,
+    element: <ProtectedRoute />,
     children: [
       {
         path: '/preferences',

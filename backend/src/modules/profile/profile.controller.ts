@@ -3,28 +3,58 @@
  * Handles HTTP requests for profile and matching endpoints
  */
 
-import { Controller, Get, Post, Delete, Param, Query, Body, HttpCode } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Patch,
+  Param,
+  Query,
+  Body,
+  HttpCode,
+  UseGuards,
+  BadRequestException,
+} from '@nestjs/common';
 import { ProfileService } from './profile.service';
-import { 
-  GetProfileDetailsDto, 
-  SearchUsersDto, 
-  AddFavoriteDto, 
-  RemoveFavoriteDto, 
+import {
+  GetProfileDetailsDto,
+  SearchUsersDto,
+  AddFavoriteDto,
+  RemoveFavoriteDto,
   GetFavoritesDto,
   VoteUserDto,
   RemoveVoteDto,
   GetMyVotesDto,
   GetVoteStatsDto,
-  ProfileDetailsDto, 
-  SearchUsersResponseDto, 
+  ProfileDetailsDto,
+  SearchUsersResponseDto,
   GetFavoritesResponseDto,
   VoteResponseDto,
   VoteStatsDto,
-  GetMyVotesResponseDto
+  GetMyVotesResponseDto,
 } from './dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { User } from '@modules/auth/decorators/user.decorator';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('profile')
 export class ProfileController {
+  /**
+   * PATCH /profile
+   * Update current user's profile (phone, bio, searchStatus)
+   */
+  @Patch()
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(200)
+  async updateProfile(
+    @Body() dto: UpdateProfileDto,
+    @User() user: any,
+  ): Promise<any> {
+    const userId = user?.id || user?.userId || user?.sub;
+    if (!userId) throw new BadRequestException('User ID not found in session');
+    return this.profileService.updateProfile(userId, dto);
+  }
   constructor(private readonly profileService: ProfileService) {}
 
   /**
@@ -43,7 +73,9 @@ export class ProfileController {
    */
   @Get('search')
   @HttpCode(200)
-  async searchUsers(@Query() dto: SearchUsersDto): Promise<SearchUsersResponseDto> {
+  async searchUsers(
+    @Query() dto: SearchUsersDto,
+  ): Promise<SearchUsersResponseDto> {
     return this.profileService.searchUsers(dto);
   }
 
@@ -54,7 +86,9 @@ export class ProfileController {
    */
   @Get('favorites/list')
   @HttpCode(200)
-  async getFavorites(@Query() dto: GetFavoritesDto): Promise<GetFavoritesResponseDto> {
+  async getFavorites(
+    @Query() dto: GetFavoritesDto,
+  ): Promise<GetFavoritesResponseDto> {
     return this.profileService.getFavorites(dto);
   }
 
@@ -64,7 +98,9 @@ export class ProfileController {
    */
   @Post('favorites')
   @HttpCode(201)
-  async addFavorite(@Body() dto: AddFavoriteDto): Promise<{ message: string; favoriteId: string }> {
+  async addFavorite(
+    @Body() dto: AddFavoriteDto,
+  ): Promise<{ message: string; favoriteId: string }> {
     return this.profileService.addFavorite(dto);
   }
 
@@ -76,7 +112,7 @@ export class ProfileController {
   @HttpCode(200)
   async removeFavorite(
     @Param('favoritedUserId') favoritedUserId: string,
-    @Query() dto: RemoveFavoriteDto
+    @Query() dto: RemoveFavoriteDto,
   ): Promise<{ message: string }> {
     dto.favoritedUserId = favoritedUserId;
     return this.profileService.removeFavorite(dto);
@@ -117,7 +153,7 @@ export class ProfileController {
   @HttpCode(200)
   async removeVote(
     @Param('votedUserId') votedUserId: string,
-    @Query() dto: RemoveVoteDto
+    @Query() dto: RemoveVoteDto,
   ): Promise<{ message: string }> {
     dto.votedUserId = votedUserId;
     return this.profileService.removeVote(dto);
@@ -131,7 +167,9 @@ export class ProfileController {
    */
   @Get('votes/my-votes')
   @HttpCode(200)
-  async getMyVotes(@Query() dto: GetMyVotesDto): Promise<GetMyVotesResponseDto> {
+  async getMyVotes(
+    @Query() dto: GetMyVotesDto,
+  ): Promise<GetMyVotesResponseDto> {
     return this.profileService.getMyVotes(dto);
   }
 
