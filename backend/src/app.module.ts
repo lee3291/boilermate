@@ -14,6 +14,7 @@ import { ReportModule } from '@modules/report/report.module';
 import { ReCaptchaModule } from '@modules/reCaptcha/reCaptcha.module';
 import { PreferencesModule } from '@modules/preferences/preferences.module';
 import { ProfileModule } from '@modules/profile/profile.module';
+import { AnnouncementsModule } from './modules/announcements/announcements.module';
 // Ethan
 // import { ProfileModule } from './modules/profile/profile.module';
 import { VerificationModule } from './modules/verification/verification.module';
@@ -38,6 +39,7 @@ import { VerificationModule } from './modules/verification/verification.module';
     ReCaptchaModule,
     ProfileModule,
     VerificationModule,
+    AnnouncementsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
