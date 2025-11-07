@@ -163,6 +163,9 @@ export class ProfileService {
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
+    if (user.status !== 'ACTIVE') {
+      throw new NotFoundException('Profile not found');
+    }
 
     // Check if viewer has favorited this user (only if viewerId is provided and different from userId)
     let isFavoritedByMe = false;
