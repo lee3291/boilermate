@@ -3,7 +3,9 @@ import ChatSideBar from './ChatSideBar';
 import ChatWindow from './ChatWindow';
 import FakeSignIn from './FakeSignIn';
 import CreateGroupModal from './components/CreateGroupModal';
+import CreateNormalChatModal from './components/CreateNormalChatModal';
 import InvitationsModal from './components/InvitationsModal';
+import BlockModal from './components/BlockModal';
 import AddMembersModal from './components/AddMembersModal';
 
 export default function ChatPage() {
@@ -24,14 +26,17 @@ export default function ChatPage() {
         <div className="flex flex-1 w-full">
           {/* pass conversations/loading state to sidebar */}
           <ChatSideBar
-            conversations={logic.conversations}
-            selectedChatId={logic.selectedChatId}
-            onSelect={logic.setSelectedChatId}
-            loading={logic.loadingChats}
-            error={logic.error}
-            onCreateGroup={() => logic.setShowCreateGroupModal(true)}
-            onViewInvitations={() => logic.setShowInvitationsModal(true)}
-            invitationsCount={logic.invitationsCount}
+              currentUserId={logic.currentUserId}
+              conversations={logic.conversations}
+              selectedChatId={logic.selectedChatId}
+              onSelect={logic.setSelectedChatId}
+              loading={logic.loadingChats}
+              error={logic.error}
+              onCreateGroup={() => logic.setShowCreateGroupModal(true)}
+              onCreateNormalChat={() => logic.setShowCreateNormalChatModal(true)}
+              onBlock={() => logic.setShowBlockModal(true)}
+              onViewInvitations={() => logic.setShowInvitationsModal(true)}
+              invitationsCount={logic.invitationsCount}
           />
 
           {/* find selected conversation to show header info */}
@@ -50,6 +55,7 @@ export default function ChatPage() {
             selectedFile={logic.selectedFile}
             onFileChange={logic.handleFileChange}
             isUploadingImage={logic.isUploadingImage}
+            blockedBetween={logic.blockedBetween}
             // Group chat props
             showGroupMembersSidebar={logic.showGroupMembersSidebar}
             onToggleGroupMembersSidebar={() => logic.setShowGroupMembersSidebar(!logic.showGroupMembersSidebar)}
@@ -69,12 +75,31 @@ export default function ChatPage() {
           onCreateGroup={logic.handleCreateGroup}
         />
 
+          <CreateNormalChatModal
+              isOpen={logic.showCreateNormalChatModal}
+              onClose={() => logic.setShowCreateNormalChatModal(false)}
+              currentUserId={logic.currentUserId}
+              onSearchUsers={logic.handleSearchUsersForNormalChat}
+              onCreateChat={logic.handleCreateNormalChat}
+          />
+
+          <BlockModal
+              isOpen={logic.showBlockModal}
+              onClose={() => logic.setShowBlockModal(false)}
+              currentUserId={logic.currentUserId}
+              onSearchUsers={logic.handleSearchUsersForBlock}
+              onBlockUsers={logic.handleBlock}
+              onUnblockUsers={logic.handleUnblock}
+              //onGetBlockedList={logic.handleGetBlockedList}
+          />
+
         <InvitationsModal
           isOpen={logic.showInvitationsModal}
           onClose={() => logic.setShowInvitationsModal(false)}
           invitations={logic.invitations}
           onAccept={logic.handleAcceptInvitation}
           onDecline={logic.handleDeclineInvitation}
+          currentUserId={logic.currentUserId}
         />
 
         <AddMembersModal
@@ -82,7 +107,7 @@ export default function ChatPage() {
           onClose={() => logic.setShowAddMembersModal(false)}
           currentUserId={logic.currentUserId}
           chatId={logic.selectedChatId ?? ''}
-          onSearchUsers={(query) => logic.handleSearchUsersForGroup(logic.selectedChatId ?? '', query)}
+          onSearchUsers={(query) => logic.handleSearchUsersForGroup(logic.selectedChatId ?? '', logic.currentUserId, query)}
           onAddMember={logic.handleAddMember}
         />
       </div>

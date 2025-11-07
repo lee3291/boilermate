@@ -47,6 +47,11 @@ model User {
 
   // 4. Image owner - Opposite of Image.user
   images           Image[]
+  approvals        MessageApproval[]
+
+  // Block/Unblock in chat
+  usersBlocked   UserBlocking[] @relation("UserBlocked")      // users that this user has blocked
+  blockedByUsers UserBlocking[] @relation("UserBlockedBy")   // users who blocked this user
 
   // Links to preferences describing this user ("I am...")
   profilePreferences UserProfilePreference[]
@@ -98,3 +103,5 @@ enum Role {
   USER
   ADMIN
 }
+
+

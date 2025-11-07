@@ -1,24 +1,30 @@
 import ConversationListItem from './components/ConversationListItem';
 import CreateGroupButton from './components/CreateGroupButton';
+import CreateNormalChatButton from './components/CreateNormalChatButton';
 import InvitationsButton from './components/InvitationsButton';
+import BlockButton from './components/BlockButton';
 import type { Chat } from '@/types/chats/chat';
 
 export default function ChatSideBar({
+                                      currentUserId,
   conversations,
   selectedChatId,
   onSelect,
   loading,
-  error,
-  onCreateGroup,
+  error, onCreateNormalChat,
+  onCreateGroup, onBlock,
   onViewInvitations,
   invitationsCount = 0,
 }: {
+  currentUserId?: string;
   conversations?: Chat[];
   selectedChatId?: string | null;
   onSelect?: (id: string) => void;
   loading?: boolean;
   error?: string | null;
+  onCreateNormalChat?: () => void;
   onCreateGroup?: () => void;
+  onBlock?: () => void;
   onViewInvitations?: () => void;
   invitationsCount?: number;
 }) {
@@ -29,9 +35,13 @@ export default function ChatSideBar({
         <span className="font-semibold">Chats</span>
         <div className="flex items-center gap-2">
           {onViewInvitations && (
-            <InvitationsButton onClick={onViewInvitations} count={invitationsCount} />
+            <InvitationsButton
+                onClick={onViewInvitations}
+                count={invitationsCount} />
           )}
           {onCreateGroup && <CreateGroupButton onClick={onCreateGroup} />}
+          {onCreateNormalChat && <CreateNormalChatButton onClick={onCreateNormalChat} />}
+          {onBlock && <BlockButton onClick={onBlock} />}
         </div>
       </div>
       <div className="overflow-y-auto p-3 space-y-2">
@@ -40,15 +50,16 @@ export default function ChatSideBar({
         {!loading && !error && (conversations ?? []).length === 0 && (
           <div className="text-sm text-gray-500">No conversations</div>
         )}
-        {(conversations ?? []).map((c) => ( 
-          <ConversationListItem
-            key={c.id}
-            chat={c}
-            currentUserId={conversations && conversations.length > 0 ? undefined : undefined}
-            selected={selectedChatId === c.id}
-            onClick={() => onSelect?.(c.id)}
-          />
+        {(conversations ?? []).map((c) => (
+            <ConversationListItem
+                key={c.id}
+                chat={c}
+                currentUserId={currentUserId} // pass the actual current user
+                selected={selectedChatId === c.id}
+                onClick={() => onSelect?.(c.id)}
+            />
         ))}
+
       </div>
     </aside>
   );

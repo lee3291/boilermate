@@ -2,9 +2,14 @@
  * This is the place you create the interface to ensure type matching when working with the SERVICE of the MODULE
  * There are basically 2 interface you need for every API you created,
  */
-
 //* This section is reserved for basic interface
+export interface MessageApprovalDetails {
+  userId: string;
+  approved: boolean;
+}
 export interface MessageWithStatusDetails extends MessageDetails {
+  approved?: boolean; // check if the msg approve/unapprove
+  approvals?: MessageApprovalDetails[];
   isDeletedForYou?: boolean // this is a merge between the message with the message status table to form 1 single object for performance boost
 }
 
@@ -91,3 +96,21 @@ export interface deleteMessageDetails {
   forEveryone: string // used to be boolean but have to change as params only take string
 }
 
+//* This section is reserved for block/unblock users
+export interface blockUserDetails {
+  blockerId: string; // the user who blocks
+  blockedId: string; // the user being blocked
+}
+
+export interface unblockUserDetails {
+  blockerId: string; // previous blocker
+  blockedId: string; // the user who got unblock by blocker
+}
+
+export interface blockedUserResult {
+  userIds: string[]; // array of blocked user IDs
+}
+
+export interface searchUnblockedUserResult {
+  userIds: string[]; // array of unblocked user IDs
+}

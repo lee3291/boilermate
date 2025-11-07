@@ -11,7 +11,7 @@ declare global {
 interface RawMarker {
     title: string
     location: string
-    pricing?: number
+    price?: number
 }
 
 
@@ -84,7 +84,7 @@ export default function ListingMap() {
                 content: `<div style="padding:4px;">
                     <strong style="font-size:16px;">${raw.title}</strong>
                     <p style="font-size:12px;">${raw.location}</p>
-                    <p style="font-weight:bold; color:green; margin-top:4px;">Price: $${raw.pricing}</p>
+                    <p style="font-weight:bold; color:green; margin-top:4px;">Price: $${raw.price}</p>
                   </div>`,
             })
             marker.addListener("click", () => infoWindow.open(gMap, marker))

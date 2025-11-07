@@ -52,7 +52,7 @@ export class GroupChatsService {
         const groupChat = await tx.chat.create({
           data: {
             isGroup: true,
-            name, // uhh what if this is null
+            name, // Name will be null if it is 1-1 chat
             groupIcon: groupIcon || null,
             creatorId,
             latestMessageAt: new Date(),
@@ -116,6 +116,7 @@ export class GroupChatsService {
               groupIcon: true,
               isGroup: true,
               creatorId: true,
+              //participants: true,
             },
           },
         },
@@ -158,6 +159,21 @@ export class GroupChatsService {
         where: { id: invitationId },
         data: { status: 'ACCEPTED' },
       });
+
+      await client.messageApproval.updateMany({
+        where: {
+          userId,
+          message: {
+            chatId: invitation.chatId, // link through relation
+          },
+          approved: false, // only update those still waiting
+        },
+        data: {
+          approved: true,
+        },
+      });
+
+
     } catch (error) {
       Logger.error('acceptInvitation error', error);
       if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
@@ -425,25 +441,42 @@ export class GroupChatsService {
 
       await client.$transaction(async (tx: any) => {
         // Delete all participants
+        // Get all message IDs
+        const messages: { id: string }[] = await tx.message.findMany({
+          where: { chatId },
+          select: { id: true },
+        });
+        const messageIds = messages.map(m => m.id);
+
+        // Delete all message that have image need approvals
+        if (messageIds.length > 0) {
+          await tx.messageApproval.deleteMany({
+            where: {
+              messageId: { in: messageIds },
+            },
+          });
+        }
+
+        // Delete all user message statuses
+        if (messageIds.length > 0) {
+          await tx.userMessageStatus.deleteMany({
+            where: {
+              messageId: { in: messageIds },
+            },
+          });
+        }
+
+        // Delete all messages
+        await tx.message.deleteMany({
+          where: { id: { in: messageIds } },
+        });
+
+        // Delete all participants
         await tx.chatParticipant.deleteMany({
           where: { chatId },
         });
 
-        // Delete all message statuses for messages in this chat
-        await tx.userMessageStatus.deleteMany({
-          where: {
-            message: {
-              chatId,
-            },
-          },
-        });
-
-        // Delete all messages
-        await tx.message.deleteMany({
-          where: { chatId },
-        });
-
-        // Delete the chat
+        // Delete the chat itself
         await tx.chat.delete({
           where: { id: chatId },
         });
@@ -454,12 +487,26 @@ export class GroupChatsService {
       throw new InternalServerErrorException('Failed to delete group chat');
     }
   }
+  /**
+   * Returns true if user1 has blocked user2 OR user2 has blocked user1.
+   */
+  async isBlockedBetween(userId1: string, userId2: string): Promise<boolean> {
+    const block = await this.prisma.userBlocking.findFirst({
+      where: {
+        OR: [
+          { blockerId: userId1, blockedId: userId2 },
+          { blockerId: userId2, blockedId: userId1 },
+        ],
+      },
+    });
+    return !!block; // true if found, false if not
+  }
 
   /**
    * Search users for creating a new group chat
    * Returns users matching the query string (searches by userId for now)
    */
-  async searchUsersForGroupCreation(searchQuery: string): Promise<any> {
+  async searchUsersForGroupCreation(creatorId: string, searchQuery: string): Promise<any> {
     const client: any = this.prisma as any;
 
     try {
@@ -480,24 +527,47 @@ export class GroupChatsService {
         take: 20, // Limit results to 20 users
       });
 
-      return {
-        users,
-      };
+      // Get list of blocked user IDs for both directions
+      const blocks = await client.userBlocking.findMany({
+        where: {
+          OR: [
+            { blockerId: creatorId },
+            { blockedId: creatorId },
+          ],
+        },
+        select: {
+          blockerId: true,
+          blockedId: true,
+        },
+      });
+
+      // Build a set of user IDs that should be excluded
+      const blockedIds = new Set<string>();
+      for (const b of blocks) {
+        if (b.blockerId === creatorId) blockedIds.add(b.blockedId);
+        if (b.blockedId === creatorId) blockedIds.add(b.blockerId);
+      }
+
+      // Filter out blocked users
+      const filteredUsers = users.filter((u: { id: string }) => !blockedIds.has(u.id));
+
+      return { users: filteredUsers };
     } catch (error) {
       Logger.error('searchUsersForGroupCreation error', error);
       throw new InternalServerErrorException('Failed to search users');
     }
   }
 
+
   /**
    * Search users to add to an existing group chat
    * Excludes users who are already participants (ACCEPTED or PENDING)
    */
-  async searchUsersForAddingToGroup(chatId: string, searchQuery: string): Promise<any> {
+  async searchUsersForAddingToGroup(chatId: string, creatorId: string, searchQuery: string): Promise<{ users: any[] }> {
     const client: any = this.prisma as any;
 
     try {
-      // Verify chat exists and is a group
+      // 1. Verify chat exists and is a group
       const chat = await client.chat.findUnique({
         where: { id: chatId },
       });
@@ -510,16 +580,34 @@ export class GroupChatsService {
         throw new BadRequestException('This is not a group chat');
       }
 
-      // Get all existing participants (ACCEPTED, PENDING, or DECLINED)
+      // 2. Get all existing participants (ACCEPTED, PENDING, DECLINED)
       const existingParticipants = await client.chatParticipant.findMany({
         where: { chatId },
         select: { userId: true },
       });
-
       const existingUserIds = existingParticipants.map((p: any) => p.userId);
 
-      // Search by userId substring match, excluding existing participants
-      // TODO: Will search by username/name when those fields are added to User model
+      // 3. Get all users blocked by creator or who blocked creator
+      const blocks = await client.userBlocking.findMany({
+        where: {
+          OR: [
+            { blockerId: creatorId },
+            { blockedId: creatorId },
+          ],
+        },
+        select: {
+          blockerId: true,
+          blockedId: true,
+        },
+      });
+
+      const blockedIds = new Set<string>();
+      for (const b of blocks) {
+        if (b.blockerId === creatorId) blockedIds.add(b.blockedId);
+        if (b.blockedId === creatorId) blockedIds.add(b.blockerId);
+      }
+
+      // 4. Search users excluding blocked and existing participants
       const users = await client.user.findMany({
         where: {
           AND: [
@@ -531,7 +619,7 @@ export class GroupChatsService {
             },
             {
               id: {
-                notIn: existingUserIds, // Exclude users already in the group
+                notIn: [...existingUserIds, ...Array.from(blockedIds)],
               },
             },
           ],
@@ -541,16 +629,15 @@ export class GroupChatsService {
           email: true,
           // TODO: Add username, firstName, lastName when available
         },
-        take: 20, // Limit results to 20 users
+        take: 20,
       });
 
-      return {
-        users,
-      };
+      return { users };
     } catch (error) {
       Logger.error('searchUsersForAddingToGroup error', error);
       if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException('Failed to search users');
     }
   }
+
 }

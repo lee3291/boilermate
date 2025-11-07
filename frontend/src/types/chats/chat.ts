@@ -1,4 +1,9 @@
 //* This section is reserved for standard interfaces
+export interface Approval {
+  msgId: string;
+  userId: string;
+  approved: boolean;
+}
 export interface MessageWithStatus {
   id: string; // message id
   chatId: string // chat box id
@@ -10,6 +15,7 @@ export interface MessageWithStatus {
   createdAt: Date;
   updatedAt: Date;
   isDeletedForYou?: boolean // this is a merge between the message with the message status table to form 1 single object for performance boost
+  approvals?: Approval[];
 }
 
 // Participant details for chat members
@@ -37,6 +43,9 @@ export interface Chat {
   creatorId?: string; // creator's userId for group chats (null for DMs)
   latestMessageAt: Date;
   participants?: Participant[]; // NEW - list of all participants with their details
+  // true if user1 block user2 and vice versa
+  // false if no block or groupchat
+  //blockRelation?: boolean;
   // NOTE: userAId and userBId no longer exist - use participants for members
 }
 
@@ -80,4 +89,14 @@ export interface editMessageRequest {
 export interface deleteMessageRequest {
   userId: string;
   forEveryone: boolean;
+}
+
+export interface messageApprovalRequest {
+  messageId: string;
+  userId: string;
+}
+
+export interface messageApprovalResponse {
+  messageId: string;
+  approved: true;
 }

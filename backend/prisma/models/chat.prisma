@@ -55,6 +55,7 @@ model Message {
   sender           User        @relation(fields: [senderId], references: [id])
   statuses         UserMessageStatus[] // Link to per-user statuses
   image            Image?      @relation(fields: [imageId], references: [id]) // link image id to image object
+  approvals        MessageApproval[] // Link to all approve image message
 
   // Index for fast retrieval and sorting within a single chat thread
   @@index([chatId, createdAt])
@@ -72,5 +73,28 @@ model UserMessageStatus {
   message          Message     @relation(fields: [messageId], references: [id])
 
   @@unique([userId, messageId])
+}
+
+model MessageApproval {
+  id         String   @id @default(uuid())
+  messageId  String
+  userId     String   // The reciever who approve/unapprove the image
+  approved   Boolean
+  message    Message  @relation(fields: [messageId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId]) // One approval per user per message
+}
+
+model UserBlocking {
+  id        String   @id @default(uuid())
+  blockerId String   // the person doing the block
+  blockedId String   // the person being blocked
+  createdAt DateTime @default(now())
+
+  blocker   User     @relation("UserBlocked", fields: [blockerId], references: [id])
+  blocked   User     @relation("UserBlockedBy", fields: [blockedId], references: [id])
+
+  @@unique([blockerId, blockedId])
 }
 

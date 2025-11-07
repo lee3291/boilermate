@@ -21,7 +21,12 @@ import {
   GroupChatResponseDto,
   InvitationResponseDto,
   SearchUsersResponseDto,
+  MessageApprovalDto,
 } from './dto';
+import { BlockUserDto,
+  UnblockUserDto,
+  BlockedUserResultDto,
+  SearchUnblockedUserResultDto } from './dto/block.dto';
 
 /**
  * Chat endpoints
@@ -86,6 +91,16 @@ export class ChatsController {
   }
 
   /**
+   * Create a 1-1 chat
+   */
+  @Post('normal-chat')
+  @HttpCode(201)
+  async createNormalChat(@Body() dto: CreateGroupChatDto) {
+    const result = await this.chatsService.createNormalChat(dto as any);
+    return GroupChatResponseDto.fromGroupChat(result.groupChat);
+  }
+
+  /**
    * Get all pending invitations for the user
    */
   @Get('invitations')
@@ -117,6 +132,25 @@ export class ChatsController {
     @Body() dto: DeclineInvitationDto
   ) {
     await this.groupChatsService.declineInvitation(invitationId, dto as any);
+  }
+
+  /**
+   * Check if it is 1-1 or group chat
+   */
+  @Get(':chatId/type')
+  @HttpCode(201)
+  async getChatType(@Param('chatId') chatId: string) {
+    return this.chatsService.checkChatType(chatId);
+  }
+
+  /**
+   * Check if the 1-1 chat already exist given senderId and recipentId
+   */
+  @Get('check-normal-chat')
+  @HttpCode(201)
+  async checkExistingNormalChat(@Query('userId') userId: string, @Query('receiverId') receiverId: string,
+  ) {
+    return this.chatsService.findExistingNormalChat(userId, receiverId);
   }
 
   /**
@@ -170,13 +204,23 @@ export class ChatsController {
   }
 
   /**
+   * Search users for creating a 1-1 chat
+   * Query param: q (search query string)
+   */
+  @Get('users/search-normal-chat')
+  @HttpCode(200)
+  async searchUsersForNormalChatCreation(@Query('creatorId') creatorId: string, @Query('q') searchQuery: string) {
+    const result = await this.chatsService.searchUsersForNormalChatCreation(creatorId, searchQuery);
+    return SearchUsersResponseDto.fromResult(result);
+  }
+  /**
    * Search users for creating a new group chat
    * Query param: q (search query string)
    */
   @Get('users/search')
   @HttpCode(200)
-  async searchUsersForGroupCreation(@Query('q') searchQuery: string) {
-    const result = await this.groupChatsService.searchUsersForGroupCreation(searchQuery);
+  async searchUsersForGroupCreation(@Query('creatorId') creatorId: string, @Query('q') searchQuery: string) {
+    const result = await this.groupChatsService.searchUsersForGroupCreation(creatorId, searchQuery);
     return SearchUsersResponseDto.fromResult(result);
   }
 
@@ -188,10 +232,85 @@ export class ChatsController {
   @Get(':chatId/users/search')
   @HttpCode(200)
   async searchUsersForAddingToGroup(
-    @Param('chatId') chatId: string, 
+      @Param('chatId') chatId: string,
+      @Query('creatorId') creatorId: string,
     @Query('q') searchQuery: string
   ) {
-    const result = await this.groupChatsService.searchUsersForAddingToGroup(chatId, searchQuery);
+    const result = await this.groupChatsService.searchUsersForAddingToGroup(chatId, creatorId, searchQuery);
     return SearchUsersResponseDto.fromResult(result);
   }
+
+  /*
+   * Approve msgs
+   */
+  @Post('messages/:messageId/approve')
+  @HttpCode(200)
+  async approveMessage(
+      @Param('messageId') messageId: string,
+      @Body() dto: MessageApprovalDto
+  ) {
+    return this.chatsService.approveMessage(messageId, dto.userId);
+  }
+  /*
+   * Get row msg approval
+   */
+  @Get('messages/:messageId/approve-status')
+  @HttpCode(200)
+  async approveMessageStatus(@Param('messageId') messageId: string, @Body() dto: MessageApprovalDto
+  ) {
+    return this.chatsService.approveMessageStatus(messageId, dto.userId);
+  }
+
+  /*
+   * Given userId, recieve a list of user that got blocked by userId
+   */
+  @Get(':userId/blocked')
+  async getBlockedByUserId(@Param('userId') userId: string): Promise<{ users: { id: string; email: string }[] }> {
+    const users = await this.chatsService.getBlockedByUserId({ userId }); // should return full user objects
+    return { users }; // now matches the type { users: { id, email }[] }
+  }
+
+  /*
+   * Given userId, recieve a list of user who block userId
+   */
+  @Get(':userId/blocked-by')
+  async getUsersWhoBlockedMeIds(@Param('userId') userId: string): Promise<any> {
+    const userIds = await this.chatsService.getUsersWhoBlockedMeIds({ userId });
+    return { userIds }; // list
+  }
+
+  /*
+   * Given userId, recieve a list of user that userId can block
+   */
+  @Get(':userId/can-block')
+  async getUserIdsCanBlock(@Param('userId') userId: string): Promise<{ users: { id: string; email: string }[] }> {
+    const users = await this.chatsService.getUserIdsCanBlock({ userId });
+    return { users };
+  }
+  /*
+   * Block
+   */
+  @Post(':userId/blocked') // userId is the person who block other
+  async blockUser(@Param('userId') userId: string, @Body() dto: BlockUserDto): Promise<void> {
+    await this.chatsService.blockUser({ blockerId: userId, blockedId: dto.blockedId });
+  }
+
+  /*
+   * Unblock
+   */
+
+  @Delete(':userId/unblock') // userId is the person who unblock other
+  async unblockUser(@Param('userId') userId: string, @Body() dto: UnblockUserDto): Promise<void> {
+    await this.chatsService.unblockUser({ blockerId: userId, blockedId: dto.blockedId });
+  }
+
+  /*
+   * Returns true if user1 has blocked user2 OR user2 has blocked user1.
+   */
+  @Get('is-block-between')
+  async checkBlocked(@Query('user1') user1: string, @Query('user2') user2: string): Promise<{ blocked: boolean }> {
+    const blocked = await this.chatsService.isBlockedBetween(user1, user2);
+    return { blocked };
+  }
+
 }

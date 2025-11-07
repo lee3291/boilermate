@@ -5,6 +5,10 @@ import { signIn } from '../../services/auth.service';
 import { useAuth } from '../../contexts/AuthContext';
 import HomeNavbar from '../home/components/HomeNavbar';
 import { isAxiosError } from 'axios';
+import ReCAPTCHA from 'react-google-recaptcha';
+import { verifyCaptcha as apiVerifyCaptcha } from '@/services/reCaptcha.service';
+
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
 const SignInPage = () => {
   const navigate = useNavigate();
@@ -13,12 +17,25 @@ const SignInPage = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    if (!captchaToken) {
+      setError('Please complete the reCAPTCHA!');
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
+      // Verify CAPTCHA first
+      const captchaResult = await apiVerifyCaptcha({ token: captchaToken });
+      if (!captchaResult.success) {
+        setError('reCAPTCHA verification failed.');
+        setIsLoading(false);
+        setCaptchaToken(null);
+        return;
+      }
       const data = await signIn({ email, password });
       if (data.status === 'deactivated') {
         navigate('/reactivate-account', {
@@ -72,6 +89,14 @@ const SignInPage = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+            
+            <div className="flex justify-center">
+              <ReCAPTCHA
+                  sitekey={RECAPTCHA_SITE_KEY}
+                  onChange={(token: string | null) => setCaptchaToken(token)}
+              />
+            </div>
+            
             <button
               type='submit'
               disabled={isLoading}
@@ -87,3 +112,4 @@ const SignInPage = () => {
 };
 
 export default SignInPage;
+

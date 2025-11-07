@@ -4,7 +4,6 @@ import './style.css';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 import ListingDetails from './pages/user/listings/ListingDetails.tsx';
-
 // Import all top-level views/components
 import ChatPage from './pages/user/chat/ChatPage.tsx';
 
@@ -44,6 +43,8 @@ import ProfileViewPage from './pages/user/roommates/ProfileViewPage.tsx';
 import VerificationPage from './pages/user/VerificationPage';
 import VerificationDashboard from './pages/admin/VerificationDashboard';
 
+import ReCaptchaPage from './pages/reCaptcha/reCaptchaForm';
+
 const router = createBrowserRouter([
   // Public routes
   {
@@ -75,10 +76,14 @@ const router = createBrowserRouter([
     path: '/reset-password',
     element: <ResetPasswordPage />,
   },
+  {
+    path: '/verify-captcha',
+    element: <ReCaptchaPage />,
+  },
 
   // Protected routes
   {
-    element: <ProtectedRoute />,
+    //element: <ProtectedRoute />,
     children: [
       {
         path: '/preferences',

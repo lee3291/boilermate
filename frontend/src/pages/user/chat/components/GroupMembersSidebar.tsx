@@ -149,6 +149,7 @@ export default function GroupMembersSidebar({
                         <span className="text-xs text-gray-500">(You)</span>
                       )}
                       {/* Show status badge if not ACCEPTED */}
+                      {/*
                       {member.status && member.status !== 'ACCEPTED' && (
                         <span className={`text-xs px-2 py-0.5 rounded-full ${
                           member.status === 'PENDING' 
@@ -158,6 +159,7 @@ export default function GroupMembersSidebar({
                           {member.status}
                         </span>
                       )}
+                      */}
                     </div>
                   </div>
                 </div>

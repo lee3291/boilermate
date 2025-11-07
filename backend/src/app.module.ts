@@ -11,6 +11,7 @@ import { ChatsModule } from '@modules/chats/chats.module';
 import { UploadsModule } from '@modules/uploads/uploads.module';
 import { BugReportModule } from './modules/bug-report/bug-report.module';
 import { ReportModule } from '@modules/report/report.module';
+import { ReCaptchaModule } from '@modules/reCaptcha/reCaptcha.module';
 import { PreferencesModule } from '@modules/preferences/preferences.module';
 import { ProfileModule } from '@modules/profile/profile.module';
 // Ethan
@@ -33,6 +34,8 @@ import { VerificationModule } from './modules/verification/verification.module';
     OTPModule,
     ListingsModule,
     BugReportModule,
+    ReportModule,
+    ReCaptchaModule,
     ProfileModule,
     VerificationModule,
   ],
