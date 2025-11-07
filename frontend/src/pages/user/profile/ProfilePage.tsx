@@ -116,8 +116,19 @@ export default function ProfilePage() {
               onClick: () => {
                 window.location.href = '/verification';
               },
-              type: 'primary',
+              type: 'primary' as const,
             },
+            ...(user?.role === 'ADMIN'
+              ? [
+                  {
+                    label: 'Verification Requests',
+                    onClick: () => {
+                      window.location.href = '/admin/verification-requests';
+                    },
+                    type: 'primary' as const,
+                  },
+                ]
+              : []),
           ]}
         />
       </div>
