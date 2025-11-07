@@ -17,6 +17,20 @@ export default function AvatarUploader({
   onAvatarChange,
   isEditable = true,
 }: AvatarUploaderProps) {
+  const defaultSvg = (
+    <svg
+      className='h-full w-full text-gray-300'
+      viewBox='0 0 24 24'
+      fill='currentColor'
+      aria-hidden='true'
+    >
+      <circle cx='12' cy='12' r='12' />
+      <path
+        d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'
+        fill='#A0AEC0'
+      />
+    </svg>
+  );
   const [previewUrl, setPreviewUrl] = useState<string>(currentAvatarUrl);
   const [isHovering, setIsHovering] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -60,25 +74,29 @@ export default function AvatarUploader({
     <div className='relative inline-block'>
       {/* Avatar Image */}
       <div
-        className={`relative w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-xl ${
+        className={`relative h-32 w-32 overflow-hidden rounded-full border-4 border-white shadow-xl ${
           isEditable ? 'cursor-pointer' : ''
         }`}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
         onClick={handleClick}
       >
-        <img
-          src={previewUrl}
-          alt='Profile avatar'
-          className='w-full h-full object-cover'
-        />
+        {previewUrl ? (
+          <img
+            src={previewUrl}
+            alt='Profile avatar'
+            className='h-full w-full object-cover'
+          />
+        ) : (
+          defaultSvg
+        )}
 
         {/* Hover Overlay (only if editable) */}
         {isEditable && isHovering && (
-          <div className='absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white transition-opacity'>
+          <div className='absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white transition-opacity'>
             <svg
               xmlns='http://www.w3.org/2000/svg'
-              className='h-8 w-8 mb-1'
+              className='mb-1 h-8 w-8'
               fill='none'
               viewBox='0 0 24 24'
               stroke='currentColor'
@@ -116,7 +134,7 @@ export default function AvatarUploader({
       {isEditable && (
         <button
           onClick={handleClick}
-          className='absolute bottom-0 right-0 w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform'
+          className='absolute right-0 bottom-0 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg transition-transform hover:scale-110'
         >
           <svg
             xmlns='http://www.w3.org/2000/svg'

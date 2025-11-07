@@ -35,11 +35,27 @@ import {
   GetMyVotesResponseDto,
 } from './dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdateAvatarDto } from './dto/update-avatar.dto';
 import { User } from '@modules/auth/decorators/user.decorator';
 import { AuthGuard } from '@nestjs/passport';
 
 @Controller('profile')
 export class ProfileController {
+  /**
+   * PATCH /profile/avatar
+   * Update current user's avatar URL
+   */
+  @Patch('avatar')
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(200)
+  async updateAvatar(
+    @Body() dto: UpdateAvatarDto,
+    @User() user: any,
+  ): Promise<any> {
+    const userId = user?.id || user?.userId || user?.sub;
+    if (!userId) throw new BadRequestException('User ID not found in session');
+    return this.profileService.updateAvatar(userId, dto.avatarKey);
+  }
   /**
    * PATCH /profile
    * Update current user's profile (phone, bio, searchStatus)

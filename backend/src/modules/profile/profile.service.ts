@@ -32,6 +32,23 @@ import {
 @Injectable()
 export class ProfileService {
   /**
+   * Update current user's avatar URL
+   */
+  async updateAvatar(userId: string, avatarKey: string): Promise<any> {
+    if (!avatarKey) {
+      throw new BadRequestException('Avatar key is required');
+    }
+    // Construct the S3 URL (assuming public access or CloudFront)
+    const bucket = process.env.AWS_S3_BUCKET;
+    const region = process.env.AWS_REGION;
+    const avatarURL = `https://${bucket}.s3.${region}.amazonaws.com/${avatarKey}`;
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarURL },
+    });
+    return user;
+  }
+  /**
    * Update current user's profile (phone, bio, searchStatus)
    */
   async updateProfile(
