@@ -25,7 +25,8 @@ import { UserProvider } from './pages/user/listings/temp/UserContext.tsx';
 import SavedListings from './pages/user/listings/SavedListings';
 import UserReportsDashboard from './pages/admin/UserReportsDashboard.tsx';
 import BugReportsDashboard from './pages/admin/BugReportDashboard.tsx';
-import BugReportPage from './pages/bug-report/BugReportPage.tsx';
+import ReportBug from './pages/bug-report/ReportBug.tsx';
+
 import ReportPage from './pages/report/ReportPage.tsx';
 import ReportTestPage from './pages/report/ReportTestPage.tsx';
 // import ListingsCreateTest from './pages/user/ListingsTest.tsx';
@@ -44,6 +45,10 @@ import VerificationPage from './pages/user/VerificationPage';
 import VerificationDashboard from './pages/admin/VerificationDashboard';
 
 import ReCaptchaPage from './pages/reCaptcha/reCaptchaForm';
+
+import AnnouncementsDashboard from './pages/admin/AnnouncementsDashboard.tsx';
+import UserAnnouncements from "./pages/admin/UserAnnouncements";
+
 
 const router = createBrowserRouter([
   // Public routes
@@ -112,8 +117,8 @@ const router = createBrowserRouter([
         element: <VerificationPage />,
       },
       {
-        path: '/bug-report',
-        element: <BugReportPage />,
+        path: '/report-bug',
+        element: <ReportBug />,
       },
       {
         path: '/listing-map',
@@ -162,13 +167,22 @@ const router = createBrowserRouter([
         element: <UserReportsDashboard />,
       },
       {
-        path: '/bug-reports',
-        element: <BugReportsDashboard />,
+        path: '/admin/bug-dashboard',
+        element: <BugDashboard />,
       },
       {
         path: '/admin/verification-requests',
         element: <VerificationDashboard />,
       },
+      {
+        path: '/announcements',
+        element: <AnnouncementsDashboard />,
+      },
+      {
+        path: "/announcementspage",
+        element: <UserAnnouncements />,
+      },
+
     ],
   },
 ]);
@@ -176,6 +190,7 @@ const router = createBrowserRouter([
 import { AuthProvider } from './contexts/AuthContext';
 import { Home } from 'lucide-react';
 import MyListings from './pages/user/listings/user/MyListings.tsx';
+import BugDashboard from './pages/admin/BugDashboard.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

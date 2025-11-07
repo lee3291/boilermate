@@ -8,11 +8,3 @@ model Report {
   createdAt       DateTime  @default(now())
 }
 
-model BugReport {
-  id            Int       @id @default(autoincrement())
-  title         String
-  description   String
-  stepsToReprod String
-  status        String    @default("open")
-  createdAt     DateTime  @default(now())
-}

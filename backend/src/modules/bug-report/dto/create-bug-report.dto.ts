@@ -1,18 +1,24 @@
-import { IsString, IsIn, IsNotEmpty, IsOptional } from 'class-validator';
+// src/modules/bug-report/dto/create-bug-report.dto.ts
+import { IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class CreateBugReportDto {
-  @IsString()
   @IsNotEmpty()
+  @IsString()
   title: string;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  description?: string;
+  description: string;
+
+  @IsNotEmpty()
+  @IsString()
+  steps: string;
+
+  @IsNotEmpty()
+  @IsString()
+  userId: string;
 
   @IsOptional()
   @IsString()
-  stepsToReprod?: string;
-
-  @IsIn(['open', 'in_progress', 'closed'])
-  status?: string;
+  priority?: string;
 }
