@@ -6,8 +6,9 @@ export default function Navbar() {
 
     const NAV_ITEMS: navItem[] = [
         { label: 'Dashboard', href: '/dashboard' },
+        { label: 'Profile' , href: '/profile'},
         { label: 'Listings', href: '/listings' },
-        { label: 'Roomates', href: '/roomates' },
+        { label: 'Roommates', href: '/roommates' },
         { label: 'Messages', href: '/messages' },
     ];
 
@@ -59,4 +60,3 @@ export default function Navbar() {
         </div>
     );
 }
-

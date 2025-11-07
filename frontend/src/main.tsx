@@ -32,10 +32,15 @@ import ReportTestPage from './pages/report/ReportTestPage.tsx';
 // import ListingsCreateTest from './pages/user/ListingsTest.tsx';
 
 import ProtectedRoute from './components/ProtectedRoute';
-import UserProfilePage from './pages/user/UserProfilePage';
-import PublicProfilePage from './pages/user/PublicProfilePage';
+// import UserProfilePage from './pages/user/UserProfilePage';
+// Updated: Renamed from PreferencesPage to ProfilePage (better semantic naming)
+import ProfilePage from './pages/user/profile/ProfilePage.tsx';
+import RoommatesPage from './pages/user/roommates/RoommatesPage.tsx';
+import ProfileViewPage from './pages/user/roommates/ProfileViewPage.tsx';
+// Ethan
+//import PublicProfilePage from './pages/user/PublicProfilePage';
 
-import EditProfilePage from './pages/user/EditProfilePage';
+//import EditProfilePage from './pages/user/EditProfilePage';
 import VerificationPage from './pages/user/VerificationPage';
 import VerificationDashboard from './pages/admin/VerificationDashboard';
 
@@ -76,17 +81,40 @@ const router = createBrowserRouter([
     element: <ProtectedRoute />,
     children: [
       {
+        path: '/preferences',
+        element: <ProfilePage />,
+      },
+      // Legacy route - kept for backward compatibility
+      // TODO: Remove after migrating all references to /profile
+      // {
+      //   path: '/preferences',
+      //   element: <ProfilePage />,
+      // },
+      {
         path: '/profile',
-        element: <UserProfilePage />,
+        element: <ProfilePage />,
       },
       {
-        path: '/profile/:username',
-        element: <PublicProfilePage />,
+        path: '/roommates',
+        element: <RoommatesPage />,
       },
       {
-        path: '/profile/edit',
-        element: <EditProfilePage />,
+        path: '/profile/:userId',
+        element: <ProfileViewPage />,
       },
+      // Ethan profile route
+      // {
+      //   path: '/profile',
+      //   element: <UserProfilePage />,
+      // },
+      // {
+      //   path: '/profile/:username',
+      //   element: <PublicProfilePage />,
+      // },
+      // {
+      //   path: '/profile/edit',
+      //   element: <EditProfilePage />,
+      // },
       {
         path: '/verification',
         element: <VerificationPage />,
