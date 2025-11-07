@@ -19,6 +19,7 @@ export interface UserProfile {
 export interface VerificationUser {
   id: string;
   email: string;
+  legalName?: string;
   profileInfo: UserProfile | null;
 }
 

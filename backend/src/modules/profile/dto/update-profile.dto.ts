@@ -11,6 +11,9 @@ import { SearchStatus } from '@prisma/client';
 export class UpdateProfileDto {
   @IsString()
   @IsOptional()
+  legalName?: string;
+  @IsString()
+  @IsOptional()
   @Matches(/^[0-9]{10}$/, {
     message: 'Phone number must be a 10-digit string of numbers.',
   })
