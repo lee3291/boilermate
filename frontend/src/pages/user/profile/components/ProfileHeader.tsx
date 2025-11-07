@@ -30,7 +30,7 @@ interface ProfileHeaderProps {
 export default function ProfileHeader(props: ProfileHeaderProps) {
   const { user, voteStats, onAvatarChange, isEditable = true } = props;
   return (
-    <div className='mb-8 overflow-hidden rounded-2xl bg-linear-to-br from-pink-500 to-purple-600 shadow-2xl'>
+    <div className='mb-8 min-h-[250px] overflow-hidden rounded-2xl bg-linear-to-br from-pink-500 to-purple-600 shadow-2xl'>
       <div className='p-8'>
         <div className='flex items-start gap-8'>
           {/* Profile Image with Upload Capability */}
