@@ -11,6 +11,7 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
+
   async onModuleInit(): Promise<void> {
     try {
       Logger.log('Attempting to connect to database...');
