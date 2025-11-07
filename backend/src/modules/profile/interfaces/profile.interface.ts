@@ -13,11 +13,11 @@ export interface ProfileSummary {
   major?: string;
   year?: string;
   bio?: string;
-
+  
   // Lifestyle preferences count (not full details)
   lifestylePreferencesCount: number;
   roommatePreferencesCount: number;
-
+  
   // Favorite status - whether current user has favorited this profile
   isFavoritedByMe?: boolean;
 }
@@ -26,17 +26,15 @@ export interface ProfileSummary {
 export interface ProfileDetails {
   id: string;
   email: string;
-  legalName?: string;
-  phoneNumber?: string;
-  avatarURL?: string;
-  searchStatus?: string;
-  isVerified?: boolean;
-  name?: string;
-  profileImage?: string;
+  // TODO: Add username, firstName, lastName, profileImage when available
+  
+  // Basic info
   age?: number;
   major?: string;
   year?: string;
   bio?: string;
+  
+  // Lifestyle preferences (I am...)
   lifestylePreferences: {
     id: string;
     category: string;
@@ -45,6 +43,8 @@ export interface ProfileDetails {
     importance: number;
     visibility: string;
   }[];
+  
+  // Roommate preferences (I want...)
   roommatePreferences: {
     id: string;
     category: string;
@@ -66,7 +66,7 @@ export interface SearchUsersRequest {
   userId: string; // Current user ID (to exclude from results)
   page?: number; // Pagination page (default 1)
   limit?: number; // Items per page (default 20)
-
+  
   // Filter by user's lifestyle preferences matching current user's roommate preferences
   preferenceIds?: string[]; // Preference IDs to filter by
   importanceOperator?: 'equal' | 'less_or_equal' | 'greater_or_equal'; // How to compare importance

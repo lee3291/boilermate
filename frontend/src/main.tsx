@@ -9,7 +9,7 @@ import ChatPage from './pages/user/chat/ChatPage.tsx';
 
 // Auth pages
 // import LandingPage from './pages/public/LandingPage';
-import Homepage from './pages/home/Homepage.tsx';
+import Homepage from './pages/home/Homepage.tsx'
 import SignInPage from './pages/public/SignInPage';
 import SignUpPage from './pages/public/SignUpPage';
 import ReactivateAccountPage from './pages/public/ReactivateAccountPage';
@@ -23,12 +23,11 @@ import Listings from './pages/user/listings/Listings.tsx';
 import TempAccount from './pages/user/listings/temp/TempAccount.tsx';
 import { UserProvider } from './pages/user/listings/temp/UserContext.tsx';
 import SavedListings from './pages/user/listings/SavedListings';
-import UserReportsDashboard from './pages/admin/UserReportsDashboard.tsx';
+import UserReportsDashboard from './pages/user-report/UserReportDashboard.tsx';
 import BugReportsDashboard from './pages/admin/BugReportDashboard.tsx';
 import ReportBug from './pages/bug-report/ReportBug.tsx';
 
-import ReportPage from './pages/report/ReportPage.tsx';
-import ReportTestPage from './pages/report/ReportTestPage.tsx';
+import UserReportForm from "./pages/user-report/UserReportForm.tsx";
 // import ListingsCreateTest from './pages/user/ListingsTest.tsx';
 
 import ProtectedRoute from './components/ProtectedRoute';
@@ -112,6 +111,19 @@ const router = createBrowserRouter([
         path: '/profile/:userId',
         element: <ProfileViewPage />,
       },
+      // Ethan profile route
+      // {
+      //   path: '/profile',
+      //   element: <UserProfilePage />,
+      // },
+      // {
+      //   path: '/profile/:username',
+      //   element: <PublicProfilePage />,
+      // },
+      // {
+      //   path: '/profile/edit',
+      //   element: <EditProfilePage />,
+      // },
       {
         path: '/verification',
         element: <VerificationPage />,
@@ -120,6 +132,10 @@ const router = createBrowserRouter([
         path: '/report-bug',
         element: <ReportBug />,
       },
+      { 
+        path: "/report-user", 
+        element: <UserReportForm /> 
+      }, 
       {
         path: '/listing-map',
         element: <ListingMap />,
@@ -154,14 +170,7 @@ const router = createBrowserRouter([
         path: '/messages',
         element: <ChatPage />,
       },
-      {
-        path: '/report',
-        element: <ReportPage />,
-      },
-      {
-        path: '/reporttest',
-        element: <ReportTestPage />,
-      },
+
       {
         path: '/user-reports',
         element: <UserReportsDashboard />,

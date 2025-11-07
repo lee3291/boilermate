@@ -3,78 +3,29 @@
  * Handles profile retrieval and matching logic
  */
 
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  ConflictException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '@core/database/prisma.service';
-import {
-  GetProfileDetailsDto,
-  SearchUsersDto,
-  AddFavoriteDto,
-  RemoveFavoriteDto,
+import { 
+  GetProfileDetailsDto, 
+  SearchUsersDto, 
+  AddFavoriteDto, 
+  RemoveFavoriteDto, 
   GetFavoritesDto,
   VoteUserDto,
   RemoveVoteDto,
   GetMyVotesDto,
   GetVoteStatsDto,
-  ProfileDetailsDto,
-  ProfileSummaryDto,
-  SearchUsersResponseDto,
+  ProfileDetailsDto, 
+  ProfileSummaryDto, 
+  SearchUsersResponseDto, 
   GetFavoritesResponseDto,
   VoteResponseDto,
   VoteStatsDto,
-  GetMyVotesResponseDto,
+  GetMyVotesResponseDto
 } from './dto';
 
 @Injectable()
 export class ProfileService {
-  /**
-   * Update current user's avatar URL
-   */
-  async updateAvatar(userId: string, avatarKey: string): Promise<any> {
-    if (!avatarKey) {
-      throw new BadRequestException('Avatar key is required');
-    }
-    // Construct the S3 URL (assuming public access or CloudFront)
-    const bucket = process.env.AWS_S3_BUCKET;
-    const region = process.env.AWS_REGION;
-    const avatarURL = `https://${bucket}.s3.${region}.amazonaws.com/${avatarKey}`;
-    const user = await this.prisma.user.update({
-      where: { id: userId },
-      data: { avatarURL },
-    });
-    return user;
-  }
-  /**
-   * Update current user's profile (phone, bio, searchStatus)
-   */
-  async updateProfile(
-    userId: string,
-    dto: {
-      legalName?: string;
-      phoneNumber?: string;
-      bio?: string;
-      searchStatus?: string;
-    },
-  ): Promise<any> {
-    // Only allow updating allowed fields
-    const data: any = {};
-    if (dto.legalName !== undefined) data.legalName = dto.legalName;
-    if (dto.phoneNumber !== undefined) data.phoneNumber = dto.phoneNumber;
-    if (dto.bio !== undefined) data.bio = dto.bio;
-    if (dto.searchStatus !== undefined) data.searchStatus = dto.searchStatus;
-    if (Object.keys(data).length === 0) {
-      throw new BadRequestException('No valid fields to update');
-    }
-    const user = await this.prisma.user.update({
-      where: { id: userId },
-      data,
-    });
-    return user;
-  }
   constructor(private readonly prisma: PrismaService) {}
 
   /**
@@ -116,13 +67,7 @@ export class ProfileService {
     ]);
 
     // Own profile is never favorited by self and has no vote
-    return ProfileDetailsDto.fromProfile(
-      user,
-      false,
-      null,
-      likesReceived,
-      dislikesReceived,
-    );
+    return ProfileDetailsDto.fromProfile(user, false, null, likesReceived, dislikesReceived);
   }
 
   /**
@@ -163,14 +108,11 @@ export class ProfileService {
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
-    if (user.status !== 'ACTIVE' || user.searchStatus === 'HIDDEN') {
-      throw new NotFoundException('Profile not found');
-    }
 
     // Check if viewer has favorited this user (only if viewerId is provided and different from userId)
     let isFavoritedByMe = false;
     let myVoteType: 'LIKE' | 'DISLIKE' | null = null;
-
+    
     if (viewerId && viewerId !== userId) {
       const [favorite, vote] = await Promise.all([
         this.prisma.favoriteMatch.findUnique({
@@ -190,7 +132,7 @@ export class ProfileService {
           },
         }),
       ]);
-
+      
       isFavoritedByMe = !!favorite;
       myVoteType = vote?.voteType || null;
     }
@@ -205,13 +147,7 @@ export class ProfileService {
       }),
     ]);
 
-    return ProfileDetailsDto.fromProfile(
-      user,
-      isFavoritedByMe,
-      myVoteType,
-      likesReceived,
-      dislikesReceived,
-    );
+    return ProfileDetailsDto.fromProfile(user, isFavoritedByMe, myVoteType, likesReceived, dislikesReceived);
   }
 
   /**
@@ -224,31 +160,17 @@ export class ProfileService {
     // Ensure page and limit are numbers (workaround until ValidationPipe is active)
     const page = Number(dto.page) || 1;
     const limit = Number(dto.limit) || 10;
-    const {
-      userId,
-      preferenceIds: preferenceIdsString,
-      importanceOperator,
-      importanceValue: importanceValueRaw,
-    } = dto;
+    const { userId, preferenceIds: preferenceIdsString, importanceOperator, importanceValue: importanceValueRaw } = dto;
 
     // Parse comma-separated preferenceIds string into array
-    const preferenceIds = preferenceIdsString
-      ? preferenceIdsString
-          .split(',')
-          .map((id) => id.trim())
-          .filter((id) => id.length > 0)
+    const preferenceIds = preferenceIdsString 
+      ? preferenceIdsString.split(',').map(id => id.trim()).filter(id => id.length > 0)
       : [];
 
     // Ensure importanceValue is a number
-    const importanceValue = importanceValueRaw
-      ? Number(importanceValueRaw)
-      : undefined;
+    const importanceValue = importanceValueRaw ? Number(importanceValueRaw) : undefined;
 
-    console.log('Search filters:', {
-      preferenceIds,
-      importanceOperator,
-      importanceValue,
-    });
+    console.log('Search filters:', { preferenceIds, importanceOperator, importanceValue });
 
     // Calculate skip for pagination
     const skip = (page - 1) * limit;
@@ -256,17 +178,12 @@ export class ProfileService {
     // Build where clause for filtering by lifestyle preferences
     const whereClause: any = {
       id: { not: userId },
-      status: 'ACTIVE',
-      searchStatus: { not: 'HIDDEN' },
     };
 
     // If filtering by specific preferences
     if (preferenceIds.length > 0) {
-      const importanceCondition = this.buildImportanceCondition(
-        importanceOperator,
-        importanceValue,
-      );
-
+      const importanceCondition = this.buildImportanceCondition(importanceOperator, importanceValue);
+      
       whereClause.profilePreferences = {
         some: {
           preferenceId: { in: preferenceIds },
@@ -321,16 +238,16 @@ export class ProfileService {
     ]);
 
     // Create a Set of favorited user IDs for quick lookup
-    const favoritedUserIds = new Set(myFavorites.map((f) => f.favoritedUserId));
+    const favoritedUserIds = new Set(myFavorites.map(f => f.favoritedUserId));
 
     // Create a Map of voted user IDs -> vote type for quick lookup
     const myVoteMap = new Map<string, 'LIKE' | 'DISLIKE'>();
-    myVotes.forEach((vote) => {
+    myVotes.forEach(vote => {
       myVoteMap.set(vote.votedUserId, vote.voteType);
     });
 
     // Get vote counts for all users in results
-    const userIds = users.map((u) => u.id);
+    const userIds = users.map(u => u.id);
     const voteCounts = await this.prisma.userVote.groupBy({
       by: ['votedUserId', 'voteType'],
       where: {
@@ -358,16 +275,21 @@ export class ProfileService {
       const votes = voteMap.get(user.id) || { likes: 0, dislikes: 0 };
       const myVote = myVoteMap.get(user.id) || null;
       return ProfileSummaryDto.fromProfile(
-        user,
+        user, 
         favoritedUserIds.has(user.id),
         myVote,
         votes.likes,
-        votes.dislikes,
+        votes.dislikes
       );
     });
 
     // Return paginated response
-    return SearchUsersResponseDto.fromProfiles(profiles, total, page, limit);
+    return SearchUsersResponseDto.fromProfiles(
+      profiles,
+      total,
+      page,
+      limit
+    );
   }
 
   /**
@@ -375,7 +297,7 @@ export class ProfileService {
    */
   private buildImportanceCondition(
     operator?: 'equal' | 'less_or_equal' | 'greater_or_equal',
-    value?: number,
+    value?: number
   ): any {
     if (!operator || value === undefined) {
       return {};
@@ -397,9 +319,7 @@ export class ProfileService {
    * Add a user to favorites
    * Creates a FavoriteMatch record
    */
-  async addFavorite(
-    dto: AddFavoriteDto,
-  ): Promise<{ message: string; favoriteId: string }> {
+  async addFavorite(dto: AddFavoriteDto): Promise<{ message: string; favoriteId: string }> {
     const { userId, favoritedUserId } = dto;
 
     // Validate: Cannot favorite yourself
@@ -530,7 +450,7 @@ export class ProfileService {
     // All users in this list are favorited by definition (isFavoritedByMe = true)
     // Get vote counts and current user's votes for favorited users
     const userIds = favoriteMatches.map((m: any) => m.favoritedUser.id);
-
+    
     const [voteCounts, myVotes] = await Promise.all([
       this.prisma.userVote.groupBy({
         by: ['votedUserId', 'voteType'],
@@ -567,27 +487,23 @@ export class ProfileService {
 
     // Build my votes map
     const myVoteMap = new Map<string, 'LIKE' | 'DISLIKE'>();
-    myVotes.forEach((vote) => {
+    myVotes.forEach(vote => {
       myVoteMap.set(vote.votedUserId, vote.voteType);
     });
 
     const favorites = favoriteMatches.map((match: any) => {
-      const votes = voteMap.get(match.favoritedUser.id) || {
-        likes: 0,
-        dislikes: 0,
-      };
+      const votes = voteMap.get(match.favoritedUser.id) || { likes: 0, dislikes: 0 };
       const myVote = myVoteMap.get(match.favoritedUser.id) || null;
-      return ProfileSummaryDto.fromProfile(
-        match.favoritedUser,
-        true,
-        myVote,
-        votes.likes,
-        votes.dislikes,
-      );
+      return ProfileSummaryDto.fromProfile(match.favoritedUser, true, myVote, votes.likes, votes.dislikes);
     });
 
     // Return paginated response
-    return GetFavoritesResponseDto.fromFavorites(favorites, total, page, limit);
+    return GetFavoritesResponseDto.fromFavorites(
+      favorites,
+      total,
+      page,
+      limit
+    );
   }
 
   /**
@@ -742,7 +658,7 @@ export class ProfileService {
     // Transform to DTOs
     // Get vote counts and check favorite status for voted users
     const userIds = votes.map((v: any) => v.votedUser.id);
-
+    
     const [voteCounts, favorites] = await Promise.all([
       this.prisma.userVote.groupBy({
         by: ['votedUserId', 'voteType'],
@@ -777,20 +693,17 @@ export class ProfileService {
     });
 
     // Build favorites set
-    const favoritedUserIds = new Set(favorites.map((f) => f.favoritedUserId));
+    const favoritedUserIds = new Set(favorites.map(f => f.favoritedUserId));
 
     const votedProfiles = votes.map((vote: any) => {
-      const voteCounts = voteMap.get(vote.votedUser.id) || {
-        likes: 0,
-        dislikes: 0,
-      };
+      const voteCounts = voteMap.get(vote.votedUser.id) || { likes: 0, dislikes: 0 };
       const isFavorited = favoritedUserIds.has(vote.votedUser.id);
       return ProfileSummaryDto.fromProfile(
-        vote.votedUser,
-        isFavorited,
-        vote.voteType,
-        voteCounts.likes,
-        voteCounts.dislikes,
+        vote.votedUser, 
+        isFavorited, 
+        vote.voteType, 
+        voteCounts.likes, 
+        voteCounts.dislikes
       );
     });
 
@@ -799,7 +712,7 @@ export class ProfileService {
       total,
       page,
       limit,
-      voteType,
+      voteType
     );
   }
 

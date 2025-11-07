@@ -1,4 +1,4 @@
-import api from './api';
+// import api from './api';
 // import type { UpdateProfileDto, ProfileData } from '../types/profile';
 
 // export const getProfile = () => {
@@ -9,9 +9,9 @@ import api from './api';
 //   return api.get<ProfileData>(`/profile/${username}`);
 // };
 
-export const updateProfile = (data: any) => {
-  return api.patch('/profile', data);
-};
+// export const updateProfile = (data: UpdateProfileDto) => {
+//   return api.patch('/profile', data);
+// };
 
 // export const uploadAvatar = async (file: File) => {
 //   // 1. Get the pre-signed URL

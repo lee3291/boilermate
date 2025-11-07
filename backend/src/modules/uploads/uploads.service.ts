@@ -1,15 +1,8 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import {
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  imageRequestDetails,
-  imageRequestResult,
-} from './interfaces/image.interface';
+import { imageRequestDetails, imageRequestResult } from './interfaces/image.interface';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -21,9 +14,7 @@ export class UploadsService {
   constructor(private configService: ConfigService) {
     const region = this.configService.get<string>('AWS_REGION');
     const accessKeyId = this.configService.get<string>('AWS_ACCESS_KEY_ID');
-    const secretAccessKey = this.configService.get<string>(
-      'AWS_SECRET_ACCESS_KEY',
-    );
+    const secretAccessKey = this.configService.get<string>('AWS_SECRET_ACCESS_KEY');
     const bucketName = this.configService.get<string>('AWS_S3_BUCKET');
 
     if (!region || !accessKeyId || !secretAccessKey || !bucketName) {
@@ -40,13 +31,11 @@ export class UploadsService {
     this.bucketName = bucketName;
   }
 
-  async generateUploadUrl(
-    imageRequestDetails: imageRequestDetails,
-  ): Promise<imageRequestResult> {
+  async generateUploadUrl(imageRequestDetails: imageRequestDetails): Promise<imageRequestResult> {
     // Determine the file extension from the content type
     const { contentType, userId } = imageRequestDetails;
     const extension = contentType.split('/')[1] || 'jpg';
-
+    
     // Generate a unique, random key
     const key = `uploads/${userId}/${uuidv4()}.${extension}`;
 
@@ -64,21 +53,13 @@ export class UploadsService {
       });
 
       // Return both the URL for uploading and the key for saving later
-      return {
+      return { 
         preSignedUrl,
-        key,
+        key 
       };
     } catch (error) {
       Logger.error(error);
       throw new InternalServerErrorException(error);
     }
-  }
-  async deleteFile(key: string): Promise<void> {
-    // TODO: Implement S3 image deletion when AWS credentials have s3:DeleteObject permission
-    // const command = new (await import('@aws-sdk/client-s3')).DeleteObjectCommand({
-    //   Bucket: this.bucketName,
-    //   Key: key,
-    // });
-    // await this.s3Client.send(command);
   }
 }

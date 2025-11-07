@@ -21,7 +21,6 @@ model User {
   passwordHash  String
   profileInfo   Json?
   avatarURL     String?
-  legalName     String?
   phoneNumber   String?
   bio           String?
   isVerified    Boolean       @default(false)
