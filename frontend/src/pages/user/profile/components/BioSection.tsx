@@ -38,8 +38,10 @@ export default function BioSection({
       </div>
 
       {/* Bio Text */}
-      <div className='rounded-xl border border-pink-100 bg-gradient-to-r from-pink-50 to-purple-50 p-6'>
-        <p className='text-lg leading-relaxed text-gray-700'>{bio}</p>
+      <div className='max-h-48 overflow-auto rounded-xl border border-pink-100 bg-gradient-to-r from-pink-50 to-purple-50 p-6'>
+        <p className='text-lg leading-relaxed wrap-break-word whitespace-pre-line text-gray-700'>
+          {bio}
+        </p>
       </div>
 
       {/* Edit Button */}

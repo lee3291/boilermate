@@ -29,6 +29,20 @@ interface ProfileHeaderProps {
 
 export default function ProfileHeader(props: ProfileHeaderProps) {
   const { user, voteStats, onAvatarChange, isEditable = true } = props;
+
+  // Format US phone numbers as +1 (XXX) XXX-XXXX
+  function formatPhoneNumber(phone: string | undefined): string {
+    if (!phone) return '';
+    // Remove non-digit characters
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length === 10) {
+      return `+1 (${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+    if (digits.length === 11 && digits.startsWith('1')) {
+      return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+    }
+    return phone; // fallback to raw
+  }
   return (
     <div className='mb-8 min-h-[250px] overflow-hidden rounded-2xl bg-linear-to-br from-pink-500 to-purple-600 shadow-2xl'>
       <div className='p-8'>
@@ -55,7 +69,9 @@ export default function ProfileHeader(props: ProfileHeaderProps) {
               {user.phoneNumber && (
                 <div className='flex items-center gap-2'>
                   <span className='text-2xl'>📞</span>
-                  <span className='text-lg'>{user.phoneNumber}</span>
+                  <span className='text-lg'>
+                    {formatPhoneNumber(user.phoneNumber)}
+                  </span>
                 </div>
               )}
               {user.searchStatus && (
