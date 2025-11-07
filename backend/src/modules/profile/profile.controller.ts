@@ -17,6 +17,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ProfileService } from './profile.service';
+import { UserSearchService } from './user-search.service';
 import {
   GetProfileDetailsDto,
   SearchUsersDto,
@@ -41,6 +42,24 @@ import { AuthGuard } from '@nestjs/passport';
 
 @Controller('profile')
 export class ProfileController {
+  constructor(
+    private readonly profileService: ProfileService,
+    private readonly userSearchService: UserSearchService,
+  ) {}
+  /**
+   * GET /profile/search-by-id?emailPrefix=xxx
+   * Search for a user by Purdue ID (email prefix)
+   */
+  @Get('search-by-id')
+  @HttpCode(200)
+  async searchUserByID(
+    @Query('emailPrefix') emailPrefix: string,
+  ): Promise<any> {
+    if (!emailPrefix || typeof emailPrefix !== 'string') {
+      throw new BadRequestException('Missing or invalid emailPrefix');
+    }
+    return this.userSearchService.searchUserByID(emailPrefix);
+  }
   /**
    * PATCH /profile/avatar
    * Update current user's avatar URL
@@ -71,7 +90,6 @@ export class ProfileController {
     if (!userId) throw new BadRequestException('User ID not found in session');
     return this.profileService.updateProfile(userId, dto);
   }
-  constructor(private readonly profileService: ProfileService) {}
 
   /**
    * GET /profile/me

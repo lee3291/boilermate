@@ -1,4 +1,5 @@
 import accountIcon from '@/assets/images/account.png';
+import { useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 
 export default function Navbar() {
@@ -34,32 +35,86 @@ export default function Navbar() {
     return 'Account';
   })();
 
+  const [searchValue, setSearchValue] = useState('');
+  const [searchResult, setSearchResult] = useState(null);
+  const [searchError, setSearchError] = useState('');
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchError('');
+    setSearchResult(null);
+    const emailPrefix = searchValue.trim();
+    if (!emailPrefix) return;
+    try {
+      const { data } = await import('@/services/userSearch.service').then((m) =>
+        m.searchUserByID(emailPrefix),
+      );
+      if (data && data.id) {
+        setSearchResult(data);
+        window.location.href = `/profile/${data.id}`;
+      } else {
+        setSearchError('No active user found with that Purdue ID.');
+      }
+    } catch (err) {
+      setSearchError('Error searching for user.');
+    }
+  };
+
   return (
     <div className='w-full pt-7'>
       <div className='absolute top-8 left-1/2 h-16 w-[92%] -translate-x-1/2 rounded-2xl bg-black/20 blur-[5px]' />
-
       <nav className='relative z-10 mx-auto h-16 w-[92%] rounded-2xl border bg-white px-4 md:px-6'>
         <div className='flex h-full items-center justify-between gap-4'>
-          <a
-            className='cursor-pointer font-serif text-[22px] tracking-tight select-none'
-            href='/'
-          >
-            BoilerMate
-          </a>
-
-          <ul className='hidden items-center gap-6 text-[16px] md:flex'>
-            {NAV_ITEMS.map((item) => (
-              <li key={item.href}>
-                <a
-                  href={item.href}
-                  className='text-gray-600 transition-colors hover:text-black'
+          <div className='flex items-center gap-6'>
+            <a
+              className='cursor-pointer font-serif text-[22px] tracking-tight select-none'
+              href='/'
+            >
+              BoilerMate
+            </a>
+            <ul className='hidden items-center gap-6 text-[16px] md:flex'>
+              {NAV_ITEMS.map((item) => (
+                <li key={item.href}>
+                  <a
+                    href={item.href}
+                    className='text-gray-600 transition-colors hover:text-black'
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <form className='flex flex-1 justify-center' onSubmit={handleSearch}>
+            <div
+              className='relative w-full max-w-md'
+              style={{ minWidth: '280px' }}
+            >
+              <input
+                type='text'
+                placeholder='Search user by Purdue ID...'
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                className='w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-base shadow-sm outline-none placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
+              />
+              <span className='pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-gray-400'>
+                <svg
+                  xmlns='http://www.w3.org/2000/svg'
+                  className='h-5 w-5'
+                  fill='none'
+                  viewBox='0 0 24 24'
+                  stroke='currentColor'
                 >
-                  {item.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z'
+                  />
+                </svg>
+              </span>
+            </div>
+          </form>
           <div className='flex items-center gap-4'>
             <a href='/profile' className='flex items-center gap-2'>
               <img src={accountIcon} className='h-6 w-auto' />
@@ -88,6 +143,11 @@ export default function Navbar() {
             </button>
           </div>
         </div>
+        {searchError && (
+          <div className='mt-2 text-center text-sm text-red-500'>
+            {searchError}
+          </div>
+        )}
       </nav>
     </div>
   );
