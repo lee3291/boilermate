@@ -7,21 +7,21 @@
 export interface ProfileSummary {
   id: string;
   email: string;
-
+  
   age?: number;
   major?: string;
   year?: string;
   bio?: string;
-
+  
   lifestylePreferencesCount: number;
   roommatePreferencesCount: number;
-
+  
   // Favorite status - whether current user has favorited this profile
   isFavoritedByMe?: boolean;
-
+  
   // Vote status - current user's vote on this profile (LIKE, DISLIKE, or null)
   myVoteType?: 'LIKE' | 'DISLIKE' | null;
-
+  
   // Vote counts - how many likes/dislikes this user has received
   likesReceived?: number;
   dislikesReceived?: number;
@@ -41,21 +41,22 @@ export interface PreferenceDetail {
 export interface ProfileDetails {
   id: string;
   email: string;
-  legalName?: string;
-  phoneNumber?: string;
-  avatarURL?: string;
-  searchStatus?: string;
-  isVerified?: boolean;
-  name?: string;
-  profileImage?: string;
+  
   age?: number;
   major?: string;
   year?: string;
   bio?: string;
+  
   lifestylePreferences: PreferenceDetail[];
   roommatePreferences: PreferenceDetail[];
+  
+  // Favorite status - whether the viewer has favorited this profile
   isFavoritedByMe?: boolean;
+  
+  // Vote status - viewer's vote on this profile (LIKE, DISLIKE, or null)
   myVoteType?: 'LIKE' | 'DISLIKE' | null;
+  
+  // Vote counts - how many likes/dislikes this user has received
   likesReceived?: number;
   dislikesReceived?: number;
 }
@@ -172,3 +173,5 @@ export interface VoteStatsResponse {
   dislikesReceived: number;
   totalVotes: number;
 }
+
+

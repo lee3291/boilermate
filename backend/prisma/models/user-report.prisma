@@ -1,0 +1,10 @@
+model UserReport {
+  id              String   @id @default(uuid())
+  userId          String
+  reportedUserId  String
+  reason          String
+  comments        String
+  status          String   @default("UNRESOLVED")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}

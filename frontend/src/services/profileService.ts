@@ -1,22 +1,11 @@
 /**
- * Update user's avatar URL in backend
- * PATCH /profile/avatar
- */
-export const updateAvatar = async (
-  userId: string,
-  avatarKey: string,
-): Promise<any> => {
-  const response = await api.patch(`/profile/avatar`, { userId, avatarKey });
-  return response.data;
-};
-/**
  * Profile Service
  * Handles API calls for profile viewing and roommate searching
  */
 
 import api from './api';
-import type {
-  ProfileDetails,
+import type { 
+  ProfileDetails, 
   SearchUsersResponse,
   GetProfileDetailsRequest,
   SearchUsersRequest,
@@ -33,7 +22,7 @@ import type {
   GetMyVotesRequest,
   GetMyVotesResponse,
   GetVoteStatsRequest,
-  VoteStatsResponse,
+  VoteStatsResponse
 } from '../types/profile';
 
 const BASE_URL = '/profile';
@@ -45,7 +34,7 @@ const BASE_URL = '/profile';
  */
 export const getMyProfile = async (userId: string): Promise<any> => {
   const response = await api.get(`${BASE_URL}/me`, {
-    params: { userId },
+    params: { userId }
   });
   return response.data;
 };
@@ -55,12 +44,12 @@ export const getMyProfile = async (userId: string): Promise<any> => {
  * Includes lifestyle and roommate preferences
  */
 export const getProfileDetails = async (
-  request: GetProfileDetailsRequest,
+  request: GetProfileDetailsRequest
 ): Promise<ProfileDetails> => {
   const { userId, viewerId } = request;
-
+  
   const params = viewerId ? { viewerId } : {};
-
+  
   const response = await api.get(`${BASE_URL}/${userId}`, { params });
   return response.data;
 };
@@ -70,34 +59,27 @@ export const getProfileDetails = async (
  * Filters by preference IDs and importance levels
  */
 export const searchUsers = async (
-  request: SearchUsersRequest,
+  request: SearchUsersRequest
 ): Promise<SearchUsersResponse> => {
-  const {
-    userId,
-    page = 1,
-    limit = 10,
-    preferenceIds,
-    importanceOperator,
-    importanceValue,
-  } = request;
-
+  const { userId, page = 1, limit = 10, preferenceIds, importanceOperator, importanceValue } = request;
+  
   const params: any = { userId, page, limit };
-
+  
   // Only add filter params if preferences are selected
   if (preferenceIds && preferenceIds.length > 0) {
     params.preferenceIds = preferenceIds.join(','); // Send as comma-separated string
-
+    
     if (importanceOperator) {
       params.importanceOperator = importanceOperator;
     }
-
+    
     if (importanceValue !== undefined) {
       params.importanceValue = importanceValue;
     }
   }
-
+  
   console.log('Search params:', params);
-
+  
   const response = await api.get(`${BASE_URL}/search`, { params });
   return response.data;
 };
@@ -107,12 +89,12 @@ export const searchUsers = async (
  * Returns a paginated list of favorited users
  */
 export const getFavorites = async (
-  request: GetFavoritesRequest,
+  request: GetFavoritesRequest
 ): Promise<GetFavoritesResponse> => {
   const { userId, page = 1, limit = 20 } = request;
-
+  
   const params = { userId, page, limit };
-
+  
   const response = await api.get(`${BASE_URL}/favorites/list`, { params });
   return response.data;
 };
@@ -121,7 +103,7 @@ export const getFavorites = async (
  * Add a user to favorites
  */
 export const addFavorite = async (
-  request: AddFavoriteRequest,
+  request: AddFavoriteRequest
 ): Promise<AddFavoriteResponse> => {
   const response = await api.post(`${BASE_URL}/favorites`, request);
   return response.data;
@@ -131,16 +113,13 @@ export const addFavorite = async (
  * Remove a user from favorites
  */
 export const removeFavorite = async (
-  request: RemoveFavoriteRequest,
+  request: RemoveFavoriteRequest
 ): Promise<RemoveFavoriteResponse> => {
   const { userId, favoritedUserId } = request;
-
+  
   const params = { userId };
-
-  const response = await api.delete(
-    `${BASE_URL}/favorites/${favoritedUserId}`,
-    { params },
-  );
+  
+  const response = await api.delete(`${BASE_URL}/favorites/${favoritedUserId}`, { params });
   return response.data;
 };
 
@@ -151,14 +130,10 @@ export const removeFavorite = async (
 export const toggleFavorite = async (
   userId: string,
   favoritedUserId: string,
-  isFavorited: boolean,
+  isFavorited: boolean
 ): Promise<void> => {
-  console.log('toggleFavorite called:', {
-    userId,
-    favoritedUserId,
-    isFavorited,
-  });
-
+  console.log('toggleFavorite called:', { userId, favoritedUserId, isFavorited });
+  
   if (isFavorited) {
     console.log('Removing favorite...');
     await removeFavorite({ userId, favoritedUserId });
@@ -166,7 +141,7 @@ export const toggleFavorite = async (
     console.log('Adding favorite...');
     await addFavorite({ userId, favoritedUserId });
   }
-
+  
   console.log('toggleFavorite completed successfully');
 };
 
@@ -174,7 +149,7 @@ export const toggleFavorite = async (
  * Vote on a user (LIKE or DISLIKE)
  */
 export const voteUser = async (
-  request: VoteUserRequest,
+  request: VoteUserRequest
 ): Promise<VoteUserResponse> => {
   const response = await api.post(`${BASE_URL}/votes`, request);
   return response.data;
@@ -184,15 +159,13 @@ export const voteUser = async (
  * Remove a vote from a user
  */
 export const removeVote = async (
-  request: RemoveVoteRequest,
+  request: RemoveVoteRequest
 ): Promise<RemoveVoteResponse> => {
   const { voterId, votedUserId } = request;
-
+  
   const params = { voterId };
-
-  const response = await api.delete(`${BASE_URL}/votes/${votedUserId}`, {
-    params,
-  });
+  
+  const response = await api.delete(`${BASE_URL}/votes/${votedUserId}`, { params });
   return response.data;
 };
 
@@ -200,16 +173,16 @@ export const removeVote = async (
  * Get all votes cast by current user
  */
 export const getMyVotes = async (
-  request: GetMyVotesRequest,
+  request: GetMyVotesRequest
 ): Promise<GetMyVotesResponse> => {
   const { voterId, voteType, page = 1, limit = 20 } = request;
-
+  
   const params: any = { voterId, page, limit };
-
+  
   if (voteType) {
     params.voteType = voteType;
   }
-
+  
   const response = await api.get(`${BASE_URL}/votes/my-votes`, { params });
   return response.data;
 };
@@ -218,10 +191,10 @@ export const getMyVotes = async (
  * Get vote statistics for a user
  */
 export const getVoteStats = async (
-  request: GetVoteStatsRequest,
+  request: GetVoteStatsRequest
 ): Promise<VoteStatsResponse> => {
   const { userId } = request;
-
+  
   const response = await api.get(`${BASE_URL}/votes/stats/${userId}`);
   return response.data;
 };
@@ -234,7 +207,7 @@ export const toggleVote = async (
   voterId: string,
   votedUserId: string,
   currentVote: 'LIKE' | 'DISLIKE' | null,
-  newVote: 'LIKE' | 'DISLIKE',
+  newVote: 'LIKE' | 'DISLIKE'
 ): Promise<void> => {
   if (currentVote === newVote) {
     // Remove vote if clicking the same button

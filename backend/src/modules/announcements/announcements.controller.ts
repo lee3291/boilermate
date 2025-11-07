@@ -2,32 +2,31 @@ import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common'
 import { AnnouncementsService } from './announcements.service';
 import { CreateAnnouncementDto, UpdateAnnouncementDto } from './dto';
 
-
 @Controller('announcements')
 export class AnnouncementsController {
- constructor(private readonly service: AnnouncementsService) {}
+  constructor(private readonly service: AnnouncementsService) {}
 
+  // GET /announcements
+  @Get()
+  getAll() {
+    return this.service.getAnnouncements();
+  }
 
- @Get()
- async getAll() {
-   return this.service.getAnnouncements();
- }
+  // POST /announcements
+  @Post()
+  create(@Body() dto: CreateAnnouncementDto) {
+    return this.service.createAnnouncement(dto);
+  }
 
+  // PUT /announcements/:id
+  @Put(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateAnnouncementDto) {
+    return this.service.updateAnnouncement(id, dto);
+  }
 
- @Post()
- async create(@Body() dto: CreateAnnouncementDto) {
-   return this.service.createAnnouncement(dto);
- }
-
-
- @Put(':id')
- async update(@Param('id') id: string, @Body() dto: UpdateAnnouncementDto) {
-   return this.service.updateAnnouncement(id, dto);
- }
-
-
- @Delete(':id')
- async delete(@Param('id') id: string) {
-   return this.service.deleteAnnouncement(id);
- }
+  // DELETE /announcements/:id
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.service.deleteAnnouncement(id);
+  }
 }

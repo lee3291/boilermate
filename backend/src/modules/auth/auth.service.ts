@@ -15,13 +15,6 @@ import { SignInDto } from './dto/signin.dto';
 
 @Injectable()
 export class AuthService {
-  async deactivateAccount(userId: string) {
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { status: 'INACTIVE' },
-    });
-    return { success: true };
-  }
   constructor(
     private readonly prisma: PrismaService,
     private readonly emailVerificationService: EmailVerificationService,

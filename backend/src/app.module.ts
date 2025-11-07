@@ -10,7 +10,8 @@ import { EmailVerificationModule } from './modules/email-verification/email-veri
 import { ChatsModule } from '@modules/chats/chats.module';
 import { UploadsModule } from '@modules/uploads/uploads.module';
 import { BugReportModule } from './modules/bug-report/bug-report.module';
-import { ReportModule } from '@modules/report/report.module';
+import { UserReportModule } from './modules/user-report/user-report.module';
+
 import { ReCaptchaModule } from '@modules/reCaptcha/reCaptcha.module';
 import { PreferencesModule } from '@modules/preferences/preferences.module';
 import { ProfileModule } from '@modules/profile/profile.module';
@@ -35,7 +36,7 @@ import { VerificationModule } from './modules/verification/verification.module';
     OTPModule,
     ListingsModule,
     BugReportModule,
-    ReportModule,
+    UserReportModule,
     ReCaptchaModule,
     ProfileModule,
     VerificationModule,

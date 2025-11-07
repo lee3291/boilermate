@@ -19,7 +19,7 @@ import * as profileService from '@/services/profileService';
 export default function useProfileLogic(userId: string) {
   // Profile data (from /profile/me endpoint)
   const [profileData, setProfileData] = useState<any>(null);
-
+  
   // Vote stats (likes/dislikes received)
   const [voteStats, setVoteStats] = useState<{
     likesReceived: number;
@@ -30,12 +30,8 @@ export default function useProfileLogic(userId: string) {
   const [allPreferences, setAllPreferences] = useState<Preference[]>([]);
 
   // User's selected preferences
-  const [userProfilePreferences, setUserProfilePreferences] = useState<
-    UserProfilePreference[]
-  >([]);
-  const [roommatePreferences, setRoommatePreferences] = useState<
-    RoommatePreference[]
-  >([]);
+  const [userProfilePreferences, setUserProfilePreferences] = useState<UserProfilePreference[]>([]);
+  const [roommatePreferences, setRoommatePreferences] = useState<RoommatePreference[]>([]);
 
   // Loading states
   const [loadingProfile, setLoadingProfile] = useState(false);
@@ -57,7 +53,7 @@ export default function useProfileLogic(userId: string) {
     try {
       const response = await profileService.getMyProfile(userId);
       setProfileData(response);
-
+      
       // Extract vote stats from response
       setVoteStats({
         likesReceived: response.likesReceived || 0,
@@ -92,8 +88,7 @@ export default function useProfileLogic(userId: string) {
     setLoadingUserProfile(true);
     setError(null);
     try {
-      const response =
-        await preferencesService.getUserProfilePreferences(userId);
+      const response = await preferencesService.getUserProfilePreferences(userId);
       setUserProfilePreferences(response.preferences);
     } catch (err: any) {
       setError(err.message || 'Failed to load user profile preferences');
@@ -120,68 +115,56 @@ export default function useProfileLogic(userId: string) {
   }, []);
 
   // Add/Update user profile preference
-  const handleSetUserProfilePreference = useCallback(
-    async (preferenceId: string, importance: number, visibility: string) => {
-      setError(null);
-      try {
-        await preferencesService.setUserProfilePreference({
-          userId,
-          preferenceId,
-          visibility,
-          importance,
-        });
-        await fetchUserProfilePreferences(userId);
-      } catch (err: any) {
-        setError(err.message || 'Failed to set user profile preference');
-        console.error('Error setting user profile preference:', err);
-      }
-    },
-    [userId, fetchUserProfilePreferences],
-  );
+  const handleSetUserProfilePreference = useCallback(async (
+    preferenceId: string,
+    importance: number,
+    visibility: string
+  ) => {
+    setError(null);
+    try {
+      await preferencesService.setUserProfilePreference({
+        userId,
+        preferenceId,
+        visibility,
+        importance,
+      });
+      await fetchUserProfilePreferences(userId);
+    } catch (err: any) {
+      setError(err.message || 'Failed to set user profile preference');
+      console.error('Error setting user profile preference:', err);
+    }
+  }, [userId, fetchUserProfilePreferences]);
 
   // Update user profile preference (importance/visibility only)
-  const handleUpdateUserProfilePreference = useCallback(
-    async (
-      userProfilePreferenceId: string,
-      importance: number,
-      visibility: string,
-    ) => {
-      setError(null);
-      try {
-        await preferencesService.updateUserProfilePreference(
-          userId,
-          userProfilePreferenceId,
-          {
-            visibility,
-            importance,
-          },
-        );
-        await fetchUserProfilePreferences(userId);
-      } catch (err: any) {
-        setError(err.message || 'Failed to update user profile preference');
-        console.error('Error updating user profile preference:', err);
-      }
-    },
-    [userId, fetchUserProfilePreferences],
-  );
+  const handleUpdateUserProfilePreference = useCallback(async (
+    userProfilePreferenceId: string,
+    importance: number,
+    visibility: string
+  ) => {
+    setError(null);
+    try {
+      await preferencesService.updateUserProfilePreference(userId, userProfilePreferenceId, {
+        visibility,
+        importance,
+      });
+      await fetchUserProfilePreferences(userId);
+    } catch (err: any) {
+      setError(err.message || 'Failed to update user profile preference');
+      console.error('Error updating user profile preference:', err);
+    }
+  }, [userId, fetchUserProfilePreferences]);
 
   // Remove user profile preference
-  const handleDeleteUserProfilePreference = useCallback(
-    async (userProfilePreferenceId: string) => {
-      setError(null);
-      try {
-        await preferencesService.deleteUserProfilePreference(
-          userId,
-          userProfilePreferenceId,
-        );
-        await fetchUserProfilePreferences(userId);
-      } catch (err: any) {
-        setError(err.message || 'Failed to delete user profile preference');
-        console.error('Error deleting user profile preference:', err);
-      }
-    },
-    [userId, fetchUserProfilePreferences],
-  );
+    const handleDeleteUserProfilePreference = useCallback(async (userProfilePreferenceId: string) => {
+    setError(null);
+    try {
+      await preferencesService.deleteUserProfilePreference(userId, userProfilePreferenceId);
+      await fetchUserProfilePreferences(userId);
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete user profile preference');
+      console.error('Error deleting user profile preference:', err);
+    }
+  }, [userId, fetchUserProfilePreferences]);
 
   // Add/Update roommate preference
   const handleSetRoommatePreference = useCallback(
@@ -201,34 +184,27 @@ export default function useProfileLogic(userId: string) {
         console.error('Error setting roommate preference:', err);
       }
     },
-    [userId, fetchRoommatePreferences],
+    [userId, fetchRoommatePreferences]
   );
 
   // Update roommate preference (importance/visibility only)
-  const handleUpdateRoommatePreference = useCallback(
-    async (
-      roommatePreferenceId: string,
-      importance: number,
-      visibility: string,
-    ) => {
-      setError(null);
-      try {
-        await preferencesService.updateRoommatePreference(
-          userId,
-          roommatePreferenceId,
-          {
-            visibility,
-            importance,
-          },
-        );
-        await fetchRoommatePreferences(userId);
-      } catch (err: any) {
-        setError(err.message || 'Failed to update roommate preference');
-        console.error('Error updating roommate preference:', err);
-      }
-    },
-    [userId, fetchRoommatePreferences],
-  );
+  const handleUpdateRoommatePreference = useCallback(async (
+    roommatePreferenceId: string,
+    importance: number,
+    visibility: string
+  ) => {
+    setError(null);
+    try {
+      await preferencesService.updateRoommatePreference(userId, roommatePreferenceId, {
+        visibility,
+        importance,
+      });
+      await fetchRoommatePreferences(userId);
+    } catch (err: any) {
+      setError(err.message || 'Failed to update roommate preference');
+      console.error('Error updating roommate preference:', err);
+    }
+  }, [userId, fetchRoommatePreferences]);
 
   // Remove roommate preference
   const handleDeleteRoommatePreference = useCallback(
@@ -243,7 +219,7 @@ export default function useProfileLogic(userId: string) {
         console.error('Error deleting roommate preference:', err);
       }
     },
-    [userId, fetchRoommatePreferences],
+    [userId, fetchRoommatePreferences]
   );
 
   // Initialize: Load master preferences on mount
@@ -256,12 +232,7 @@ export default function useProfileLogic(userId: string) {
     fetchMyProfile(userId);
     fetchUserProfilePreferences(userId);
     fetchRoommatePreferences(userId);
-  }, [
-    userId,
-    fetchMyProfile,
-    fetchUserProfilePreferences,
-    fetchRoommatePreferences,
-  ]);
+  }, [userId, fetchMyProfile, fetchUserProfilePreferences, fetchRoommatePreferences]);
 
   /**
    * Handle avatar file change
@@ -269,30 +240,11 @@ export default function useProfileLogic(userId: string) {
    * For now, just logs the file
    */
   const handleAvatarChange = useCallback(async (file: File) => {
-    if (!file || !userId) return;
-    setError(null);
-    try {
-      // 1. Get pre-signed URL from backend
-      const { getPresignedUrl, uploadFileToS3 } = await import(
-        '@/services/uploadService'
-      );
-      const { preSignedUrl, key } = await getPresignedUrl({
-        contentType: file.type,
-        userId,
-      });
-
-      // 2. Upload file to S3
-      await uploadFileToS3(preSignedUrl, file);
-
-      // 3. Update avatar URL in backend
-      await profileService.updateAvatar(userId, key);
-
-      // 4. Refresh profile data
-      await fetchMyProfile(userId);
-    } catch (err: any) {
-      setError(err.message || 'Failed to upload avatar');
-      console.error('Error uploading avatar:', err);
-    }
+    console.log('Avatar file selected:', file);
+    // TODO: Upload to AWS S3
+    // TODO: Update user avatar URL in backend
+    // TODO: Refresh profile data
+    alert('Avatar upload functionality will be implemented soon!');
   }, []);
 
   return {

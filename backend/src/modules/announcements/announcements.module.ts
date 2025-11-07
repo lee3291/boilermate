@@ -1,11 +1,15 @@
-import { Module } from '@nestjs/common';
-import { AnnouncementsService } from './announcements.service';
-import { AnnouncementsController } from './announcements.controller';
-import { PrismaService } from '@core/database/prisma.service';
 
+
+
+import { Module } from '@nestjs/common';
+import { AnnouncementsController } from './announcements.controller';
+import { AnnouncementsService } from './announcements.service';
+import { PrismaModule } from '@core/database/prisma.module';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
- controllers: [AnnouncementsController],
- providers: [AnnouncementsService, PrismaService],
+  imports: [PrismaModule, MailModule],
+  controllers: [AnnouncementsController],
+  providers: [AnnouncementsService],
 })
 export class AnnouncementsModule {}
