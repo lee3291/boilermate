@@ -107,19 +107,6 @@ const router = createBrowserRouter([
         path: '/profile/:userId',
         element: <ProfileViewPage />,
       },
-      // Ethan profile route
-      // {
-      //   path: '/profile',
-      //   element: <UserProfilePage />,
-      // },
-      // {
-      //   path: '/profile/:username',
-      //   element: <PublicProfilePage />,
-      // },
-      // {
-      //   path: '/profile/edit',
-      //   element: <EditProfilePage />,
-      // },
       {
         path: '/verification',
         element: <VerificationPage />,
