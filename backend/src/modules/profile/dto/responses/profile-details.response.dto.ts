@@ -36,6 +36,7 @@ export class ProfileDetailsDto {
   @Expose() searchStatus?: string;
   @Expose() id: string;
   @Expose() email: string;
+  @Expose() isVerified?: boolean;
 
   @Expose() age?: number;
   @Expose() major?: string;
@@ -78,6 +79,7 @@ export class ProfileDetailsDto {
     dto.phoneNumber = profile.phoneNumber;
     dto.avatarURL = profile.avatarURL;
     dto.searchStatus = profile.searchStatus;
+    dto.isVerified = profile.isVerified;
 
     dto.lifestylePreferences = (profile.profilePreferences || []).map(
       (p: any) => PreferenceDetailDto.fromUserPreference(p),
