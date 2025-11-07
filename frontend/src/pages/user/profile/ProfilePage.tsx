@@ -28,9 +28,13 @@ import BioSection from './components/BioSection';
 import LifestyleSection from './components/LifestyleSection';
 import RoommateSection from './components/RoommateSection';
 import ProfileActionBar from './components/ProfileActionBar';
+import { useState } from 'react';
+import DeactivateAccountModal from '@/components/DeactivateAccountModal';
+import { deactivateAccount } from '@/services/account.service';
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const userId = user!.id;
   const logic = useProfileLogic(userId);
 
@@ -129,7 +133,21 @@ export default function ProfilePage() {
                   },
                 ]
               : []),
+            {
+              label: 'Deactivate',
+              onClick: () => setShowDeactivateModal(true),
+              type: 'secondary' as const,
+            },
           ]}
+        />
+        <DeactivateAccountModal
+          open={showDeactivateModal}
+          onClose={() => setShowDeactivateModal(false)}
+          onConfirm={async () => {
+            await deactivateAccount();
+            logout();
+            window.location.href = '/signin';
+          }}
         />
       </div>
     </div>

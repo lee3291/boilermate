@@ -253,6 +253,8 @@ export class ProfileService {
     // Build where clause for filtering by lifestyle preferences
     const whereClause: any = {
       id: { not: userId },
+      status: 'ACTIVE',
+      searchStatus: { not: 'HIDDEN' },
     };
 
     // If filtering by specific preferences
