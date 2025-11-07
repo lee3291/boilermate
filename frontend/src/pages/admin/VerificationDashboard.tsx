@@ -97,8 +97,11 @@ const VerificationDashboard = () => {
               <tbody>
                 {requests.map((req) => (
                   <tr key={req.id} className='border-b border-gray-700'>
-                    <td className='p-3'>
-                      {req.user.profileInfo?.name || 'N/A'}
+                    <td
+                      className='max-w-[180px] truncate overflow-hidden p-3 whitespace-nowrap'
+                      title={req.user.legalName || 'N/A'}
+                    >
+                      {req.user.legalName || 'N/A'}
                     </td>
                     <td className='p-3'>{req.user.email}</td>
                     <td

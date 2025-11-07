@@ -75,10 +75,17 @@ const VerificationReviewModal = ({
         <h2 className='mb-4 text-xl font-bold'>Review Verification</h2>
         <div className='mb-4'>
           <p>
-            <strong>User:</strong> {request.user.profileInfo?.name || 'N/A'}
-          </p>
-          <p>
-            <strong>Email:</strong> {request.user.email}
+            <strong>User:</strong>{' '}
+            {request.user.legalName ? (
+              <span
+                className='inline-block max-w-[300px] truncate overflow-hidden whitespace-nowrap'
+                title={request.user.legalName}
+              >
+                {request.user.legalName}
+              </span>
+            ) : (
+              'N/A'
+            )}
           </p>
         </div>
 

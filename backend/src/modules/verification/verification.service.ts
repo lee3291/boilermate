@@ -110,6 +110,7 @@ export class VerificationService {
           select: {
             id: true,
             email: true,
+            legalName: true,
             profileInfo: true,
           },
         },
