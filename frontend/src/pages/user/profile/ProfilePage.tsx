@@ -27,6 +27,7 @@ import ProfileHeader from './components/ProfileHeader';
 import BioSection from './components/BioSection';
 import LifestyleSection from './components/LifestyleSection';
 import RoommateSection from './components/RoommateSection';
+import ProfileActionBar from './components/ProfileActionBar';
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -37,7 +38,7 @@ export default function ProfilePage() {
   const profile = logic.profileData;
 
   return (
-    <div className='min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50'>
+    <div className='min-h-screen bg-linear-to-br from-pink-50 via-white to-purple-50'>
       <Navbar />
       <div className='mx-auto max-w-4xl px-4 py-8'>
         {logic.error && (
@@ -106,6 +107,18 @@ export default function ProfilePage() {
           onUpdatePreference={logic.handleUpdateRoommatePreference}
           onRemovePreference={logic.handleDeleteRoommatePreference}
           loading={logic.loadingRoommate || logic.loadingMasterList}
+        />
+        {/* Section 5: Action Bar (Buttons) */}
+        <ProfileActionBar
+          actions={[
+            {
+              label: 'Verify ID',
+              onClick: () => {
+                window.location.href = '/verification';
+              },
+              type: 'primary',
+            },
+          ]}
         />
       </div>
     </div>
