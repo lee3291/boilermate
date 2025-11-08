@@ -21,6 +21,11 @@ import { ReactivationGuard } from './guards/reactivation.guard';
 
 @Controller('auth')
 export class AuthController {
+  @Post('deactivate')
+  @UseGuards(AuthGuard('jwt'))
+  async deactivate(@User() user: { userId: string }) {
+    return this.authService.deactivateAccount(user.userId);
+  }
   constructor(private readonly authService: AuthService) {}
 
   @Post('request-code')

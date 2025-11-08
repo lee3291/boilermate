@@ -30,18 +30,23 @@ export class PreferenceDetailDto {
 //* Full Profile Details Response
 @Exclude()
 export class ProfileDetailsDto {
+  @Expose() legalName?: string;
+  @Expose() phoneNumber?: string;
+  @Expose() avatarURL?: string;
+  @Expose() searchStatus?: string;
   @Expose() id: string;
   @Expose() email: string;
-  
+  @Expose() isVerified?: boolean;
+
   @Expose() age?: number;
   @Expose() major?: string;
   @Expose() year?: string;
   @Expose() bio?: string;
-  
+
   @Expose()
   @Type(() => PreferenceDetailDto)
   lifestylePreferences: PreferenceDetailDto[];
-  
+
   @Expose()
   @Type(() => PreferenceDetailDto)
   roommatePreferences: PreferenceDetailDto[];
@@ -57,11 +62,11 @@ export class ProfileDetailsDto {
   @Expose() dislikesReceived?: number;
 
   static fromProfile(
-    profile: any, 
+    profile: any,
     isFavoritedByMe?: boolean,
     myVoteType?: 'LIKE' | 'DISLIKE' | null,
     likesReceived?: number,
-    dislikesReceived?: number
+    dislikesReceived?: number,
   ): ProfileDetailsDto {
     const dto = new ProfileDetailsDto();
     dto.id = profile.id;
@@ -70,18 +75,25 @@ export class ProfileDetailsDto {
     dto.major = profile.major;
     dto.year = profile.year;
     dto.bio = profile.bio;
-    
-    dto.lifestylePreferences = (profile.profilePreferences || [])
-      .map((p: any) => PreferenceDetailDto.fromUserPreference(p));
-    
-    dto.roommatePreferences = (profile.roommatePreferences || [])
-      .map((p: any) => PreferenceDetailDto.fromUserPreference(p));
-    
+    dto.legalName = profile.legalName;
+    dto.phoneNumber = profile.phoneNumber;
+    dto.avatarURL = profile.avatarURL;
+    dto.searchStatus = profile.searchStatus;
+    dto.isVerified = profile.isVerified;
+
+    dto.lifestylePreferences = (profile.profilePreferences || []).map(
+      (p: any) => PreferenceDetailDto.fromUserPreference(p),
+    );
+
+    dto.roommatePreferences = (profile.roommatePreferences || []).map(
+      (p: any) => PreferenceDetailDto.fromUserPreference(p),
+    );
+
     dto.isFavoritedByMe = isFavoritedByMe || false;
     dto.myVoteType = myVoteType || null;
     dto.likesReceived = likesReceived;
     dto.dislikesReceived = dislikesReceived;
-    
+
     return dto;
   }
 }

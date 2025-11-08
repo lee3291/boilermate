@@ -50,6 +50,17 @@ export const createVerificationRequest = async (idImageKey: string) => {
 };
 
 /**
+ * Sets the idImageURL of a verification request to null (removes the image).
+ */
+export const removeVerificationImage = async (requestId: string) => {
+  const response = await api.post(
+    `/verification/admin/requests/${requestId}/remove-image`,
+    {},
+  );
+  return response.data;
+};
+
+/**
  * Fetches all verification requests for the admin dashboard.
  * @param status An optional status to filter the requests by.
  */
