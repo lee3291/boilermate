@@ -44,8 +44,7 @@ import type {
 } from '@/types/chats/chat';
 import { chatSocket } from '@/services/chatSocket';
 
-export default function useChatLogic(initialUserId: string) {
-  const [currentUserId, setCurrentUserId] = useState<string>(initialUserId); // initialUserId allow pre-set in page
+export default function useChatLogic(userId: string) {
   const [conversations, setConversations] = useState<Chat[]>([]); // populate the chat sidebar
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null); // enable clicking for the chat sidebar, save state
   const [messages, setMessages] = useState<MessageWithStatus[]>([]); // set the message display part in the chat window
@@ -70,29 +69,24 @@ export default function useChatLogic(initialUserId: string) {
   const [blockedBetween, setBlockedBetween] = useState<boolean>(false);
 
   // fetch all chats for current user
-  const fetchChats = useCallback(async (userId?: string) => {
-    //console.log('check chat fetching')
-
+  const fetchChats = useCallback(async () => {
     if (!userId) return;
     setLoadingChats(true);
     setError(null);
     try {
       const req: getChatsRequest = { userId };
       const res: getChatsResponse = await apiGetChats(req);
-
-      //console.log('the hell ???')
-
       setConversations(res.chats || []);
     } catch (err: any) {
       setError(err?.message ?? 'Failed to load chats');
     } finally {
       setLoadingChats(false);
     }
-  }, []);
+  }, [userId]);
 
   // fetch history for selected chat and current user
   const fetchHistory = useCallback(
-    async (chatId?: string, userId?: string) => {
+    async (chatId: string) => {
       if (!chatId || !userId) return;
       setLoadingMessages(true);
       setError(null);
@@ -106,27 +100,24 @@ export default function useChatLogic(initialUserId: string) {
         setLoadingMessages(false);
       }
     },
-    []
+    [userId]
   );
 
-  // When currentUserId changes fetch chats and connect to WebSocket to subscribe to current chat
+  // When userId changes fetch chats and connect to WebSocket to subscribe to current chat
   useEffect(() => {
-    if (!currentUserId) return;
-    //fetchChats(currentUserId);
+    if (!userId) return;
 
     async function initConnection() {
       try {
         // Wait for socket connection before fetching
-        await chatSocket.connect(currentUserId);
-        await fetchChats(currentUserId);
+        await chatSocket.connect(userId);
+        await fetchChats();
       } catch (error) {
         console.error('Failed to initialize:', error);
         setError('Connection failed');
       }
     }
 
-    // Connect to WebSocket
-    //chatSocket.connect(currentUserId);
     initConnection();
 
     return () => {
@@ -134,13 +125,13 @@ export default function useChatLogic(initialUserId: string) {
       // will be called when the component unmount itself before using new effect after dependencies changes
       chatSocket.disconnect();
     };
-  }, [currentUserId]);
+  }, [userId, fetchChats]);
 
   // When selected chat changes fetch its history and join chat room
   useEffect(() => {
-    if (!selectedChatId || !currentUserId) return;
+    if (!selectedChatId || !userId) return;
 
-    fetchHistory(selectedChatId, currentUserId);
+    fetchHistory(selectedChatId);
     chatSocket.joinChat(selectedChatId); // emit signal to backend that user join a new chat
 
     return () => {
@@ -148,11 +139,11 @@ export default function useChatLogic(initialUserId: string) {
       // before the effect runs again due to dependencies changes
       chatSocket.leaveChat(selectedChatId);
     };
-  }, [selectedChatId, currentUserId, fetchHistory]);
+  }, [selectedChatId, userId, fetchHistory]);
 
   // Set up WebSocket event handlers
   useEffect(() => {
-    if (!currentUserId) return;
+    if (!userId) return;
 
     // this handler is used to update the newest message for other users
     const messageHandler = (message: MessageWithStatus) => {
@@ -189,15 +180,15 @@ export default function useChatLogic(initialUserId: string) {
       unsubEdit();
       unsubDelete();
     };
-  }, [currentUserId]);
+  }, [userId]);
 
   //refresh chat after recieve new msg
   useEffect(() => {
-    if (!currentUserId) return;
+    if (!userId) return;
 
     const refreshHandler = ({ chatId }: { chatId: string }) => {
       if (chatId === selectedChatId) {
-        fetchHistory(chatId, currentUserId); // fetch latest messages
+        fetchHistory(chatId); // fetch latest messages
       }
     };
 
@@ -206,15 +197,11 @@ export default function useChatLogic(initialUserId: string) {
     return () => {
       unsubRefresh();
     };
-  }, [currentUserId, selectedChatId, fetchHistory]);
+  }, [userId, selectedChatId, fetchHistory]);
 
-
-    // Refresh block status when selected chat changes
-    // Update blockedBetween correctly in useChatLogic
-    // Track if DM is blocked
-    // Track if DM is blocked
+  // Refresh block status when selected chat changes
   useEffect(() => {
-    if (!currentUserId || !selectedChatId) return;
+    if (!userId || !selectedChatId) return;
 
     const selectedConversation = conversations.find(c => c.id === selectedChatId);
     if (!selectedConversation || selectedConversation.isGroup) {
@@ -222,7 +209,7 @@ export default function useChatLogic(initialUserId: string) {
       return;
     }
 
-    const otherUserId = selectedConversation.participants?.find(p => p.id !== currentUserId)?.id;
+    const otherUserId = selectedConversation.participants?.find(p => p.id !== userId)?.id;
     if (!otherUserId) {
       setBlockedBetween(false);
       return;
@@ -230,7 +217,7 @@ export default function useChatLogic(initialUserId: string) {
 
     const fetchBlockStatus = async () => {
       try {
-        const res = await apiIsBlockBetween(currentUserId, otherUserId);
+        const res = await apiIsBlockBetween(userId, otherUserId);
         setBlockedBetween(res);
       } catch {
         setBlockedBetween(false);
@@ -242,7 +229,7 @@ export default function useChatLogic(initialUserId: string) {
 
     // subscribe to block events from WebSocket
     const unsubBlock = chatSocket.onBlockStatusChange(({ user1, user2 }) => {
-      if ([user1, user2].includes(currentUserId) && [user1, user2].includes(otherUserId)) {
+      if ([user1, user2].includes(userId) && [user1, user2].includes(otherUserId)) {
         fetchBlockStatus();
       }
     });
@@ -250,7 +237,7 @@ export default function useChatLogic(initialUserId: string) {
     return () => {
       unsubBlock();
     };
-  }, [currentUserId, selectedChatId, conversations]);
+  }, [userId, selectedChatId, conversations]);
 
 
 
@@ -281,7 +268,7 @@ export default function useChatLogic(initialUserId: string) {
     async (overrides?: { recipientId?: string }) => {
 
       //TODO: Need to modify this to account for sending image
-      if (!currentUserId) {
+      if (!userId) {
         setError('senderId required');
         return null;
       }
@@ -312,7 +299,7 @@ export default function useChatLogic(initialUserId: string) {
             // Request presigned URL from backend
             const { preSignedUrl, key } = await apiGetPresignedUrl({
               contentType: compressedFile.type, // send MIME type to backend
-              userId: currentUserId, // send user ID for tracking
+              userId: userId, // send user ID for tracking
             });
 
             // Upload compressed image directly to S3 using presigned URL
@@ -333,7 +320,7 @@ export default function useChatLogic(initialUserId: string) {
         // build the request
         const payload: sendMessageRequest = {
           chatId: selectedChatId ?? undefined,
-          senderId: currentUserId,
+          senderId: userId,
           recipientId: overrides?.recipientId,
           content: hasText ? messageInput.trim() : '', // send empty string if no text (backend handles image-only)
           imageUrl, //include imageUrl if image was uploaded
@@ -370,20 +357,20 @@ export default function useChatLogic(initialUserId: string) {
         return null;
       }
     },
-    [currentUserId, messageInput, selectedChatId, selectedFile] // add selectedFile to dependencies
+    [userId, messageInput, selectedChatId, selectedFile] // add selectedFile to dependencies
   );
 
   // edit a message (only updates local state after API call)
   const edit = useCallback(
     //*  need to care about editing an image
     async (messageId: string, content: string) => {
-      if (!currentUserId) {
+      if (!userId) {
         setError('userId required');
         return false;
       }
 
       try {
-        const req: editMessageRequest = { content, userId: currentUserId };
+        const req: editMessageRequest = { content, userId: userId };
         await apiEditMessage(messageId, req);
         setMessages((prev) =>
           prev.map((m) => (m.id === messageId ? { ...m, content, isEdited: true } : m))
@@ -394,19 +381,19 @@ export default function useChatLogic(initialUserId: string) {
         return false;
       }
     },
-    [currentUserId]
+    [userId]
   );
 
   // delete a message (forEveryone toggles message.isDeleted, otherwise mark isDeletedForYou)
   const remove = useCallback(
     async (messageId: string, forEveryone: boolean) => {
-      if (!currentUserId) {
+      if (!userId) {
         setError('userId required');
         return false;
       }
 
       try {
-        const req: deleteMessageRequest = { userId: currentUserId, forEveryone: forEveryone };
+        const req: deleteMessageRequest = { userId: userId, forEveryone: forEveryone };
         await apiDeleteMessage(messageId, req);
         setMessages((prev) => // all chat history
           prev.map((m) => // start mapping for updated window
@@ -423,212 +410,212 @@ export default function useChatLogic(initialUserId: string) {
         return false;
       }
     },
-    [currentUserId]
+    [userId]
   );
 
   const messagesForSelected = useMemo(() => messages, [messages]);
 
   // Fetch pending invitations for current user
   const fetchInvitations = useCallback(async () => {
-    if (!currentUserId) return;
+    if (!userId) return;
     try {
-      const result = await apiGetInvitations({ userId: currentUserId });
+      const result = await apiGetInvitations({ userId: userId });
       setInvitations(result || []);
       setInvitationsCount(result?.length || 0);
     } catch (err: any) {
       setError(err?.message ?? 'Failed to load invitations');
     }
-  }, [currentUserId]);
+  }, [userId]);
 
   // Accept an invitation
   const handleAcceptInvitation = useCallback(async (invitationId: string) => {
-    if (!currentUserId) return;
+    if (!userId) return;
     try {
-      await apiAcceptInvitation(invitationId, { userId: currentUserId });
+      await apiAcceptInvitation(invitationId, { userId: userId });
       // Refresh invitations and chats
       await fetchInvitations();
-      await fetchChats(currentUserId);
+      await fetchChats();
     } catch (err: any) {
       setError(err?.message ?? 'Failed to accept invitation');
     }
-  }, [currentUserId, fetchInvitations, fetchChats]);
+  }, [userId, fetchInvitations, fetchChats]);
 
   // Decline an invitation
   const handleDeclineInvitation = useCallback(async (invitationId: string) => {
-    if (!currentUserId) return;
+    if (!userId) return;
     try {
-      await apiDeclineInvitation(invitationId, { userId: currentUserId });
+      await apiDeclineInvitation(invitationId, { userId: userId });
       // Refresh invitations
       await fetchInvitations();
     } catch (err: any) {
       setError(err?.message ?? 'Failed to decline invitation');
     }
-  }, [currentUserId, fetchInvitations]);
+  }, [userId, fetchInvitations]);
 
   //Create normal chat
   const handleCreateNormalChat = useCallback(async (recipientId: string) => {
-    if (!currentUserId) return;
+    if (!userId) return;
 
     try {
       await apiCreateNormalChat({
-        creatorId: currentUserId,
-        name: currentUserId,
+        creatorId: userId,
+        name: userId,
         participantIds: [recipientId],
       });
 
-      await fetchChats(currentUserId);
+      await fetchChats();
       setShowCreateNormalChatModal(false);
     } catch (err: any) {
       setError(err?.message ?? 'Failed to create chat');
     }
-  }, [currentUserId, fetchChats]);
+  }, [userId, fetchChats]);
 
 
   // Create a new group chat
   const handleCreateGroup = useCallback(async (name: string, participantIds: string[], groupIcon?: string) => {
-    if (!currentUserId) return;
+    if (!userId) return;
     try {
       await apiCreateGroupChat({
-        creatorId: currentUserId,
+        creatorId: userId,
         name,
         groupIcon,
         participantIds,
       });
       // Refresh chats
-      await fetchChats(currentUserId);
+      await fetchChats();
       setShowCreateGroupModal(false);
     } catch (err: any) {
       setError(err?.message ?? 'Failed to create group');
     }
-  }, [currentUserId, fetchChats]);
+  }, [userId, fetchChats]);
 
   //Handle block
   const handleBlock = useCallback(async (targetUserId: string) => {
-    if (!currentUserId) return;
+    if (!userId) return;
     try {
-      await apiBlockUser(currentUserId, targetUserId);
-      await fetchChats(currentUserId); // refresh UI if needed
+      await apiBlockUser(userId, targetUserId);
+      await fetchChats(); // refresh UI if needed
       setShowBlockModal(false);
     } catch (err: any) {
       setError(err?.message ?? 'Failed to block user');
     }
-  }, [currentUserId, fetchChats]);
+  }, [userId, fetchChats]);
 
   //Handle unblock
   const handleUnblock = useCallback(
       async (targetUserId: string) => {
-        if (!currentUserId) return;
+        if (!userId) return;
         try {
-          await apiUnblockUser(currentUserId, targetUserId); // <-- use your unblock API here
-          await fetchChats(currentUserId); // refresh UI if needed
+          await apiUnblockUser(userId, targetUserId); // <-- use your unblock API here
+          await fetchChats(); // refresh UI if needed
           setShowBlockModal(false);
         } catch (err: any) {
           setError(err?.message ?? 'Failed to unblock user');
         }
       },
-      [currentUserId, fetchChats]
+      [userId, fetchChats]
   );
 
   //Search users for block
   const handleSearchUsersForBlock = useCallback(async (searchQuery: string) => {
-    if (!currentUserId) return [];
+    if (!userId) return [];
     try {
-      const result = await apiSearchUsersForBlock(currentUserId, searchQuery);
+      const result = await apiSearchUsersForBlock(userId, searchQuery);
       return result.users || []; // expected format: [{ id, email }]
     } catch (err: any) {
       setError(err?.message ?? 'Failed to search users for blocking');
       return [];
     }
-  }, [currentUserId]);
+  }, [userId]);
 
   // Get list of blocked users by current userId
   const handleGetBlockedList = useCallback(
-      async (currentUserId: string): Promise<{ id: string; email?: string }[]> => {
-        if (!currentUserId) return [];
+      async (): Promise<{ id: string; email?: string }[]> => {
+        if (!userId) return [];
 
         try {
-          const blockedIds = await apiBlockedByUserId(currentUserId);
+          const blockedIds = await apiBlockedByUserId(userId);
           // Ensure blockedIds is always an array
           const safeBlockedIds = Array.isArray(blockedIds) ? blockedIds : [];
           return safeBlockedIds.map((id) => ({ id }));
         } catch (err: any) {
           setError(err?.message ?? 'Failed to fetch blocked users');
           return [];
-        }
+      }
       },
-      [currentUserId]
+      [userId]
   );
 
   // Search users for 1-1 creation
   const handleSearchUsersForNormalChat = useCallback(async (searchQuery: string) => {
-        if (!currentUserId) return [];
+        if (!userId) return [];
 
         try {
-          const result = await apiSearchUsersForNormalChatCreation(currentUserId, searchQuery);
+          const result = await apiSearchUsersForNormalChatCreation(userId, searchQuery);
           return result.users || [];
         } catch (err: any) {
           setError(err?.message ?? 'Failed to search users');
           return [];
         }
       },
-      [currentUserId]
+      [userId]
   );
 
 
   // Search users for group creation (mock function for now - you can fill this in)
   const handleSearchUsers = useCallback(async (searchQuery: string) => {
-    if (!currentUserId) return [];
+    if (!userId) return [];
     try {
-      const result = await apiSearchUsersForGroupCreation(currentUserId, searchQuery);
+      const result = await apiSearchUsersForGroupCreation(userId, searchQuery);
       return result.users || [];
     } catch (err: any) {
       setError(err?.message ?? 'Failed to search users');
       return [];
     }
-  }, [currentUserId]);
+  }, [userId]);
 
   // Search users for adding to group (mock function for now - you can fill this in)
-  const handleSearchUsersForGroup = useCallback(async (chatId: string, currentUserId: string, searchQuery: string) => {
+  const handleSearchUsersForGroup = useCallback(async (chatId: string, searchQuery: string) => {
     try {
-      const result = await apiSearchUsersForAddingToGroup(chatId, currentUserId, searchQuery);
+      const result = await apiSearchUsersForAddingToGroup(chatId, userId, searchQuery);
       return result.users || [];
     } catch (err: any) {
       setError(err?.message ?? 'Failed to search users');
       return [];
     }
-  }, []);
+  }, [userId]);
 
   // Add member to group (admin only)
-  const handleAddMember = useCallback(async (chatId: string, userId: string) => {
-    if (!currentUserId) return;
+  const handleAddMember = useCallback(async (chatId: string, memberUserId: string) => {
+    if (!userId) return;
     try {
-      await apiInviteParticipant(chatId, { creatorId: currentUserId, userId });
+      await apiInviteParticipant(chatId, { creatorId: userId, userId: memberUserId });
       // Note: Member will be in PENDING status until they accept
       // Refetch chats to update the participants list in the sidebar
-      await fetchChats(currentUserId);
+      await fetchChats();
     } catch (err: any) {
       setError(err?.message ?? 'Failed to add member');
     }
-  }, [currentUserId, fetchChats]);
+  }, [userId, fetchChats]);
 
   // Remove member from group (admin only)
-  const handleRemoveMember = useCallback(async (chatId: string, userId: string) => {
-    if (!currentUserId) return;
+  const handleRemoveMember = useCallback(async (chatId: string, memberUserId: string) => {
+    if (!userId) return;
     try {
-      await apiRemoveParticipant(chatId, userId, { creatorId: currentUserId });
+      await apiRemoveParticipant(chatId, memberUserId, { creatorId: userId });
       // Refetch chats to update the participants list in the sidebar
-      await fetchChats(currentUserId);
+      await fetchChats();
     } catch (err: any) {
       setError(err?.message ?? 'Failed to remove member');
     }
-  }, [currentUserId, fetchChats]);
+  }, [userId, fetchChats]);
 
   // Delete entire group chat (creator only)
   const handleDeleteGroup = useCallback(async (chatId: string) => {
-    if (!currentUserId) return;
+    if (!userId) return;
     try {
       const { deleteGroupChat } = await import('@/services/groupChatService');
-      await deleteGroupChat(chatId, { creatorId: currentUserId });
+      await deleteGroupChat(chatId, { creatorId: userId });
       // Remove chat from conversations list
       setConversations(prev => prev.filter(c => c.id !== chatId));
       // Clear selected chat if it was deleted
@@ -640,13 +627,13 @@ export default function useChatLogic(initialUserId: string) {
       setError(err?.message ?? 'Failed to delete group');
       throw err; // Re-throw so UI can handle the error
     }
-  }, [currentUserId, selectedChatId]);
+  }, [userId, selectedChatId]);
 
   // Leave group chat (any member can leave)
   const handleLeaveGroup = useCallback(async (chatId: string) => {
-    if (!currentUserId) return;
+    if (!userId) return;
     try {
-      await apiLeaveGroupChat(chatId, { userId: currentUserId });
+      await apiLeaveGroupChat(chatId, { userId: userId });
       // Remove chat from conversations list
       setConversations(prev => prev.filter(c => c.id !== chatId));
       // Clear selected chat if it was the one we left
@@ -658,19 +645,18 @@ export default function useChatLogic(initialUserId: string) {
       setError(err?.message ?? 'Failed to leave group');
       throw err; // Re-throw so UI can handle the error
     }
-  }, [currentUserId, selectedChatId]);
+  }, [userId, selectedChatId]);
 
   // Fetch invitations when user changes
   useEffect(() => {
-    if (currentUserId) {
+    if (userId) {
       fetchInvitations();
     }
-  }, [currentUserId, fetchInvitations]);
+  }, [userId, fetchInvitations]);
 
   return {
     // state
-    currentUserId,
-    setCurrentUserId,
+    currentUserId: userId,
     conversations,
     selectedChatId,
     setSelectedChatId,

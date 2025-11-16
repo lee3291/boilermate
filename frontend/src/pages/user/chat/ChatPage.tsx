@@ -1,7 +1,8 @@
+import { useAuth } from '@/contexts/AuthContext';
 import useChatLogic from './useChatLogic';
 import ChatSideBar from './ChatSideBar';
 import ChatWindow from './ChatWindow';
-import FakeSignIn from './FakeSignIn';
+import Navbar from '../components/Navbar';
 import CreateGroupModal from './components/CreateGroupModal';
 import CreateNormalChatModal from './components/CreateNormalChatModal';
 import InvitationsModal from './components/InvitationsModal';
@@ -9,24 +10,25 @@ import BlockModal from './components/BlockModal';
 import AddMembersModal from './components/AddMembersModal';
 
 export default function ChatPage() {
-  const logic = useChatLogic('1');
+  const { user } = useAuth();
+  
+  // ProtectedRoute ensures user exists
+  const userId = user!.id;
+  
+  const logic = useChatLogic(userId);
 
   // Get selected conversation
   const selectedConversation = logic.conversations.find((c) => c.id === logic.selectedChatId) ?? null;
 
     return (
-      // h-screen + overflow-hidden prevents the browser page from scrolling vertically
-      <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
-        {/* top: sign-in / controls (full width) */}
-        <div className="bg-white border-b px-4 py-3">
-          <FakeSignIn onChange={logic.setCurrentUserId} />
-        </div>
+      <div className="min-h-screen w-full bg-white">
+        <Navbar />
 
-        {/* bottom: chat area (full width) */}
-        <div className="flex flex-1 w-full">
+        {/* Chat area */}
+        <div className="flex h-[calc(100vh-96px)] w-full">
           {/* pass conversations/loading state to sidebar */}
           <ChatSideBar
-              currentUserId={logic.currentUserId}
+              currentUserId={userId}
               conversations={logic.conversations}
               selectedChatId={logic.selectedChatId}
               onSelect={logic.setSelectedChatId}
@@ -42,7 +44,7 @@ export default function ChatPage() {
           {/* find selected conversation to show header info */}
           <ChatWindow
             chatId={logic.selectedChatId ?? ''}
-            currentUserId={logic.currentUserId}
+            currentUserId={userId}
             messages={logic.messages}
             loadingMessages={logic.loadingMessages}
             error={logic.error}
@@ -70,7 +72,7 @@ export default function ChatPage() {
         <CreateGroupModal
           isOpen={logic.showCreateGroupModal}
           onClose={() => logic.setShowCreateGroupModal(false)}
-          currentUserId={logic.currentUserId}
+          currentUserId={userId}
           onSearchUsers={logic.handleSearchUsers}
           onCreateGroup={logic.handleCreateGroup}
         />
@@ -78,7 +80,7 @@ export default function ChatPage() {
           <CreateNormalChatModal
               isOpen={logic.showCreateNormalChatModal}
               onClose={() => logic.setShowCreateNormalChatModal(false)}
-              currentUserId={logic.currentUserId}
+              currentUserId={userId}
               onSearchUsers={logic.handleSearchUsersForNormalChat}
               onCreateChat={logic.handleCreateNormalChat}
           />
@@ -86,7 +88,7 @@ export default function ChatPage() {
           <BlockModal
               isOpen={logic.showBlockModal}
               onClose={() => logic.setShowBlockModal(false)}
-              currentUserId={logic.currentUserId}
+              currentUserId={userId}
               onSearchUsers={logic.handleSearchUsersForBlock}
               onBlockUsers={logic.handleBlock}
               onUnblockUsers={logic.handleUnblock}
@@ -99,15 +101,15 @@ export default function ChatPage() {
           invitations={logic.invitations}
           onAccept={logic.handleAcceptInvitation}
           onDecline={logic.handleDeclineInvitation}
-          currentUserId={logic.currentUserId}
+          currentUserId={userId}
         />
 
         <AddMembersModal
           isOpen={logic.showAddMembersModal}
           onClose={() => logic.setShowAddMembersModal(false)}
-          currentUserId={logic.currentUserId}
+          currentUserId={userId}
           chatId={logic.selectedChatId ?? ''}
-          onSearchUsers={(query) => logic.handleSearchUsersForGroup(logic.selectedChatId ?? '', logic.currentUserId, query)}
+          onSearchUsers={(query) => logic.handleSearchUsersForGroup(logic.selectedChatId ?? '', query)}
           onAddMember={logic.handleAddMember}
         />
       </div>
