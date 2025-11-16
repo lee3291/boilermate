@@ -100,7 +100,6 @@ export class ChatsService {
               status: true,
               user: {
                 select: {
-                  id: true,
                   email: true,
                   // TODO: Add username, firstName, lastName when available
                 }
@@ -120,7 +119,7 @@ export class ChatsService {
         creatorId: chat.creatorId,
         latestMessageAt: chat.latestMessageAt,
         participants: chat.participants.map((p: any) => ({
-          id: p.user.id,
+          id: p.userId, // Use userId, not ChatParticipant id
           email: p.user.email,
           status: p.status,
           // TODO: Add username, firstName, lastName when available
@@ -519,11 +518,24 @@ export class ChatsService {
     const client: any = this.prisma as any;
 
     try {
-      // Search by userId substring match (case-insensitive)
-      // TODO: Will search by username/name when those fields are added to User model
+      // Search by email substring match (case-insensitive)
+      // Old code - Search by userId:
+      // const users = await client.user.findMany({
+      //   where: {
+      //     id: {
+      //       contains: searchQuery,
+      //       mode: 'insensitive',
+      //     },
+      //   },
+      //   select: {
+      //     id: true,
+      //     email: true,
+      //   },
+      //   take: 20,
+      // });
       const users = await client.user.findMany({
         where: {
-          id: {
+          email: {
             contains: searchQuery,
             mode: 'insensitive',
           },
@@ -535,6 +547,8 @@ export class ChatsService {
         },
         take: 20, // Limit results to 20 users
       });
+
+      Logger.log(users)
 
       // Get list of blocked user IDs for both directions
       const blocks = await client.userBlocking.findMany({
@@ -899,11 +913,24 @@ export class ChatsService {
   /*
    * Given userId, recieve a list of user that userId can block
    */
-  async getUserIdsCanBlock({ userId }: { userId: string }): Promise<{ id: string; email: string }[]> {
-    // Fetch all users except the current user
+  async getUserIdsCanBlock({ userId, searchQuery }: { userId: string; searchQuery?: string }): Promise<{ id: string; email: string }[]> {
+    // Fetch all users except the current user, with optional email search
+    // Old code - Fetch all users without search:
+    // const allUsers = await this.prisma.user.findMany({
+    //   where: { NOT: { id: userId } },
+    //   select: { id: true, email: true },
+    // });
+    const whereClause: any = { NOT: { id: userId } };
+    if (searchQuery) {
+      whereClause.email = {
+        contains: searchQuery,
+        mode: 'insensitive',
+      };
+    }
     const allUsers = await this.prisma.user.findMany({
-      where: { NOT: { id: userId } },
+      where: whereClause,
       select: { id: true, email: true },
+      take: 20, // Limit results when searching
     });
 
     // Get users that current user has blocked (full objects)

@@ -510,11 +510,24 @@ export class GroupChatsService {
     const client: any = this.prisma as any;
 
     try {
-      // Search by userId substring match (case-insensitive)
-      // TODO: Will search by username/name when those fields are added to User model
+      // Search by email substring match (case-insensitive)
+      // Old code - Search by userId:
+      // const users = await client.user.findMany({
+      //   where: {
+      //     id: {
+      //       contains: searchQuery,
+      //       mode: 'insensitive',
+      //     },
+      //   },
+      //   select: {
+      //     id: true,
+      //     email: true,
+      //   },
+      //   take: 20,
+      // });
       const users = await client.user.findMany({
         where: {
-          id: {
+          email: {
             contains: searchQuery,
             mode: 'insensitive',
           },
@@ -607,12 +620,35 @@ export class GroupChatsService {
         if (b.blockedId === creatorId) blockedIds.add(b.blockerId);
       }
 
-      // 4. Search users excluding blocked and existing participants
+      // 4. Search users by email excluding blocked and existing participants
+      // Old code - Search by userId:
+      // const users = await client.user.findMany({
+      //   where: {
+      //     AND: [
+      //       {
+      //         id: {
+      //           contains: searchQuery,
+      //           mode: 'insensitive',
+      //         },
+      //       },
+      //       {
+      //         id: {
+      //           notIn: [...existingUserIds, ...Array.from(blockedIds)],
+      //         },
+      //       },
+      //     ],
+      //   },
+      //   select: {
+      //     id: true,
+      //     email: true,
+      //   },
+      //   take: 20,
+      // });
       const users = await client.user.findMany({
         where: {
           AND: [
             {
-              id: {
+              email: {
                 contains: searchQuery,
                 mode: 'insensitive',
               },

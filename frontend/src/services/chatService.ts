@@ -96,7 +96,7 @@ export async function createNormalChat(request: {
 export async function searchUsersForNormalChatCreation(creatorId: string, searchQuery: string): Promise<{ users: Array<{ id: string; email: string }> }> {
   try {
     const res = await api.get('/chats/users/search-normal-chat', {
-      params: { creatorId, q: searchQuery },
+      params: { creatorId, searchQuery },
     });
     console.log('search users for normal chat creation', res);
     return res.data;
@@ -161,7 +161,7 @@ export async function getUsersWhoBlockedMeIds(userId: string): Promise<string[]>
 export async function getUserIdsCanBlock(userId: string, searchQuery?: string): Promise<{ users: Array<{ id: string; email: string }> }> {
   try {
     const res = await api.get(`/chats/${userId}/can-block`, {
-      params: { q: searchQuery },
+      params: { searchQuery },
     });
     console.log('list of users user can still block', res.data);
     return res.data; // expected format: { users: [{ id, email }, ...] }

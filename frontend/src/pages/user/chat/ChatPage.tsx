@@ -13,9 +13,7 @@ export default function ChatPage() {
   const { user } = useAuth();
   
   // ProtectedRoute ensures user exists
-  const userId = user!.id;
-  
-  const logic = useChatLogic(userId);
+  const logic = useChatLogic(user!);
 
   // Get selected conversation
   const selectedConversation = logic.conversations.find((c) => c.id === logic.selectedChatId) ?? null;
@@ -28,7 +26,7 @@ export default function ChatPage() {
         <div className="flex h-[calc(100vh-96px)] w-full">
           {/* pass conversations/loading state to sidebar */}
           <ChatSideBar
-              currentUserId={userId}
+              currentUserId={logic.user.id}
               conversations={logic.conversations}
               selectedChatId={logic.selectedChatId}
               onSelect={logic.setSelectedChatId}
@@ -44,7 +42,7 @@ export default function ChatPage() {
           {/* find selected conversation to show header info */}
           <ChatWindow
             chatId={logic.selectedChatId ?? ''}
-            currentUserId={userId}
+            currentUserId={logic.user.id}
             messages={logic.messages}
             loadingMessages={logic.loadingMessages}
             error={logic.error}
@@ -72,7 +70,7 @@ export default function ChatPage() {
         <CreateGroupModal
           isOpen={logic.showCreateGroupModal}
           onClose={() => logic.setShowCreateGroupModal(false)}
-          currentUserId={userId}
+          currentUserId={logic.user.id}
           onSearchUsers={logic.handleSearchUsers}
           onCreateGroup={logic.handleCreateGroup}
         />
@@ -80,7 +78,7 @@ export default function ChatPage() {
           <CreateNormalChatModal
               isOpen={logic.showCreateNormalChatModal}
               onClose={() => logic.setShowCreateNormalChatModal(false)}
-              currentUserId={userId}
+              currentUserId={logic.user.id}
               onSearchUsers={logic.handleSearchUsersForNormalChat}
               onCreateChat={logic.handleCreateNormalChat}
           />
@@ -88,7 +86,7 @@ export default function ChatPage() {
           <BlockModal
               isOpen={logic.showBlockModal}
               onClose={() => logic.setShowBlockModal(false)}
-              currentUserId={userId}
+              currentUserId={logic.user.id}
               onSearchUsers={logic.handleSearchUsersForBlock}
               onBlockUsers={logic.handleBlock}
               onUnblockUsers={logic.handleUnblock}
@@ -101,13 +99,13 @@ export default function ChatPage() {
           invitations={logic.invitations}
           onAccept={logic.handleAcceptInvitation}
           onDecline={logic.handleDeclineInvitation}
-          currentUserId={userId}
+          currentUserId={logic.user.id}
         />
 
         <AddMembersModal
           isOpen={logic.showAddMembersModal}
           onClose={() => logic.setShowAddMembersModal(false)}
-          currentUserId={userId}
+          currentUserId={logic.user.id}
           chatId={logic.selectedChatId ?? ''}
           onSearchUsers={(query) => logic.handleSearchUsersForGroup(logic.selectedChatId ?? '', query)}
           onAddMember={logic.handleAddMember}

@@ -44,7 +44,14 @@ import type {
 } from '@/types/chats/chat';
 import { chatSocket } from '@/services/chatSocket';
 
-export default function useChatLogic(userId: string) {
+interface User {
+  id: string;
+  email: string;
+  [key: string]: any;
+}
+
+export default function useChatLogic(user: User) {
+  const userId = user.id;
   const [conversations, setConversations] = useState<Chat[]>([]); // populate the chat sidebar
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null); // enable clicking for the chat sidebar, save state
   const [messages, setMessages] = useState<MessageWithStatus[]>([]); // set the message display part in the chat window
@@ -656,6 +663,7 @@ export default function useChatLogic(userId: string) {
 
   return {
     // state
+    user,
     currentUserId: userId,
     conversations,
     selectedChatId,

@@ -53,10 +53,10 @@ export default function ChatWindow(props: {
 
   const isGroupChat = selectedConversation?.isGroup ?? false;
   const isDM = selectedConversation?.isGroup === false && selectedConversation?.participants?.length === 2;
-  const otherUserId = selectedConversation?.participants?.find(p => p.id !== currentUserId)?.id;
+  const otherUser = selectedConversation?.participants?.find(p => p.id !== currentUserId);
   const chatDisplayName = isGroupChat
       ? selectedConversation?.name ?? 'Unnamed Group'
-      : otherUserId ?? 'Unknown User';
+      : otherUser?.email ?? 'Unknown User';
 
   if (!chatId) {
     return (
@@ -89,6 +89,7 @@ export default function ChatWindow(props: {
                 <MessageDisplay
                     messages={messages ?? []}
                     currentUser={currentUserId ?? ''}
+                    participants={selectedConversation?.participants ?? []}
                     onEdit={onEdit}
                     onDelete={onDelete}
                 />
@@ -111,7 +112,7 @@ export default function ChatWindow(props: {
         </div>
         {isGroupChat &&
             showGroupMembersSidebar &&
-            selectedConversation?.participants?.some(p => p.id === currentUserId && p.status === 'ACCEPTED') && (
+            selectedConversation?.participants?.some(p => p.id === currentUserId) && (
                 <GroupMembersSidebar
                     chatId={chatId ?? ''}
                     currentUserId={currentUserId ?? ''}
@@ -128,7 +129,7 @@ export default function ChatWindow(props: {
                       if (onDeleteGroup) await onDeleteGroup(chatId ?? '');
                     }}
                     members={selectedConversation?.participants
-                        ?.filter(p => p.status === 'ACCEPTED')
+                        ?.filter(p => p.status === 'ACCEPTED' || p.status === 'PENDING')
                         .map(p => ({ id: p.id, email: p.email, status: p.status }))}
                 />
             )}
