@@ -4,6 +4,7 @@ import {
   OnModuleDestroy,
   Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
 
 @Injectable()
@@ -11,10 +12,20 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
+  constructor(private readonly configService: ConfigService) {
+    super();
+  }
 
   async onModuleInit(): Promise<void> {
     try {
       Logger.log('Attempting to connect to database...');
+      
+      // Sanity check for new dotenv cli setup, should be removed later
+      const dbUrl = this.configService.get<string>('DATABASE_URL');
+      if (dbUrl) {
+        Logger.log(`Database: ${dbUrl}`);
+      }
+
       await this.$connect();
       Logger.log('PrismaClient connected successfully');
     } catch (error) {

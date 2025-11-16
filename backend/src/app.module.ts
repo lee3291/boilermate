@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from '@core/database/prisma.module';
@@ -24,8 +25,9 @@ import { VerificationModule } from './modules/verification/verification.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true, // Make config available globally
-      envFilePath: '.env', // Load environment variables
+      envFilePath: '.env', // Load environment variables for production/ the main db
     }),
+    ScheduleModule.forRoot(),
     PrismaModule, // Database module
     ChatsModule, // Chat feature module
     UploadsModule, // Image upload module

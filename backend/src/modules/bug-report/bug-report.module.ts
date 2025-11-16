@@ -6,6 +6,6 @@ import { MailService } from '../mail/mail.service';
 
 @Module({
   controllers: [BugReportController],
-  providers: [BugReportService, PrismaService, MailService],
+  providers: [BugReportService, MailService],
 })
 export class BugReportModule {}
