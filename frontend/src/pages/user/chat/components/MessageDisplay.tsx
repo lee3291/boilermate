@@ -1,14 +1,22 @@
 import { useEffect, useRef } from 'react';
 import Message from './Message';
 
+interface Participant {
+  id: string;
+  email: string;
+  status: string;
+}
+
 export default function MessageDisplay({ 
   messages, 
-  currentUser, 
+  currentUser,
+  participants, 
   onEdit, 
   onDelete 
 }: { 
   messages: any[]; 
-  currentUser: string; 
+  currentUser: string;
+  participants: Participant[]; 
   onEdit?: (id: string, content: string) => void; 
   onDelete?: (id: string, forEveryone: boolean) => void 
 }) {
@@ -34,6 +42,7 @@ export default function MessageDisplay({
             m={m} 
             isMine={m.senderId === currentUser}
             currentUserId={currentUser}
+            senderEmail={participants.find(p => p.id === m.senderId)?.email ?? m.senderId}
             onEdit={onEdit} 
             onDelete={onDelete}
           />

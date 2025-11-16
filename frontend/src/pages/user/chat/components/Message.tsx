@@ -83,11 +83,12 @@ interface MessageProps {
     m: any;
     isMine: boolean;
     currentUserId: string;
+    senderEmail: string;
     onEdit?: (id: string, content: string) => void;
     onDelete?: (id: string, forEveryone: boolean) => void;
 }
 
-export default function Message({ m, isMine, currentUserId, onEdit, onDelete }: MessageProps) {
+export default function Message({ m, isMine, currentUserId, senderEmail, onEdit, onDelete }: MessageProps) {
     const [hover, setHover] = useState(false);
     const [editing, setEditing] = useState(false);
     const [editText, setEditText] = useState(m.content);
@@ -118,8 +119,8 @@ export default function Message({ m, isMine, currentUserId, onEdit, onDelete }: 
             <div className="flex items-center gap-2" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
                 {!isMine && (
                     <div className="flex flex-col items-center mr-2">
-                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-[10px] text-gray-700">
-                            {m.senderId}
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-semibold text-blue-700">
+                            {senderEmail[0]?.toUpperCase() ?? '?'}
                         </div>
                     </div>
                 )}
@@ -199,8 +200,8 @@ export default function Message({ m, isMine, currentUserId, onEdit, onDelete }: 
 
                 {isMine && (
                     <div className="flex flex-col items-center ml-2">
-                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-[10px] text-gray-700">
-                            {m.senderId}
+                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-xs font-semibold text-green-700">
+                            {senderEmail[0]?.toUpperCase() ?? '?'}
                         </div>
                     </div>
                 )}

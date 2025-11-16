@@ -205,21 +205,21 @@ export class ChatsController {
 
   /**
    * Search users for creating a 1-1 chat
-   * Query param: q (search query string)
+   * Query param: searchQuery (search query string for email)
    */
   @Get('users/search-normal-chat')
   @HttpCode(200)
-  async searchUsersForNormalChatCreation(@Query('creatorId') creatorId: string, @Query('q') searchQuery: string) {
+  async searchUsersForNormalChatCreation(@Query('creatorId') creatorId: string, @Query('searchQuery') searchQuery: string) {
     const result = await this.chatsService.searchUsersForNormalChatCreation(creatorId, searchQuery);
     return SearchUsersResponseDto.fromResult(result);
   }
   /**
    * Search users for creating a new group chat
-   * Query param: q (search query string)
+   * Query param: searchQuery (search query string for email)
    */
   @Get('users/search')
   @HttpCode(200)
-  async searchUsersForGroupCreation(@Query('creatorId') creatorId: string, @Query('q') searchQuery: string) {
+  async searchUsersForGroupCreation(@Query('creatorId') creatorId: string, @Query('searchQuery') searchQuery: string) {
     const result = await this.groupChatsService.searchUsersForGroupCreation(creatorId, searchQuery);
     return SearchUsersResponseDto.fromResult(result);
   }
@@ -227,14 +227,14 @@ export class ChatsController {
   /**
    * Search users to add to an existing group chat
    * Excludes users already in the group
-   * Query param: q (search query string)
+   * Query param: searchQuery (search query string for email)
    */
   @Get(':chatId/users/search')
   @HttpCode(200)
   async searchUsersForAddingToGroup(
       @Param('chatId') chatId: string,
       @Query('creatorId') creatorId: string,
-    @Query('q') searchQuery: string
+    @Query('searchQuery') searchQuery: string
   ) {
     const result = await this.groupChatsService.searchUsersForAddingToGroup(chatId, creatorId, searchQuery);
     return SearchUsersResponseDto.fromResult(result);
@@ -283,8 +283,11 @@ export class ChatsController {
    * Given userId, recieve a list of user that userId can block
    */
   @Get(':userId/can-block')
-  async getUserIdsCanBlock(@Param('userId') userId: string): Promise<{ users: { id: string; email: string }[] }> {
-    const users = await this.chatsService.getUserIdsCanBlock({ userId });
+  async getUserIdsCanBlock(
+    @Param('userId') userId: string,
+    @Query('searchQuery') searchQuery?: string,
+  ): Promise<{ users: { id: string; email: string }[] }> {
+    const users = await this.chatsService.getUserIdsCanBlock({ userId, searchQuery });
     return { users };
   }
   /*

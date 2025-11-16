@@ -23,17 +23,17 @@ export default function ConversationListItem({
   // NEW: Support both DM and Group chats
   const isGroupChat = chat?.isGroup ?? false;
   
-  // Display name: For groups show name, for DMs show other user's name
+  // Display name: For groups show name, for DMs show other user's email
 
   const displayName = isGroupChat
       ? (chat?.name ?? 'Unnamed Group')
-      : (chat?.participants?.find(p => p.id !== currentUserId)?.id ?? 'Unknown User');
+      : (chat?.participants?.find(p => p.id !== currentUserId)?.email ?? 'Unknown User');
 
 
   // Badge/Avatar: For groups use first letter of name, for DMs use user badge
   const avatarContent = isGroupChat
       ? (chat?.name?.[0]?.toUpperCase() ?? 'G')
-      : (chat?.participants?.find(p => p.id !== currentUserId)?.id?.[0]?.toUpperCase() ?? 'U');
+      : (chat?.participants?.find(p => p.id !== currentUserId)?.email?.[0]?.toUpperCase() ?? 'U');
 
   const avatarColor = isGroupChat ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700';
 

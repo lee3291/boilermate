@@ -33,7 +33,7 @@ export default function ChatSideBar({
       {/* Header with Chats title and action buttons */}
       <div className="px-4 py-3 border-b flex items-center justify-between">
         <span className="font-semibold">Chats</span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {onViewInvitations && (
             <InvitationsButton
                 onClick={onViewInvitations}
