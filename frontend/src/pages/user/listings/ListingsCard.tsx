@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { useAuth } from '../../../contexts/AuthContext';
 import SaveBlack from "../../../assets/images/save-black.png";
 import SaveWhite from "../../../assets/images/save-white.png";
+import FlagBlack from "../../../assets/images/flag-black.png";
+import FlagWhite from "../../../assets/images/flag-white.png";
 import { toggleSave } from "../../../services/saves";
 import { getSavedListings } from "../../../services/savedListings";
 import { getSavedHint, setSavedHint } from "../../../services/savedCache";
@@ -206,11 +208,20 @@ export default function ListingsCard({
     ) : (
         <img
             src={clicked ? SaveBlack : SaveWhite}
-            className={`h-6 w-auto cursor-pointer select-none ${saving ? "opacity-60 pointer-events-none" : ""}`}
+            className={`h-6 w-6 cursor-pointer select-none object-contain text-wrap ${saving ? "opacity-60 pointer-events-none" : ""}`}
             alt={clicked ? "Saved" : "Save"}
             onClick={onToggleSave}
             draggable={false}
         />
+    );
+
+    const flagIcon = (
+        <img
+            src={FlagBlack}
+            className="h-6 w-6 cursor-pointer select-none object-contain"
+            alt="Flag listing"
+            draggable={false}
+            />
     );
 
     const style = widthStyle ? { width: widthStyle } : undefined;
@@ -220,13 +231,16 @@ export default function ListingsCard({
             <div className={`absolute h-100 ${widthClass} z-0 bg-black/20 blur-[5px] rounded-lg`} style={style} />
             <div className={`relative h-100 ${widthClass} z-10 border-black border-[1.5px] bg-white rounded-lg`} style={style}>
                 <div className="py-5 px-5">
-                    <div className="flex justify-between">
-                        <h1 className="font-roboto-regular text-3xl tracking-[-0.4pt]">{title}</h1>
-                        <div className="flex items-center gap-3">
+                    <div className="flex items-center">
+                        <h1 className="flex-[3] font-roboto-regular text-3xl tracking-[-0.4pt]">{title}</h1>
+                        <div className="flex-[2] flex items-center">
                             <h1 className="mt-1 font-sourceserif4-18pt-regular text-[20px] text-gray-400 tracking-[-0.4pt]">
                                 {location}
                             </h1>
-                            {icon}
+                            <div className="shrink-0 flex flex-col gap-3">
+                                {icon}
+                                {flagIcon}
+                            </div>
                         </div>
                     </div>
 
