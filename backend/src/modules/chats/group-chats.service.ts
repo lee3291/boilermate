@@ -13,6 +13,8 @@ import {
   DeleteGroupChatDetails,
   GroupChatDetails,
   InvitationDetails,
+  PollDetails,
+  PollOptionDetails,
 } from './interfaces/group-chat.interface';
 
 @Injectable()
@@ -675,5 +677,119 @@ export class GroupChatsService {
       throw new InternalServerErrorException('Failed to search users');
     }
   }
+  //Related to poll
+  /*
+   * Create new poll in the current chat
+   */
+  async createPoll(chatId: string, question: string, options: string[]): Promise<PollDetails> {
+    const client: any = this.prisma as any;
 
+    try {
+      const chat = await client.chat.findUnique({ where: { id: chatId } });
+      if (!chat) throw new NotFoundException('Chat not found');
+
+      if (!question.trim()) throw new BadRequestException('Question cannot be empty');
+      if (!options.length) throw new BadRequestException('Poll must have at least one option');
+
+      const poll = await client.poll.create({
+        data: {
+          chatId,
+          question,
+          options: { create: options.map(text => ({ text })) }
+        },
+        include: { options: true }
+      });
+
+      return {
+        id: poll.id,
+        question: poll.question,
+        chatId: poll.chatId,
+        options: poll.options.map((opt: any) => ({
+          id: opt.id,
+          text: opt.text,
+          votes: opt.votes
+        }))
+      };
+    } catch (error) {
+      Logger.error('createPoll error', error);
+      throw new InternalServerErrorException('Failed to create poll');
+    }
+  }
+
+
+  /*
+   * Get all poll from current chat (include options)
+   */
+  async getPolls(chatId: string): Promise<PollDetails[]> {
+    const client: any = this.prisma as any;
+
+    try {
+      const chat = await client.chat.findUnique({ where: { id: chatId } });
+      if (!chat) throw new NotFoundException('Chat not found');
+
+      const polls = await client.poll.findMany({
+        where: { chatId },
+        include: { options: true },
+        orderBy: { createdAt: 'asc' } // THIS IS OK even if we don't return it
+      });
+
+      return polls.map((poll: any)=> ({
+        id: poll.id,
+        chatId: poll.chatId,
+        question: poll.question,
+        options: poll.options.map((opt: any) => ({
+          id: opt.id,
+          text: opt.text,
+          votes: opt.votes
+        }))
+      }));
+    } catch (error) {
+      Logger.error('getPolls error', error);
+      throw new InternalServerErrorException('Failed to fetch polls');
+    }
+  }
+
+  /**
+   * Add a new option to a poll
+   */
+  async addOption(pollId: string, text: string): Promise<PollDetails> {
+    const client: any = this.prisma as any;
+
+    try {
+      const poll = await client.poll.findUnique({
+        where: {id: pollId},
+        include: {options: true}
+      });
+      if (!poll) throw new NotFoundException('Poll not found');
+
+      if (!text.trim()) throw new BadRequestException('Option text cannot be empty');
+
+      const exists = poll.options.some((opt: any) => opt.text === text);
+
+      if (exists) throw new ConflictException('Option already exists');
+
+      await client.pollOption.create({
+        data: {pollId, text}
+      });
+
+      const updated = await client.poll.findUnique({
+        where: {id: pollId},
+        include: {options: true}
+      });
+
+      return {
+        id: updated.id,
+        chatId: updated.chatId,
+        question: updated.question,
+        options: poll.options.map((opt: any) => ({
+          id: opt.id,
+          text: opt.text,
+          votes: opt.votes
+        }))
+      };
+    } catch (error) {
+      Logger.error('addOption error', error);
+      throw new InternalServerErrorException('Failed to add option');
+    }
+  }
 }

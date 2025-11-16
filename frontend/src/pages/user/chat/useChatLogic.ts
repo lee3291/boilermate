@@ -27,6 +27,9 @@ import {
   leaveGroupChat as apiLeaveGroupChat,
   searchUsersForGroupCreation as apiSearchUsersForGroupCreation,
   searchUsersForAddingToGroup as apiSearchUsersForAddingToGroup,
+  createPoll as apiCreatePoll,
+  getAllPolls as apiGetAllPolls,
+  addPollOption as apiAddPollOption,
 } from '@/services/groupChatService';
 import { compressImage } from '@/utils/imageCompression';
 import config from '@/utils/config';
@@ -50,6 +53,18 @@ interface User {
   [key: string]: any;
 }
 
+interface PollOption {
+  id: string;
+  text: string;
+  votes: number;
+}
+
+
+interface Poll {
+  id: string;
+  question: string;
+  options: PollOption[];
+}
 export default function useChatLogic(user: User) {
   const userId = user.id;
   const [conversations, setConversations] = useState<Chat[]>([]); // populate the chat sidebar
@@ -60,6 +75,7 @@ export default function useChatLogic(user: User) {
   const [isUploadingImage, setIsUploadingImage] = useState(false); // track if image is being uploaded
   const [loadingChats, setLoadingChats] = useState(false); // set loading state when fetching all chatIds in side bar
   const [loadingMessages, setLoadingMessages] = useState(false); // set loading state when fetching all the messages in chat window
+  const [polls, setPolls] = useState<Poll[]>([]); //track polls
   const [error, setError] = useState<string | null>(null); // set error state when handling events
 
   // Group chat specific states
@@ -592,6 +608,41 @@ export default function useChatLogic(user: User) {
     }
   }, [userId]);
 
+  // Create a new poll
+  const handleCreatePoll = useCallback(
+      async (chatId: string, question: string, options: string[]): Promise<boolean> => {
+        if (!userId) {
+          setError('userId required');
+          return false;
+        }
+
+        try {
+          const newPoll: Poll = await apiCreatePoll(chatId, question, options );
+          setPolls((prev) => [...prev, newPoll]); // append new poll
+          return true;
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to create poll');
+          return false;
+        }
+      },
+      [userId]
+  );
+  //Get all polls given chat id
+  const handleGetPolls = useCallback(
+      async (chatId: string) => {
+        if (!chatId) return [];
+        try {
+          const res = await apiGetAllPolls(chatId); // call backend service
+          setPolls(res || []);
+          return res;
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to fetch polls');
+          return [];
+        }
+      },
+      []
+  );
+
   // Add member to group (admin only)
   const handleAddMember = useCallback(async (chatId: string, memberUserId: string) => {
     if (!userId) return;
@@ -708,6 +759,8 @@ export default function useChatLogic(user: User) {
     remove,
     blockedBetween,
       setBlockedBetween,
+    handleCreatePoll,
+    handleGetPolls,
 
     // group chat actions
     fetchInvitations,

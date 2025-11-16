@@ -22,6 +22,8 @@ import {
   InvitationResponseDto,
   SearchUsersResponseDto,
   MessageApprovalDto,
+  PollInGroupDto,
+  PollOptionDto,
 } from './dto';
 import { BlockUserDto,
   UnblockUserDto,
@@ -315,5 +317,33 @@ export class ChatsController {
     const blocked = await this.chatsService.isBlockedBetween(user1, user2);
     return { blocked };
   }
-
+  //Related to poll
+  /*
+   * Create new poll in the current chat
+   */
+  @Post(':chatId/polls')
+  async createPoll(
+      @Param('chatId') chatId: string,
+      @Body('question') question: string,
+      @Body('options') options: string[]
+  ): Promise<PollInGroupDto> {
+    return this.groupChatsService.createPoll(chatId, question, options);
+  }
+  /*
+   * Get all poll from current chat (include options)
+   */
+  @Get(':chatId/polls')
+  async getAllPolls(@Param('chatId') chatId: string): Promise<PollInGroupDto[]> {
+    return this.groupChatsService.getPolls(chatId);
+  }
+  /*
+   * Add more options to current poll
+   */
+  @Post('poll/:pollId/add-option')
+  async addOption(
+      @Param('pollId') pollId: string,
+      @Body() body: { text: string }
+  ) {
+    return this.groupChatsService.addOption(pollId, body.text);
+  }
 }

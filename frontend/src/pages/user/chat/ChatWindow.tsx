@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MessageDisplay from './components/MessageDisplay';
 import InputBar from './components/InputBar';
 import GroupMembersSidebar from './components/GroupMembersSidebar';
@@ -28,6 +28,8 @@ export default function ChatWindow(props: {
   onLeaveGroup?: (chatId: string) => Promise<void>;
   onDeleteGroup?: (chatId: string) => Promise<void>;
   blockedBetween?: boolean;
+  onCreatePoll?: (chatId: string, question: string, options: string[]) => Promise<boolean>;
+  onGetPolls?: (chatId: string) => Promise<{ id: string; question: string; options: string[] }[]>;
 }) {
   const {
     chatId,
@@ -51,35 +53,47 @@ export default function ChatWindow(props: {
     onLeaveGroup,
     onDeleteGroup,
     blockedBetween,
+    onCreatePoll,
+    onGetPolls,
   } = props;
 
-  const [localPolls, setLocalPolls] = useState<{ id: string; question: string; options: string[] }[]>([]);
+  const [polls, setPolls] = useState<{ id: string; question: string; options: string[] }[]>([]);
   const [showPollsSidebar, setShowPollsSidebar] = useState(false);
 
-  const handleCreatePoll = (poll: { question: string; options: string[] }) => {
-    setLocalPolls(prev => [...prev, { id: crypto.randomUUID(), ...poll }]);
+  const handleCreatePoll = async (poll: { question: string; options: string[] }) => {
+    if (!onCreatePoll || !chatId) return;
+    const success = await onCreatePoll(chatId, poll.question, poll.options);
+    if (success) {
+      await handleFetchPolls(); // refresh from backend after creation
+    }
   };
 
+  const handleFetchPolls = async () => {
+    if (!onGetPolls || !chatId) return;
+    try {
+      const result = await onGetPolls(chatId);
+      setPolls(result || []);
+    } catch (err) {
+      console.error('Failed to fetch polls', err);
+    }
+  };
+
+  useEffect(() => {
+    if (chatId && selectedConversation?.isGroup) {
+      handleFetchPolls();
+    }
+  }, [chatId, selectedConversation]);
+
   const isGroupChat = selectedConversation?.isGroup ?? false;
-  const isDM =
-      selectedConversation?.isGroup === false &&
-      selectedConversation?.participants?.length === 2;
-
-  const otherUser = selectedConversation?.participants?.find(
-      p => p.id !== currentUserId
-  );
-
-  const chatDisplayName = isGroupChat
-      ? selectedConversation?.name ?? 'Unnamed Group'
-      : otherUser?.email ?? 'Unknown User';
+  const isDM = selectedConversation?.isGroup === false && selectedConversation?.participants?.length === 2;
+  const otherUser = selectedConversation?.participants?.find(p => p.id !== currentUserId);
+  const chatDisplayName = isGroupChat ? selectedConversation?.name ?? 'Unnamed Group' : otherUser?.email ?? 'Unknown User';
 
   if (!chatId) {
     return (
         <main className="flex-1 flex flex-col">
           <header className="px-4 py-3 border-b bg-white">Select a chat</header>
-          <div className="flex-1 flex items-center justify-center">
-            Please select a chat to begin
-          </div>
+          <div className="flex-1 flex items-center justify-center">Please select a chat to begin</div>
         </main>
     );
   }
@@ -90,23 +104,15 @@ export default function ChatWindow(props: {
           <header className="flex-none h-12 px-4 py-3 border-b bg-white flex items-center justify-between">
             <span className="font-medium">{chatDisplayName}</span>
             {isGroupChat && onToggleGroupMembersSidebar && (
-                <button
-                    onClick={onToggleGroupMembersSidebar}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
+                <button onClick={onToggleGroupMembersSidebar} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                   <Users size={20} />
                 </button>
             )}
           </header>
 
           <div className="flex-1 min-h-0 relative bg-gray-50 overflow-y-auto">
-            {loadingMessages && (
-                <div className="p-4 text-sm text-gray-500">Loading messages...</div>
-            )}
-            {error && (
-                <div className="p-4 text-sm text-red-500">{error}</div>
-            )}
-
+            {loadingMessages && <div className="p-4 text-sm text-gray-500">Loading messages...</div>}
+            {error && <div className="p-4 text-sm text-red-500">{error}</div>}
             {!loadingMessages && !error && (
                 <div className="flex flex-col p-4 space-y-4">
                   <MessageDisplay
@@ -122,9 +128,7 @@ export default function ChatWindow(props: {
 
           <div className="flex-none">
             {isDM && blockedBetween ? (
-                <div className="p-4 text-center text-red-500">
-                  You cannot send messages to this user
-                </div>
+                <div className="p-4 text-center text-red-500">You cannot send messages to this user</div>
             ) : (
                 <InputBar
                     value={messageInput}
@@ -142,42 +146,33 @@ export default function ChatWindow(props: {
 
         {isGroupChat && showGroupMembersSidebar && selectedConversation?.participants?.some(p => p.id === currentUserId) && (
             <GroupMembersSidebar
-                chatId={chatId ?? ''}
+                chatId={chatId}
                 currentUserId={currentUserId ?? ''}
                 isAdmin={selectedConversation?.creatorId === currentUserId}
                 onClose={() => onToggleGroupMembersSidebar?.()}
                 onAddMembers={() => onAddMembersClick?.()}
-                onRemoveMember={async memberId => {
-                  if (onRemoveMember) await onRemoveMember(chatId ?? '', memberId);
-                }}
-                onLeaveGroup={async () => {
-                  if (onLeaveGroup) await onLeaveGroup(chatId ?? '');
-                }}
-                onDeleteGroup={async () => {
-                  if (onDeleteGroup) await onDeleteGroup(chatId ?? '');
-                }}
-                members={selectedConversation?.participants
-                    ?.filter(p => p.status === 'ACCEPTED' || p.status === 'PENDING')
-                    .map(p => ({
-                      id: p.id,
-                      email: p.email,
-                      status: p.status,
-                    }))}
+                onRemoveMember={async memberId => { if (onRemoveMember) await onRemoveMember(chatId, memberId); }}
+                onLeaveGroup={async () => { if (onLeaveGroup) await onLeaveGroup(chatId); }}
+                onDeleteGroup={async () => { if (onDeleteGroup) await onDeleteGroup(chatId); }}
+                members={selectedConversation?.participants?.filter(p => p.status === 'ACCEPTED' || p.status === 'PENDING').map(p => ({
+                  id: p.id,
+                  email: p.email,
+                  status: p.status,
+                }))}
                 onSeePolls={() => {
-                  // Close group members sidebar and open polls sidebar
                   onToggleGroupMembersSidebar?.();
                   setShowPollsSidebar(true);
+                  handleFetchPolls();
                 }}
             />
         )}
 
         {isGroupChat && showPollsSidebar && (
             <PollsSidebar
-                polls={localPolls}
+                polls={polls}
                 onClose={() => setShowPollsSidebar(false)}
             />
         )}
-
       </div>
   );
 }

@@ -143,7 +143,38 @@ export async function searchUsersForAddingToGroup(chatId: string, creatorId: str
     throw error.response?.data ?? error;
   }
 }
+// Create a new poll in a chat
+export async function createPoll(chatId: string, question: string, options: string[]): Promise<any> {
+  try {
+    const res = await api.post(`/chats/${encodeURIComponent(chatId)}/polls`, { question, options });
+    console.log('create poll', res);
+    return res.data;
+  } catch (error: any) {
+    throw error.response?.data ?? error;
+  }
+}
 
+// Get all polls for a chat
+export async function getAllPolls(chatId: string): Promise<any[]> {
+  try {
+    const res = await api.get(`/chats/${encodeURIComponent(chatId)}/polls`);
+    console.log('get all polls', res);
+    return res.data;
+  } catch (error: any) {
+    throw error.response?.data ?? error;
+  }
+}
+
+// Add a new option to an existing poll
+export async function addPollOption(pollId: string, text: string): Promise<any> {
+  try {
+    const res = await api.post(`/chats/poll/${encodeURIComponent(pollId)}/add-option`, { text });
+    console.log('add poll option', res);
+    return res.data;
+  } catch (error: any) {
+    throw error.response?.data ?? error;
+  }
+}
 export default {
   createGroupChat,
   getInvitations,
@@ -155,4 +186,7 @@ export default {
   deleteGroupChat,
   searchUsersForGroupCreation,
   searchUsersForAddingToGroup,
+  createPoll,
+  getAllPolls,
+  addPollOption,
 };
