@@ -91,15 +91,22 @@ export default function ListingDetails() {
 
             <div className="pt-10 pl-18">
                 <div className="flex justify-between">
-                    <h1 className="font-sourceserif4-18pt-regular text-[55px] tracking-[-0.02em] text-maingray">{title}</h1>
+                    <h1 className="font-sourceserif4-18pt-regular text-[55px] tracking-[-0.02em] text-maingray">
+                        {title}
+                    </h1>
 
                     <div className="flex justify-baseline gap-3 mr-20 -mt-5">
-                        <button className="mt-10 h-12 w-35 bg-black text-white font-roboto-light rounded-4xl cursor-pointer">
-                            Apply to join
-                        </button>
-                        <button className="mt-10 h-12 w-30 bg-white text-black border-black border-1 font-roboto-light rounded-4xl cursor-pointer">
-                            Contact
-                        </button>
+                        {/* Only show Apply / Contact if viewer is not the owner (mirrors card behavior) */}
+                        {!isOwner && (
+                            <>
+                                <button className="mt-10 h-12 w-35 bg-black text-white font-roboto-light rounded-4xl cursor-pointer">
+                                    Apply to join
+                                </button>
+                                <button className="mt-10 h-12 w-30 bg-white text-black border-black border-1 font-roboto-light rounded-4xl cursor-pointer">
+                                    Contact
+                                </button>
+                            </>
+                        )}
 
                         <ShareButtons
                             id={id}
@@ -110,34 +117,54 @@ export default function ListingDetails() {
                             location={location}
                             moveInStart={moveInStart}
                             moveInEnd={moveInEnd}
-                        />
+                            />
                     </div>
                 </div>
 
                 <div className="flex justify-end mr-22">
-                    <a href="/listings" className="font-roboto-light hover:underline hover:underline-offset-2">Return to Listings</a>
+                    <a
+                        href="/listings"
+                        className="font-roboto-light hover:underline hover:underline-offset-2"
+                    >
+                        Return to Listings
+                    </a>
                 </div>
 
                 <div className="flex flex-col gap-1">
                     <div className="flex gap-10">
-                        <p className="text-gray-500 text-[20px] font-roboto-italic tracking-[-0.02em] ">Created by {author}</p>
-                        <p className="-mt-[1px] text-gray-400 font-sourceserif4-18pt-italic text-[20px]">{price}</p>
+                        <p className="text-gray-500 text-[20px] font-roboto-italic tracking-[-0.02em] ">
+                            Created by {author}
+                        </p>
+                        <p className="-mt-[1px] text-gray-400 font-sourceserif4-18pt-italic text-[20px]">
+                            {price}
+                        </p>
                     </div>
 
                     {isOwner && (
                         <div className="text-sm text-gray-500 font-roboto-italic text-[20px]">
-                            Views: {viewCount ?? "—"}{typeof uniqueCount === "number" ? ` (${uniqueCount} unique)` : ""}
+                            Views: {viewCount ?? "—"}
+                            {typeof uniqueCount === "number" ? ` (${uniqueCount} unique)` : ""}
                         </div>
                     )}
                 </div>
 
-                <p className="font-roboto-italic text-[20px] text-gray-600 ">Location: {location}</p>
-                <p className="font-roboto-italic text-[20px] text-gray-600 ">Move in Date: {moveInStart} - {moveInEnd}</p>
+                <p className="font-roboto-italic text-[20px] text-gray-600 ">
+                    Location: {location}
+                </p>
+                <p className="font-roboto-italic text-[20px] text-gray-600 ">
+                    Move in Date: {moveInStart} - {moveInEnd}
+                </p>
 
-                <h2 className="mt-10 font-sourceserif4-18pt-regular text-[40px] tracking-[-0.02em] text-maingray">Description</h2>
-                <p className="mt-1 font-roboto-light text-[20px] tracking-[-0.02em]">{body}</p>
+                <h2 className="mt-10 font-sourceserif4-18pt-regular text-[40px] tracking-[-0.02em] text-maingray">
+                    Description
+                </h2>
+                <p className="mt-1 font-roboto-light text-[20px] tracking-[-0.02em]">
+                    {body}
+                </p>
 
-                <p className="mt-6 text-sm font-roboto-light text-gray-400">Listing ID: {id}</p>
+                <p className="mt-6 text-sm font-roboto-light text-gray-400">
+                    Listing ID: {id}
+                </p>
             </div>
         </div>
     );

@@ -217,7 +217,7 @@ export default function ListingsCard({
 
     const flagIcon = (
         <img
-            src={FlagBlack}
+            src={FlagWhite}
             className="h-6 w-6 cursor-pointer select-none object-contain"
             alt="Flag listing"
             draggable={false}
