@@ -6,6 +6,6 @@ import { MailService } from '../mail/mail.service';
 
 @Module({
   controllers: [UserReportController],
-  providers: [UserReportService, PrismaService, MailService],
+  providers: [UserReportService, MailService],
 })
 export class UserReportModule {}

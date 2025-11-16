@@ -17,18 +17,20 @@
     "prisma:migrate": "prisma migrate dev --schema ./prisma",
     "prisma:seed": "ts-node prisma/seeds/preferences.seed.ts",
     "prisma:reset": "prisma migrate reset",
-    "start -d": "dotenv -e .env -e .env.dev -- nest start",
-    "start:dev -d": "dotenv -e .env -e .env.dev -- nest start --watch",
-    "start:debug -d": "dotenv -e .env -e .env.dev -- nest start --debug --watch",
-    "prisma:generate -d": "dotenv -e .env -e .env.dev -- prisma generate --schema ./prisma",
-    "prisma:migrate -d": "dotenv -e .env -e .env.dev -- prisma migrate dev --schema ./prisma",
-    "prisma:seed -d": "dotenv -e .env -e .env.dev -- ts-node prisma/seeds/preferences.seed.ts",
-    "prisma:reset -d": "dotenv -e .env -e .env.dev -- prisma migrate reset",
-    "test": "dotenv -e .env -e .env.test -- jest",
-    "test:watch": "dotenv -e .env -e .env.test -- jest --watch",
-    "test:cov": "dotenv -e .env -e .env.test -- jest --coverage",
-    "test:debug": "dotenv -e .env -e .env.test -- node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "dotenv -e .env -e .env.test -- jest --config ./test/jest-e2e.json"
+
+    "start:d": "dotenv -e .env -e .env.dev --override -- nest start",
+    "start:dev:d": "dotenv -e .env -e .env.dev --override -- nest start --watch",
+    "start:debug:d": "dotenv -e .env -e .env.dev --override -- nest start --debug --watch",
+    "prisma:generate:d": "dotenv -e .env -e .env.dev --override -- prisma generate --schema ./prisma",
+    "prisma:migrate:d": "dotenv -e .env -e .env.dev --override -- prisma migrate dev --schema ./prisma",
+    "prisma:seed:d": "dotenv -e .env -e .env.dev --override -- ts-node prisma/seeds/preferences.seed.ts",
+    "prisma:reset:d": "dotenv -e .env -e .env.dev --override -- prisma migrate reset",
+
+    "test": "dotenv -e .env -e .env.test --override -- jest",
+    "test:watch": "dotenv -e .env -e .env.test --override -- jest --watch",
+    "test:cov": "dotenv -e .env -e .env.test --override -- jest --coverage",
+    "test:debug": "dotenv -e .env -e .env.test --override -- node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "dotenv -e .env -e .env.test --override -- jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
     "@aws-sdk/client-cloudfront": "^3.908.0",

@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common';
 import { EmailVerificationService } from './email-verification.service';
-import { PrismaModule } from '@core/database/prisma.module';
+// import { PrismaModule } from '@core/database/prisma.module';
 
 @Module({
-  imports: [PrismaModule],
   providers: [EmailVerificationService],
   exports: [EmailVerificationService],
 })
