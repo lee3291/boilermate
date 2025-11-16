@@ -1,21 +1,26 @@
 import { useRef } from 'react';
 import ImageUploadButton from './ImageUploadButton';
 import CreatePollButton from './CreatePollButton';
+import type { Chat, MessageWithStatus } from '@/types/chats/chat';
 
 export default function InputBar({
   value,
+                                     selectedConversation,
   onChange,
   onSend,
   onFileChange, // new prop for handling file selection
   selectedFile, // new prop for displaying selected file
   isUploading, // new prop for showing upload state
-}: {
+                                     onCreatePoll,
+                                 }: {
   value?: string;
+    selectedConversation?: Chat | null;
   onChange?: (v: string) => void;
   onSend?: (opts?: { recipientId?: string }) => Promise<any> | void;
   onFileChange?: (file: File | null) => void; // handler for file selection
   selectedFile?: File | null; // currently selected file
   isUploading?: boolean; // whether image is being uploaded
+    onCreatePoll?: (poll: { question: string; options: string[] }) => void; //Handle for poll in chat
 }) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -42,7 +47,7 @@ export default function InputBar({
     textarea.style.height = `${textarea.scrollHeight}px`;
     onChange?.(textarea.value);
   };
-
+  const isGroupChat = selectedConversation?.isGroup ?? false;
   return (
     <div className="px-3 py-2 border-t bg-white flex gap-3 items-end max-h-60">
       {/* Image upload button - placed before textarea */}
@@ -51,7 +56,11 @@ export default function InputBar({
         disabled={isUploading} // disable during upload
         selectedFileName={selectedFile?.name} // show selected file name
       />
-        <CreatePollButton/>
+        {isGroupChat && (
+            <>
+                <CreatePollButton onCreatePoll={onCreatePoll} />
+            </>
+        )}
 
       {/* Message textarea - disabled when file is selected */}
       <textarea

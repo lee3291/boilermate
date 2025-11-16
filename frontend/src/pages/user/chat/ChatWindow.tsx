@@ -1,6 +1,8 @@
+import { useState } from "react";
 import MessageDisplay from './components/MessageDisplay';
 import InputBar from './components/InputBar';
 import GroupMembersSidebar from './components/GroupMembersSidebar';
+import PollsSidebar from './components/PollsSidebar';
 import type { Chat, MessageWithStatus } from '@/types/chats/chat';
 import { Users } from 'lucide-react';
 
@@ -51,9 +53,22 @@ export default function ChatWindow(props: {
     blockedBetween,
   } = props;
 
+  const [localPolls, setLocalPolls] = useState<{ id: string; question: string; options: string[] }[]>([]);
+  const [showPollsSidebar, setShowPollsSidebar] = useState(false);
+
+  const handleCreatePoll = (poll: { question: string; options: string[] }) => {
+    setLocalPolls(prev => [...prev, { id: crypto.randomUUID(), ...poll }]);
+  };
+
   const isGroupChat = selectedConversation?.isGroup ?? false;
-  const isDM = selectedConversation?.isGroup === false && selectedConversation?.participants?.length === 2;
-  const otherUser = selectedConversation?.participants?.find(p => p.id !== currentUserId);
+  const isDM =
+      selectedConversation?.isGroup === false &&
+      selectedConversation?.participants?.length === 2;
+
+  const otherUser = selectedConversation?.participants?.find(
+      p => p.id !== currentUserId
+  );
+
   const chatDisplayName = isGroupChat
       ? selectedConversation?.name ?? 'Unnamed Group'
       : otherUser?.email ?? 'Unknown User';
@@ -62,7 +77,9 @@ export default function ChatWindow(props: {
     return (
         <main className="flex-1 flex flex-col">
           <header className="px-4 py-3 border-b bg-white">Select a chat</header>
-          <div className="flex-1 flex items-center justify-center">Please select a chat to begin</div>
+          <div className="flex-1 flex items-center justify-center">
+            Please select a chat to begin
+          </div>
         </main>
     );
   }
@@ -76,63 +93,91 @@ export default function ChatWindow(props: {
                 <button
                     onClick={onToggleGroupMembersSidebar}
                     className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="Toggle group members"
                 >
                   <Users size={20} />
                 </button>
             )}
           </header>
-          <div className="flex-1 min-h-0 relative bg-gray-50">
-            {loadingMessages && <div className="p-4 text-sm text-gray-500">Loading messages...</div>}
-            {error && <div className="p-4 text-sm text-red-500">{error}</div>}
+
+          <div className="flex-1 min-h-0 relative bg-gray-50 overflow-y-auto">
+            {loadingMessages && (
+                <div className="p-4 text-sm text-gray-500">Loading messages...</div>
+            )}
+            {error && (
+                <div className="p-4 text-sm text-red-500">{error}</div>
+            )}
+
             {!loadingMessages && !error && (
-                <MessageDisplay
-                    messages={messages ?? []}
-                    currentUser={currentUserId ?? ''}
-                    participants={selectedConversation?.participants ?? []}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                />
+                <div className="flex flex-col p-4 space-y-4">
+                  <MessageDisplay
+                      messages={messages ?? []}
+                      currentUser={currentUserId ?? ''}
+                      participants={selectedConversation?.participants ?? []}
+                      onEdit={onEdit}
+                      onDelete={onDelete}
+                  />
+                </div>
             )}
           </div>
+
           <div className="flex-none">
             {isDM && blockedBetween ? (
-                <div className="p-4 text-center text-red-500">You cannot send messages to this user</div>
+                <div className="p-4 text-center text-red-500">
+                  You cannot send messages to this user
+                </div>
             ) : (
                 <InputBar
                     value={messageInput}
+                    selectedConversation={selectedConversation}
                     onChange={onInputChange}
                     onSend={() => onSend?.({})}
                     selectedFile={selectedFile}
                     onFileChange={onFileChange}
                     isUploading={isUploadingImage}
+                    onCreatePoll={handleCreatePoll}
                 />
             )}
           </div>
         </div>
-        {isGroupChat &&
-            showGroupMembersSidebar &&
-            selectedConversation?.participants?.some(p => p.id === currentUserId) && (
-                <GroupMembersSidebar
-                    chatId={chatId ?? ''}
-                    currentUserId={currentUserId ?? ''}
-                    isAdmin={selectedConversation?.creatorId === currentUserId}
-                    onClose={() => onToggleGroupMembersSidebar?.()}
-                    onAddMembers={() => onAddMembersClick?.()}
-                    onRemoveMember={async memberId => {
-                      if (onRemoveMember) await onRemoveMember(chatId ?? '', memberId);
-                    }}
-                    onLeaveGroup={async () => {
-                      if (onLeaveGroup) await onLeaveGroup(chatId ?? '');
-                    }}
-                    onDeleteGroup={async () => {
-                      if (onDeleteGroup) await onDeleteGroup(chatId ?? '');
-                    }}
-                    members={selectedConversation?.participants
-                        ?.filter(p => p.status === 'ACCEPTED' || p.status === 'PENDING')
-                        .map(p => ({ id: p.id, email: p.email, status: p.status }))}
-                />
-            )}
+
+        {isGroupChat && showGroupMembersSidebar && selectedConversation?.participants?.some(p => p.id === currentUserId) && (
+            <GroupMembersSidebar
+                chatId={chatId ?? ''}
+                currentUserId={currentUserId ?? ''}
+                isAdmin={selectedConversation?.creatorId === currentUserId}
+                onClose={() => onToggleGroupMembersSidebar?.()}
+                onAddMembers={() => onAddMembersClick?.()}
+                onRemoveMember={async memberId => {
+                  if (onRemoveMember) await onRemoveMember(chatId ?? '', memberId);
+                }}
+                onLeaveGroup={async () => {
+                  if (onLeaveGroup) await onLeaveGroup(chatId ?? '');
+                }}
+                onDeleteGroup={async () => {
+                  if (onDeleteGroup) await onDeleteGroup(chatId ?? '');
+                }}
+                members={selectedConversation?.participants
+                    ?.filter(p => p.status === 'ACCEPTED' || p.status === 'PENDING')
+                    .map(p => ({
+                      id: p.id,
+                      email: p.email,
+                      status: p.status,
+                    }))}
+                onSeePolls={() => {
+                  // Close group members sidebar and open polls sidebar
+                  onToggleGroupMembersSidebar?.();
+                  setShowPollsSidebar(true);
+                }}
+            />
+        )}
+
+        {isGroupChat && showPollsSidebar && (
+            <PollsSidebar
+                polls={localPolls}
+                onClose={() => setShowPollsSidebar(false)}
+            />
+        )}
+
       </div>
   );
 }

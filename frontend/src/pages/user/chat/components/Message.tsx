@@ -192,6 +192,12 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
                                         />
                                     )}
                                     {hasContent && <div className={hasImage ? 'mt-2' : ''}>{m.content}</div>}
+                                    <div className="text-[10px] text-gray-400 mt-1 self-end">
+                                        {new Date(m.createdAt).toLocaleTimeString([], {
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        })}
+                                    </div>
                                 </div>
                             )}
                         </div>

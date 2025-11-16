@@ -46,6 +46,7 @@ export default function CreatePollButton({
         <>
             <button
                 onClick={() => setOpen(true)}
+                title="Create poll"
                 className="w-10 h-10 flex items-center justify-center rounded-full bg-white border border-gray-300 hover:bg-gray-100 transition"
             >
                 📊

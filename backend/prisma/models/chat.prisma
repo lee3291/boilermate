@@ -15,9 +15,10 @@ model Chat {
   latestMessageAt DateTime // time of the latest message, this is used to sort user conversation
 
   // RELATIONS
-  messages     Message[]        // A chat has many messages.
+  messages     Message[]          // A chat has many messages.
   participants ChatParticipant[]  // A chat has many participants (members).
-  creator      User?            @relation(fields: [creatorId], references: [id])
+  creator      User?              @relation(fields: [creatorId], references: [id])
+  polls        Poll[]             // A chat has many polls.
   
   // Index for fast sorting of the user's conversation list
   @@index([latestMessageAt])
@@ -98,3 +99,30 @@ model UserBlocking {
   @@unique([blockerId, blockedId])
 }
 
+//Poll chat
+model Poll {
+  id        String       @id @default(uuid())
+  chatId    String       //The chat that poll belongto
+  question  String       //Assume each poll only have 1 question
+  createdAt DateTime     @default(now())
+  chat      Chat         @relation(fields: [chatId], references: [id])
+  options   PollOption[]
+}
+
+model PollOption {
+  id      String         @id @default(uuid())
+  pollId  String         //Link to the id of poll
+  text    String         //Content of the option
+  votes   Int            @default(0) //Number of people who vote
+  poll    Poll           @relation(fields: [pollId], references: [id])
+  votesBy UserPollVote[]
+}
+
+model UserPollVote {
+  id           String         @id @default(uuid())
+  userId       String         //Link to person who vote
+  pollOptionId String         //Link to option that person vote
+  user         User           @relation(fields: [userId], references: [id])
+  option       PollOption     @relation(fields: [pollOptionId], references: [id])
+  @@unique([userId, pollOptionId])
+}
