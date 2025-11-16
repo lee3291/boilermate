@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import ImageUploadButton from './ImageUploadButton';
+import CreatePollButton from './CreatePollButton';
 
 export default function InputBar({
   value,
@@ -24,6 +25,13 @@ export default function InputBar({
     if (!hasContent) return; // prevent sending empty message
     onSend?.();
   }
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+      // Enter
+      if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          handleSend();
+      }
+  }
 
   // Auto-resize textarea based on content
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -43,12 +51,14 @@ export default function InputBar({
         disabled={isUploading} // disable during upload
         selectedFileName={selectedFile?.name} // show selected file name
       />
+        <CreatePollButton/>
 
       {/* Message textarea - disabled when file is selected */}
       <textarea
         ref={textareaRef}
         value={value}
         onChange={handleInput}
+        onKeyDown={handleKeyDown}
         placeholder={selectedFile ? "Image selected" : "Message"} // change placeholder when file selected
         rows={1}
         disabled={selectedFile !== null || isUploading} // disable text input when file is selected or uploading
