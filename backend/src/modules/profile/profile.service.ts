@@ -8,8 +8,10 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '@core/database/prisma.service';
+import { MailService } from '@modules/mail/mail.service';
 import {
   GetProfileDetailsDto,
   SearchUsersDto,
@@ -31,6 +33,7 @@ import {
 
 @Injectable()
 export class ProfileService {
+  private readonly logger = new Logger(ProfileService.name);
   /**
    * Update current user's avatar URL
    */
@@ -73,9 +76,45 @@ export class ProfileService {
       where: { id: userId },
       data,
     });
+
+    // --- EMAIL NOTIFICATION ---
+    // After a user updates their profile, find their followers and notify them.
+    const followers = await this.prisma.follow.findMany({
+      where: { followingId: userId },
+      include: { follower: true },
+    });
+
+    if (followers.length > 0) {
+      const followerEmails = followers.map((f) => f.follower.email);
+      const updatedUser = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (updatedUser) {
+        const username = updatedUser.email.split('@')[0];
+        this.logger.log(
+          `Notifying ${followerEmails.length} followers of profile update for ${username}`,
+        );
+
+        const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:5173';
+        const profileUrl = `${frontendUrl}/profile/${userId}`;
+
+        this.mailService.sendBulkEmail(
+          followerEmails,
+          `Boilermate: ${username} updated their profile!`,
+          `${username} has just updated their profile. Check it out: ${profileUrl}`,
+          `<p>${username} has just updated their profile. <a href="${profileUrl}">Check it out!</a></p>`,
+        );
+      }
+    }
+    // --- END EMAIL NOTIFICATION ---
+
     return user;
   }
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mailService: MailService,
+  ) {}
 
   /**
    * Get current user's full profile
@@ -836,5 +875,73 @@ export class ProfileService {
     ]);
 
     return VoteStatsDto.fromStats(userId, likesReceived, dislikesReceived);
+  }
+
+  /**
+   * Follow a user
+   */
+  async followUser(
+    followerId: string,
+    followingId: string,
+  ): Promise<{ message: string; followId: string }> {
+    if (followerId === followingId) {
+      throw new BadRequestException('You cannot follow yourself');
+    }
+    try {
+      const follow = await this.prisma.follow.create({
+        data: {
+          followerId,
+          followingId,
+        },
+      });
+      return { message: 'Followed user successfully', followId: follow.id };
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException('Already following this user');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Unfollow a user
+   */
+  async unfollowUser(
+    followerId: string,
+    followingId: string,
+  ): Promise<{ message: string }> {
+    const follow = await this.prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId,
+          followingId,
+        },
+      },
+    });
+    if (!follow) {
+      throw new NotFoundException('Follow relationship not found');
+    }
+    await this.prisma.follow.delete({
+      where: { id: follow.id },
+    });
+    return { message: 'Unfollowed user successfully' };
+  }
+
+  /**
+   * Check if follower is following another user
+   */
+  async isFollowing(
+    followerId: string,
+    followingId: string,
+  ): Promise<{ isFollowing: boolean }> {
+    const follow = await this.prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId,
+          followingId,
+        },
+      },
+    });
+    return { isFollowing: !!follow };
   }
 }

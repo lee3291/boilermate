@@ -31,15 +31,29 @@ import ProfileActionBar from './components/ProfileActionBar';
 import { useState } from 'react';
 import DeactivateAccountModal from '@/components/DeactivateAccountModal';
 import { deactivateAccount } from '@/services/account.service';
+import FollowButton from './components/FollowButton';
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
   const userId = user!.id;
   const logic = useProfileLogic(userId);
 
   // Use real profile data from backend
   const profile = logic.profileData;
+
+  // Only show follow/unfollow button if viewing another user's profile
+  const isOtherUser = profile && profile.id !== userId;
+
+  const handleFollowToggle = async () => {
+    setFollowLoading(true);
+    setTimeout(() => {
+      setIsFollowing((prev) => !prev);
+      setFollowLoading(false);
+    }, 600); // Simulate network delay
+  };
 
   return (
     <div className='min-h-screen bg-linear-to-br from-pink-50 via-white to-purple-50'>
@@ -140,6 +154,15 @@ export default function ProfilePage() {
             },
           ]}
         />
+        {isOtherUser && (
+          <div className='mt-4 flex justify-center'>
+            <FollowButton
+              isFollowing={isFollowing}
+              loading={followLoading}
+              onToggle={handleFollowToggle}
+            />
+          </div>
+        )}
         <DeactivateAccountModal
           open={showDeactivateModal}
           onClose={() => setShowDeactivateModal(false)}
