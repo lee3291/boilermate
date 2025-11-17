@@ -837,4 +837,72 @@ export class ProfileService {
 
     return VoteStatsDto.fromStats(userId, likesReceived, dislikesReceived);
   }
+
+  /**
+   * Follow a user
+   */
+  async followUser(
+    followerId: string,
+    followingId: string,
+  ): Promise<{ message: string; followId: string }> {
+    if (followerId === followingId) {
+      throw new BadRequestException('You cannot follow yourself');
+    }
+    try {
+      const follow = await this.prisma.follow.create({
+        data: {
+          followerId,
+          followingId,
+        },
+      });
+      return { message: 'Followed user successfully', followId: follow.id };
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException('Already following this user');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Unfollow a user
+   */
+  async unfollowUser(
+    followerId: string,
+    followingId: string,
+  ): Promise<{ message: string }> {
+    const follow = await this.prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId,
+          followingId,
+        },
+      },
+    });
+    if (!follow) {
+      throw new NotFoundException('Follow relationship not found');
+    }
+    await this.prisma.follow.delete({
+      where: { id: follow.id },
+    });
+    return { message: 'Unfollowed user successfully' };
+  }
+
+  /**
+   * Check if follower is following another user
+   */
+  async isFollowing(
+    followerId: string,
+    followingId: string,
+  ): Promise<{ isFollowing: boolean }> {
+    const follow = await this.prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId,
+          followingId,
+        },
+      },
+    });
+    return { isFollowing: !!follow };
+  }
 }

@@ -216,4 +216,55 @@ export class ProfileController {
   async getVoteStats(@Param('userId') userId: string): Promise<VoteStatsDto> {
     return this.profileService.getVoteStats({ userId });
   }
+
+  /**
+   * POST /profile/follow/:userId
+   * Follow a user
+   */
+  @Post('follow/:userId')
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(201)
+  async followUser(
+    @Param('userId') userId: string,
+    @User() user: any,
+  ): Promise<{ message: string; followId: string }> {
+    const followerId = user?.id || user?.userId || user?.sub;
+    if (!followerId)
+      throw new BadRequestException('User ID not found in session');
+    return this.profileService.followUser(followerId, userId);
+  }
+
+  /**
+   * DELETE /profile/follow/:userId
+   * Unfollow a user
+   */
+  @Delete('follow/:userId')
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(200)
+  async unfollowUser(
+    @Param('userId') userId: string,
+    @User() user: any,
+  ): Promise<{ message: string }> {
+    const followerId = user?.id || user?.userId || user?.sub;
+    if (!followerId)
+      throw new BadRequestException('User ID not found in session');
+    return this.profileService.unfollowUser(followerId, userId);
+  }
+
+  /**
+   * GET /profile/:userId/is-following
+   * Check if current user is following another user
+   */
+  @Get(':userId/is-following')
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(200)
+  async isFollowing(
+    @Param('userId') userId: string,
+    @User() user: any,
+  ): Promise<{ isFollowing: boolean }> {
+    const followerId = user?.id || user?.userId || user?.sub;
+    if (!followerId)
+      throw new BadRequestException('User ID not found in session');
+    return this.profileService.isFollowing(followerId, userId);
+  }
 }
