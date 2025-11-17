@@ -1,13 +1,13 @@
+import React, { useState } from "react";
 import { X } from "lucide-react";
-import { useState, useEffect } from "react";
 
-interface PollOption {
+export interface PollOption {
     id: string;
     text: string;
     votes: number;
 }
 
-interface Poll {
+export interface Poll {
     id: string;
     question: string;
     options: PollOption[];
@@ -16,9 +16,10 @@ interface Poll {
 interface PollsSidebarProps {
     polls: Poll[];
     onClose: () => void;
+    onAddOption: (pollId: string, optionText: string) => Promise<PollOption>;
 }
 
-export default function PollsSidebar({ polls, onClose }: PollsSidebarProps) {
+export default function PollsSidebar({ polls, onClose, onAddOption }: PollsSidebarProps) {
     const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({});
     const [newOptionText, setNewOptionText] = useState<Record<string, string>>({});
 
@@ -27,10 +28,20 @@ export default function PollsSidebar({ polls, onClose }: PollsSidebarProps) {
             const current = prev[pollId] ?? [];
             if (current.includes(optionId)) {
                 return { ...prev, [pollId]: current.filter(id => id !== optionId) };
-            } else {
-                return { ...prev, [pollId]: [...current, optionId] };
             }
+            return { ...prev, [pollId]: [...current, optionId] };
         });
+    };
+
+    const handleAddOption = async (pollId: string) => {
+        const text = newOptionText[pollId]?.trim();
+        if (!text) return;
+        try {
+            await onAddOption(pollId, text);
+            onClose(); // close sidebar immediately
+        } catch (err) {
+            console.error("Failed to add option", err);
+        }
     };
 
     return (
@@ -78,9 +89,13 @@ export default function PollsSidebar({ polls, onClose }: PollsSidebarProps) {
                                     placeholder="Add option"
                                     value={newOptionText[poll.id] ?? ""}
                                     onChange={e => setNewOptionText(prev => ({ ...prev, [poll.id]: e.target.value }))}
+                                    onKeyDown={e => { if (e.key === "Enter") handleAddOption(poll.id); }}
                                     className="flex-1 pl-2 pr-2 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
-                                <button className="px-3 py-1 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600">
+                                <button
+                                    onClick={() => handleAddOption(poll.id)}
+                                    className="px-3 py-1 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600"
+                                >
                                     +
                                 </button>
                             </div>

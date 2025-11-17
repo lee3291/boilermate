@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import MessageDisplay from './components/MessageDisplay';
 import InputBar from './components/InputBar';
 import GroupMembersSidebar from './components/GroupMembersSidebar';
@@ -29,7 +29,8 @@ export default function ChatWindow(props: {
   onDeleteGroup?: (chatId: string) => Promise<void>;
   blockedBetween?: boolean;
   onCreatePoll?: (chatId: string, question: string, options: string[]) => Promise<boolean>;
-  onGetPolls?: (chatId: string) => Promise<{ id: string; question: string; options: string[] }[]>;
+  onGetPolls?: (chatId: string) => Promise<{ id: string; question: string; options: { id: string; text: string; votes: number }[] }[]>;
+  onAddOptions?: (pollId: string, optionText: string) => Promise<void>;
 }) {
   const {
     chatId,
@@ -55,20 +56,14 @@ export default function ChatWindow(props: {
     blockedBetween,
     onCreatePoll,
     onGetPolls,
+    onAddOptions,
   } = props;
 
-  const [polls, setPolls] = useState<{ id: string; question: string; options: string[] }[]>([]);
+  const [polls, setPolls] = useState<{ id: string; question: string; options: { id: string; text: string; votes: number }[] }[]>([]);
   const [showPollsSidebar, setShowPollsSidebar] = useState(false);
 
-  const handleCreatePoll = async (poll: { question: string; options: string[] }) => {
-    if (!onCreatePoll || !chatId) return;
-    const success = await onCreatePoll(chatId, poll.question, poll.options);
-    if (success) {
-      await handleFetchPolls(); // refresh from backend after creation
-    }
-  };
-
-  const handleFetchPolls = async () => {
+  // Fetch polls from backend
+  const handleFetchPolls = useCallback(async () => {
     if (!onGetPolls || !chatId) return;
     try {
       const result = await onGetPolls(chatId);
@@ -76,13 +71,25 @@ export default function ChatWindow(props: {
     } catch (err) {
       console.error('Failed to fetch polls', err);
     }
+  }, [chatId, onGetPolls]);
+
+  // Create a new poll
+  const handleCreatePoll = async (poll: { question: string; options: string[] }) => {
+    if (!onCreatePoll || !chatId) return;
+    const success = await onCreatePoll(chatId, poll.question, poll.options);
+    if (success) await handleFetchPolls();
+  };
+
+  // Add a new option to a poll and close the sidebar immediately
+  const handleAddOption = async (pollId: string, optionText: string) => {
+    if (!onAddOptions) throw new Error("onAddOptions handler missing");
+    await onAddOptions(pollId, optionText);
+    setShowPollsSidebar(false);
   };
 
   useEffect(() => {
-    if (chatId && selectedConversation?.isGroup) {
-      handleFetchPolls();
-    }
-  }, [chatId, selectedConversation]);
+    if (chatId && selectedConversation?.isGroup) handleFetchPolls();
+  }, [chatId, selectedConversation, handleFetchPolls]);
 
   const isGroupChat = selectedConversation?.isGroup ?? false;
   const isDM = selectedConversation?.isGroup === false && selectedConversation?.participants?.length === 2;
@@ -101,6 +108,7 @@ export default function ChatWindow(props: {
   return (
       <div className="flex-1 flex h-full">
         <div className="flex-1 flex flex-col">
+          {/* Header */}
           <header className="flex-none h-12 px-4 py-3 border-b bg-white flex items-center justify-between">
             <span className="font-medium">{chatDisplayName}</span>
             {isGroupChat && onToggleGroupMembersSidebar && (
@@ -110,6 +118,7 @@ export default function ChatWindow(props: {
             )}
           </header>
 
+          {/* Messages */}
           <div className="flex-1 min-h-0 relative bg-gray-50 overflow-y-auto">
             {loadingMessages && <div className="p-4 text-sm text-gray-500">Loading messages...</div>}
             {error && <div className="p-4 text-sm text-red-500">{error}</div>}
@@ -126,6 +135,7 @@ export default function ChatWindow(props: {
             )}
           </div>
 
+          {/* Input */}
           <div className="flex-none">
             {isDM && blockedBetween ? (
                 <div className="p-4 text-center text-red-500">You cannot send messages to this user</div>
@@ -144,6 +154,7 @@ export default function ChatWindow(props: {
           </div>
         </div>
 
+        {/* Group Members Sidebar */}
         {isGroupChat && showGroupMembersSidebar && selectedConversation?.participants?.some(p => p.id === currentUserId) && (
             <GroupMembersSidebar
                 chatId={chatId}
@@ -162,14 +173,16 @@ export default function ChatWindow(props: {
                 onSeePolls={() => {
                   onToggleGroupMembersSidebar?.();
                   setShowPollsSidebar(true);
-                  handleFetchPolls();
+                  handleFetchPolls(); // fetch fresh polls
                 }}
             />
         )}
 
+        {/* Polls Sidebar */}
         {isGroupChat && showPollsSidebar && (
             <PollsSidebar
                 polls={polls}
+                onAddOption={handleAddOption} // adds option and closes sidebar
                 onClose={() => setShowPollsSidebar(false)}
             />
         )}

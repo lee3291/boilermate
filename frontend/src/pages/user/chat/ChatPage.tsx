@@ -57,6 +57,7 @@ export default function ChatPage() {
             isUploadingImage={logic.isUploadingImage}
             onCreatePoll={logic.handleCreatePoll}
             onGetPolls={logic.handleGetPolls}
+            onAddOptions={logic.handleAddOption}
             blockedBetween={logic.blockedBetween}
             // Group chat props
             showGroupMembersSidebar={logic.showGroupMembersSidebar}

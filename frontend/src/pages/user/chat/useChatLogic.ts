@@ -643,6 +643,26 @@ export default function useChatLogic(user: User) {
       []
   );
 
+  const handleAddOption = useCallback(
+      async (pollId: string, optionText: string) => {
+        if (!pollId || !optionText.trim()) return;
+
+        try {
+          const newOption = await apiAddPollOption(pollId, optionText.trim());
+          setPolls(prevPolls =>
+              prevPolls.map(poll => {
+                if (poll.id !== pollId) return poll;
+                return { ...poll, options: [...poll.options, newOption] };
+              })
+          );
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to add poll option');
+        }
+      },
+      []
+  );
+
+
   // Add member to group (admin only)
   const handleAddMember = useCallback(async (chatId: string, memberUserId: string) => {
     if (!userId) return;
@@ -761,6 +781,7 @@ export default function useChatLogic(user: User) {
       setBlockedBetween,
     handleCreatePoll,
     handleGetPolls,
+    handleAddOption,
 
     // group chat actions
     fetchInvitations,

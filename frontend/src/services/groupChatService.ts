@@ -5,6 +5,19 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+interface PollOption {
+  id: string;
+  text: string;
+  votes: number;
+}
+
+
+interface Poll {
+  id: string;
+  question: string;
+  options: PollOption[];
+}
+
 // Create a new group chat
 export async function createGroupChat(request: {
   creatorId: string;
@@ -166,11 +179,11 @@ export async function getAllPolls(chatId: string): Promise<any[]> {
 }
 
 // Add a new option to an existing poll
-export async function addPollOption(pollId: string, text: string): Promise<any> {
+export async function addPollOption(pollId: string, text: string): Promise<PollOption> {
   try {
     const res = await api.post(`/chats/poll/${encodeURIComponent(pollId)}/add-option`, { text });
     console.log('add poll option', res);
-    return res.data;
+    return res.data.o;
   } catch (error: any) {
     throw error.response?.data ?? error;
   }

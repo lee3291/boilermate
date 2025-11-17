@@ -752,44 +752,29 @@ export class GroupChatsService {
   /**
    * Add a new option to a poll
    */
-  async addOption(pollId: string, text: string): Promise<PollDetails> {
+  async addOption(pollId: string, text: string): Promise<PollOptionDetails> {
     const client: any = this.prisma as any;
 
-    try {
-      const poll = await client.poll.findUnique({
-        where: {id: pollId},
-        include: {options: true}
-      });
-      if (!poll) throw new NotFoundException('Poll not found');
+    const poll = await client.poll.findUnique({
+      where: { id: pollId },
+      include: { options: true }
+    });
 
-      if (!text.trim()) throw new BadRequestException('Option text cannot be empty');
+    if (!poll) throw new NotFoundException('Poll not found');
+    if (!text.trim()) throw new BadRequestException('Option text cannot be empty');
 
-      const exists = poll.options.some((opt: any) => opt.text === text);
+    const exists = poll.options.some((opt: any) => opt.text === text);
+    if (exists) throw new ConflictException('Option already exists');
 
-      if (exists) throw new ConflictException('Option already exists');
+    const newOpt = await client.pollOption.create({
+      data: { pollId, text }
+    });
 
-      await client.pollOption.create({
-        data: {pollId, text}
-      });
-
-      const updated = await client.poll.findUnique({
-        where: {id: pollId},
-        include: {options: true}
-      });
-
-      return {
-        id: updated.id,
-        chatId: updated.chatId,
-        question: updated.question,
-        options: poll.options.map((opt: any) => ({
-          id: opt.id,
-          text: opt.text,
-          votes: opt.votes
-        }))
-      };
-    } catch (error) {
-      Logger.error('addOption error', error);
-      throw new InternalServerErrorException('Failed to add option');
-    }
+    return {
+      id: newOpt.id,
+      text: newOpt.text,
+      votes: newOpt.votes
+    };
   }
+
 }
