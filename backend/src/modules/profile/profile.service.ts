@@ -99,7 +99,7 @@ export class ProfileService {
         const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:5173';
         const profileUrl = `${frontendUrl}/profile/${userId}`;
 
-        await this.mailService.sendBulkEmail(
+        this.mailService.sendBulkEmail(
           followerEmails,
           `Boilermate: ${username} updated their profile!`,
           `${username} has just updated their profile. Check it out: ${profileUrl}`,

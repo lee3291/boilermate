@@ -194,7 +194,7 @@ export class ListingsService {
           const html = `<p>Hi there,</p><p>${authorName} has just posted a new listing: "<strong>${created.title}</strong>".</p><p>You can view it here: <a href="${listingUrl}">${listingUrl}</a></p><br><p>Thanks,</p><p>The BoilerMate Team</p>`;
 
           // 4. Send the email to all followers.
-          await this.mailService.sendBulkEmail(
+          this.mailService.sendBulkEmail(
             followerEmails,
             subject,
             text,
@@ -202,13 +202,13 @@ export class ListingsService {
           );
 
           this.logger.log(
-            `Sent new listing notification to ${followerEmails.length} followers of user ${data.user}.`,
+            `Queued new listing notification for ${followerEmails.length} followers of user ${data.user}.`,
           );
         }
       }
     } catch (error) {
       this.logger.warn(
-        `Failed to send new listing notification for listing ${created.id}: ${error.message}`,
+        `Failed to queue new listing notification for listing ${created.id}: ${error.message}`,
       );
     }
     // ---- End of Notification Logic ----
