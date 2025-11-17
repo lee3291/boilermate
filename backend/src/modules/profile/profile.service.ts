@@ -8,8 +8,10 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '@core/database/prisma.service';
+import { MailService } from '@modules/mail/mail.service';
 import {
   GetProfileDetailsDto,
   SearchUsersDto,
@@ -31,6 +33,7 @@ import {
 
 @Injectable()
 export class ProfileService {
+  private readonly logger = new Logger(ProfileService.name);
   /**
    * Update current user's avatar URL
    */
@@ -73,9 +76,45 @@ export class ProfileService {
       where: { id: userId },
       data,
     });
+
+    // --- EMAIL NOTIFICATION ---
+    // After a user updates their profile, find their followers and notify them.
+    const followers = await this.prisma.follow.findMany({
+      where: { followingId: userId },
+      include: { follower: true },
+    });
+
+    if (followers.length > 0) {
+      const followerEmails = followers.map((f) => f.follower.email);
+      const updatedUser = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (updatedUser) {
+        const username = updatedUser.email.split('@')[0];
+        this.logger.log(
+          `Notifying ${followerEmails.length} followers of profile update for ${username}`,
+        );
+
+        const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:5173';
+        const profileUrl = `${frontendUrl}/profile/${userId}`;
+
+        await this.mailService.sendBulkEmail(
+          followerEmails,
+          `Boilermate: ${username} updated their profile!`,
+          `${username} has just updated their profile. Check it out: ${profileUrl}`,
+          `<p>${username} has just updated their profile. <a href="${profileUrl}">Check it out!</a></p>`,
+        );
+      }
+    }
+    // --- END EMAIL NOTIFICATION ---
+
     return user;
   }
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mailService: MailService,
+  ) {}
 
   /**
    * Get current user's full profile
