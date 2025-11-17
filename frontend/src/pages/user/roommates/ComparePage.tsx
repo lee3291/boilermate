@@ -148,9 +148,9 @@ export default function ComparePage() {
     <div className='min-h-screen bg-linear-to-br from-pink-50 via-white to-purple-50'>
       <Navbar />
 
-      <div className='mx-auto max-w-7xl px-4 py-8'>
+      <div className='mx-auto px-6 py-6' style={{ maxWidth: '1600px' }}>
         {/* Header */}
-        <div className='mb-6 flex items-center justify-between'>
+        <div className='mb-4 flex items-center justify-between'>
           <button
             onClick={() => navigate('/roommates')}
             className='flex items-center gap-2 px-4 py-2 text-sm text-gray-600 transition hover:text-gray-900'
@@ -164,7 +164,7 @@ export default function ComparePage() {
         </div>
 
         {/* Grid of profiles */}
-        <div className={`grid gap-6 ${profiles.length === 1 ? 'grid-cols-1 max-w-4xl mx-auto' : profiles.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+        <div className={`grid gap-4 ${profiles.length === 1 ? 'grid-cols-1 max-w-4xl mx-auto' : profiles.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
           {profiles.map((profile) => (
             <div key={profile.id} className='relative'>
               {/* Remove button */}
@@ -177,99 +177,155 @@ export default function ComparePage() {
               </button>
 
               {/* Action buttons */}
-              <div className='mb-4 flex items-center justify-center gap-2'>
+              <div className='mb-4 flex items-center justify-center gap-3'>
                 <button
                   onClick={() => handleToggleVote(profile.id, 'LIKE')}
-                  className={`flex items-center gap-1 rounded-full border-2 px-3 py-2 text-sm shadow-lg transition-all hover:scale-105 ${
+                  className={`flex items-center gap-2 rounded-full border-2 px-4 py-3 shadow-lg transition-all hover:scale-105 hover:shadow-xl ${
                     profile.myVoteType === 'LIKE'
                       ? 'border-green-600 bg-green-500 text-white'
                       : 'border-gray-200 bg-white text-gray-700'
                   }`}
+                  title='Like'
                 >
-                  <span>👍</span>
-                  <span className='font-semibold'>{profile.myVoteType === 'LIKE' ? 'Liked' : 'Like'}</span>
+                  <span className='text-xl'>👍</span>
+                  <span className='text-sm font-semibold'>
+                    {profile.myVoteType === 'LIKE' ? 'Liked' : 'Like'}
+                  </span>
                 </button>
 
                 <button
                   onClick={() => handleToggleVote(profile.id, 'DISLIKE')}
-                  className={`flex items-center gap-1 rounded-full border-2 px-3 py-2 text-sm shadow-lg transition-all hover:scale-105 ${
+                  className={`flex items-center gap-2 rounded-full border-2 px-4 py-3 shadow-lg transition-all hover:scale-105 hover:shadow-xl ${
                     profile.myVoteType === 'DISLIKE'
                       ? 'border-red-600 bg-red-500 text-white'
                       : 'border-gray-200 bg-white text-gray-700'
                   }`}
+                  title='Dislike'
                 >
-                  <span>👎</span>
-                  <span className='font-semibold'>{profile.myVoteType === 'DISLIKE' ? 'Disliked' : 'Dislike'}</span>
+                  <span className='text-xl'>👎</span>
+                  <span className='text-sm font-semibold'>
+                    {profile.myVoteType === 'DISLIKE' ? 'Disliked' : 'Dislike'}
+                  </span>
                 </button>
 
                 <button
                   onClick={() => handleToggleFavorite(profile.id, profile.isFavoritedByMe || false)}
-                  className={`flex items-center gap-1 rounded-full border-2 px-3 py-2 text-sm shadow-lg transition-all hover:scale-105 ${
+                  className={`flex items-center gap-2 rounded-full border-2 px-4 py-3 shadow-lg transition-all hover:scale-105 hover:shadow-xl ${
                     profile.isFavoritedByMe
                       ? 'border-pink-300 bg-pink-50'
                       : 'border-gray-200 bg-white'
                   }`}
+                  title={profile.isFavoritedByMe ? 'Remove from favorites' : 'Add to favorites'}
                 >
-                  <span>{profile.isFavoritedByMe ? '❤️' : '🤍'}</span>
-                  <span className='font-semibold text-gray-700'>{profile.isFavoritedByMe ? 'Favorited' : 'Favorite'}</span>
+                  <span className='text-xl'>{profile.isFavoritedByMe ? '❤️' : '🤍'}</span>
+                  <span className='text-sm font-semibold text-gray-700'>
+                    {profile.isFavoritedByMe ? 'Favorited' : 'Favorite'}
+                  </span>
                 </button>
               </div>
 
-              {/* Vote Stats */}
-              <div className='mb-4 rounded-lg border border-gray-200 bg-white p-3 shadow'>
-                <div className='flex items-center justify-center gap-4 text-xs'>
-                  <div className='flex items-center gap-1'>
-                    <span>👍</span>
-                    <span className='font-semibold text-green-600'>{profile.likesReceived || 0}</span>
-                  </div>
-                  <div className='h-4 w-px bg-gray-300'></div>
-                  <div className='flex items-center gap-1'>
-                    <span>👎</span>
-                    <span className='font-semibold text-red-600'>{profile.dislikesReceived || 0}</span>
+              {/* Vote Stats Display */}
+              {(profile.likesReceived !== undefined || profile.dislikesReceived !== undefined) && (
+                <div className='mb-4 rounded-lg border border-gray-200 bg-white p-4 shadow'>
+                  <div className='flex items-center justify-center gap-6 text-sm'>
+                    <div className='flex items-center gap-2'>
+                      <span className='text-xl'>👍</span>
+                      <span className='font-semibold text-green-600'>
+                        {profile.likesReceived || 0} Likes
+                      </span>
+                    </div>
+                    <div className='h-4 w-px bg-gray-300'></div>
+                    <div className='flex items-center gap-2'>
+                      <span className='text-xl'>👎</span>
+                      <span className='font-semibold text-red-600'>
+                        {profile.dislikesReceived || 0} Dislikes
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* Profile Header */}
-              <ProfileHeader
-                user={{
-                  id: profile.id,
-                  legalName: profile.legalName || '',
-                  email: profile.email || '',
-                  name: profile.name || (profile.email ? profile.email.split('@')[0] : ''),
-                  profileImage: profile.avatarURL || '',
-                  phoneNumber: profile.phoneNumber || '',
-                  searchStatus: profile.searchStatus || '',
-                  isVerified: profile.isVerified || false,
-                }}
-                voteStats={{
-                  likesReceived: profile.likesReceived || 0,
-                  dislikesReceived: profile.dislikesReceived || 0,
-                }}
-                onAvatarChange={() => {}}
-                isEditable={false}
-              />
+              {/* Profile Header - compact version */}
+              <div className='mb-4 rounded-2xl border-2 border-purple-200 bg-linear-to-br from-pink-400 to-purple-500 p-4 shadow-lg'>
+                <div className='flex items-center gap-3'>
+                  {/* Avatar */}
+                  <div className='h-16 w-16 shrink-0 overflow-hidden rounded-full border-4 border-white shadow-lg'>
+                    {profile.avatarURL ? (
+                      <img src={profile.avatarURL} alt='Avatar' className='h-full w-full object-cover' />
+                    ) : (
+                      <div className='flex h-full w-full items-center justify-center bg-linear-to-br from-purple-300 to-pink-300'>
+                        <span className='text-2xl font-bold text-white'>
+                          {profile.email?.[0]?.toUpperCase() || '?'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className='flex-1 min-w-0'>
+                    <h1 className='mb-1 text-lg font-bold text-white truncate'>
+                      {profile.legalName || profile.email?.split('@')[0] || 'User'}
+                    </h1>
+                    <p className='mb-1 text-xs text-white/90 truncate'>{profile.email}</p>
+                    <div className='flex items-center gap-1.5'>
+                      {profile.isVerified && (
+                        <span className='inline-flex items-center gap-0.5 rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] text-white'>
+                          ✓ Verified
+                        </span>
+                      )}
+                      <span className='inline-flex items-center gap-0.5 rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] text-white'>
+                        👁️ {profile.searchStatus || 'Looking'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Basic Info */}
+                {(profile.age || profile.year || profile.major) && (
+                  <div className='mt-3 grid grid-cols-3 gap-1.5 text-center'>
+                    {profile.age && (
+                      <div className='rounded-lg bg-white/20 px-2 py-1.5'>
+                        <p className='text-[10px] text-white/80'>Age</p>
+                        <p className='text-xs font-bold text-white'>{profile.age}</p>
+                      </div>
+                    )}
+                    {profile.year && (
+                      <div className='rounded-lg bg-white/20 px-2 py-1.5'>
+                        <p className='text-[10px] text-white/80'>Year</p>
+                        <p className='text-xs font-bold text-white'>{profile.year}</p>
+                      </div>
+                    )}
+                    {profile.major && (
+                      <div className='rounded-lg bg-white/20 px-2 py-1.5 col-span-3'>
+                        <p className='text-[10px] text-white/80'>Major</p>
+                        <p className='text-xs font-bold text-white truncate'>{profile.major}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {/* Bio Section */}
               {profile.bio && (
-                <BioSection
-                  bio={profile.bio}
-                  legalName={profile.legalName || ''}
-                  phoneNumber={profile.phoneNumber || ''}
-                  searchStatus={profile.searchStatus || ''}
-                  onSave={async () => {}}
-                />
+                <div className='mb-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm'>
+                  <h3 className='mb-2 text-sm font-semibold text-gray-700'>📝 Bio</h3>
+                  <p className='text-sm text-gray-600'>{profile.bio}</p>
+                </div>
               )}
 
               {/* Lifestyle Preferences */}
-              <div className='mb-6 rounded-2xl border-2 border-pink-200 bg-white p-6 shadow-lg'>
-                <div className='mb-4'>
-                  <h2 className='mb-1 text-xl font-bold text-gray-900'>💫 Lifestyle</h2>
+              <div className='mb-4 rounded-2xl border-2 border-pink-200 bg-white p-4 shadow-lg'>
+                <div className='mb-3'>
+                  <h2 className='mb-1 text-lg font-bold text-gray-900'>
+                    💫 Lifestyle Preferences
+                  </h2>
                   <p className='text-xs text-gray-600'>Their lifestyle and habits</p>
                 </div>
 
                 {profile.lifestylePreferences.length === 0 ? (
-                  <p className='py-4 text-center text-sm text-gray-500'>No preferences</p>
+                  <p className='py-4 text-center text-sm text-gray-500'>
+                    No lifestyle preferences added yet
+                  </p>
                 ) : (
                   <div className='space-y-3'>
                     {profile.lifestylePreferences.map((pref) => (
@@ -280,14 +336,18 @@ export default function ComparePage() {
               </div>
 
               {/* Roommate Preferences */}
-              <div className='mb-6 rounded-2xl border-2 border-purple-200 bg-white p-6 shadow-lg'>
-                <div className='mb-4'>
-                  <h2 className='mb-1 text-xl font-bold text-gray-900'>🏠 Roommate</h2>
+              <div className='mb-4 rounded-2xl border-2 border-purple-200 bg-white p-4 shadow-lg'>
+                <div className='mb-3'>
+                  <h2 className='mb-1 text-lg font-bold text-gray-900'>
+                    🏠 Roommate Preferences
+                  </h2>
                   <p className='text-xs text-gray-600'>Looking for in a roommate</p>
                 </div>
 
                 {profile.roommatePreferences.length === 0 ? (
-                  <p className='py-4 text-center text-sm text-gray-500'>No preferences</p>
+                  <p className='py-4 text-center text-sm text-gray-500'>
+                    No roommate preferences added yet
+                  </p>
                 ) : (
                   <div className='space-y-3'>
                     {profile.roommatePreferences.map((pref) => (
