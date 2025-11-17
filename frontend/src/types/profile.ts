@@ -172,3 +172,15 @@ export interface VoteStatsResponse {
   dislikesReceived: number;
   totalVotes: number;
 }
+
+//* Compare Profiles Request
+export interface CompareProfilesRequest {
+  userIds: string[]; // Array of user IDs to compare
+  viewerId?: string; // Optional viewer ID for favorite/vote status
+}
+
+//* Compare Profiles Response
+export interface CompareProfilesResponse {
+  profiles: ProfileDetails[];
+  count: number;
+}
