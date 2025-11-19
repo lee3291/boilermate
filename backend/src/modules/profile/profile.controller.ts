@@ -21,6 +21,7 @@ import { UserSearchService } from './user-search.service';
 import {
   GetProfileDetailsDto,
   SearchUsersDto,
+  GetCompareProfilesDto,
   AddFavoriteDto,
   RemoveFavoriteDto,
   GetFavoritesDto,
@@ -34,6 +35,7 @@ import {
   VoteResponseDto,
   VoteStatsDto,
   GetMyVotesResponseDto,
+  CompareProfilesGroupedResponseDto,
 } from './dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdateAvatarDto } from './dto/update-avatar.dto';
@@ -111,6 +113,19 @@ export class ProfileController {
     @Query() dto: SearchUsersDto,
   ): Promise<SearchUsersResponseDto> {
     return this.profileService.searchUsers(dto);
+  }
+
+  /**
+   * GET /profile/compare
+   * Compare multiple user profiles side-by-side
+   * Query params: userIds (comma-separated), viewerId (optional)
+   */
+  @Get('compare')
+  @HttpCode(200)
+  async compareProfiles(
+    @Query() dto: GetCompareProfilesDto,
+  ): Promise<CompareProfilesGroupedResponseDto> {
+    return this.profileService.getCompareProfiles(dto);
   }
 
   /**

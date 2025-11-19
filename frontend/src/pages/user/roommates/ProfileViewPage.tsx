@@ -4,8 +4,8 @@
  * Shows another user's profile with lifestyle and roommate preferences
  */
 
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   getProfileDetails,
@@ -19,6 +19,8 @@ import type { ProfileDetails } from '../../../types/profile';
 import Navbar from '../components/Navbar';
 import ProfileHeader from '../profile/components/ProfileHeader';
 import BioSection from '../profile/components/BioSection';
+import CompareCart from './components/CompareCart';
+import useRoommatesLogic from './useRoommatesLogic';
 import FollowButton from '../profile/components/FollowButton';
 
 export default function ProfileViewPage() {
@@ -36,6 +38,17 @@ export default function ProfileViewPage() {
   const [myVote, setMyVote] = useState<'LIKE' | 'DISLIKE' | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
+
+  // Compare cart logic
+  const {
+    compareUsers,
+    handleToggleCompare,
+    handleRemoveFromCompare,
+    handleClearCompare,
+  } = useRoommatesLogic(viewerId);
+
+  // Check if current profile is in compare cart
+  const isInCompare = profile ? compareUsers.some((u: { id: string; email: string }) => u.id === profile.id) : false;
 
   // Redirect if trying to view own profile
   useEffect(() => {
@@ -107,7 +120,7 @@ export default function ProfileViewPage() {
       setMyVote(newVote);
 
       // Update vote counts optimistically
-      setProfile((prev) => {
+      setProfile((prev: ProfileDetails | null) => {
         if (!prev) return prev;
 
         let likesReceived = prev.likesReceived || 0;
@@ -201,6 +214,25 @@ export default function ProfileViewPage() {
           </button>
 
           <div className='flex items-center gap-3'>
+            {/* Add to Compare Button */}
+            <button
+              onClick={() => profile && handleToggleCompare(profile.id, profile.email)}
+              disabled={!isInCompare && compareUsers.length >= 3}
+              className={`flex items-center gap-2 rounded-full border-2 px-4 py-3 shadow-lg transition-all hover:scale-105 hover:shadow-xl ${
+                isInCompare
+                  ? 'border-blue-600 bg-blue-500 text-white'
+                  : compareUsers.length >= 3
+                  ? 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'border-gray-200 bg-white text-gray-700'
+              }`}
+              title={isInCompare ? 'Remove from comparison' : compareUsers.length >= 3 ? 'Compare limit reached (3 max)' : 'Add to comparison'}
+            >
+              <span className='text-xl'>{isInCompare ? '✓' : '+'}</span>
+              <span className='text-sm font-semibold'>
+                {isInCompare ? 'Added to Compare' : 'Add to Compare'}
+              </span>
+            </button>
+
             {/* Vote Buttons */}
             <button
               onClick={() => handleToggleVote('LIKE')}
@@ -346,7 +378,7 @@ export default function ProfileViewPage() {
             </p>
           ) : (
             <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-              {profile.lifestylePreferences.map((pref) => (
+              {profile.lifestylePreferences.map((pref: any) => (
                 <PreferenceCard key={pref.id} preference={pref} />
               ))}
             </div>
@@ -370,13 +402,20 @@ export default function ProfileViewPage() {
             </p>
           ) : (
             <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-              {profile.roommatePreferences.map((pref) => (
+              {profile.roommatePreferences.map((pref: any) => (
                 <PreferenceCard key={pref.id} preference={pref} />
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {/* Compare Cart */}
+      <CompareCart
+        users={compareUsers}
+        onRemove={handleRemoveFromCompare}
+        onClear={handleClearCompare}
+      />
     </div>
   );
 }

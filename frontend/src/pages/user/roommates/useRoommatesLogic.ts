@@ -37,6 +37,32 @@ export default function useRoommatesLogic(userId: string) {
   
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
+  // Comparison state - stores selected user IDs and emails
+  const [compareUsers, setCompareUsers] = useState<Array<{ id: string; email: string }>>([]);
+
+  // Load comparison data from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('compareUserIds');
+    if (stored) {
+      try {
+        const users = JSON.parse(stored);
+        setCompareUsers(users);
+      } catch (error) {
+        console.error('Failed to parse compare users:', error);
+        localStorage.removeItem('compareUserIds');
+      }
+    }
+  }, []);
+
+  // Save comparison data to localStorage whenever it changes
+  useEffect(() => {
+    if (compareUsers.length > 0) {
+      localStorage.setItem('compareUserIds', JSON.stringify(compareUsers));
+    } else {
+      localStorage.removeItem('compareUserIds');
+    }
+  }, [compareUsers]);
+
   // Fetch master preference list
   useEffect(() => {
     const fetchPreferencesList = async () => {
@@ -248,6 +274,37 @@ export default function useRoommatesLogic(userId: string) {
     setPage(1);
   }, []);
 
+  // Comparison handlers
+  const handleToggleCompare = useCallback((userId: string, userEmail: string) => {
+    setCompareUsers(prev => {
+      const exists = prev.some(u => u.id === userId);
+      if (exists) {
+        // Remove from comparison
+        return prev.filter(u => u.id !== userId);
+      } else {
+        // Add to comparison (max 3)
+        if (prev.length >= 3) {
+          console.warn('Maximum 3 users can be compared');
+          return prev;
+        }
+        return [...prev, { id: userId, email: userEmail }];
+      }
+    });
+  }, []);
+
+  const handleRemoveFromCompare = useCallback((userId: string) => {
+    setCompareUsers(prev => prev.filter(u => u.id !== userId));
+  }, []);
+
+  const handleClearCompare = useCallback(() => {
+    setCompareUsers([]);
+    localStorage.removeItem('compareUserIds');
+  }, []);
+
+  const isUserInCompare = useCallback((userId: string) => {
+    return compareUsers.some(u => u.id === userId);
+  }, [compareUsers]);
+
   return {
     // state
     profiles,
@@ -262,6 +319,7 @@ export default function useRoommatesLogic(userId: string) {
     importanceOperator,
     importanceValue,
     expandedCategories,
+    compareUsers,
 
     // actions
     setPage,
@@ -274,5 +332,9 @@ export default function useRoommatesLogic(userId: string) {
     handleToggleCategory,
     handleSetImportanceOperator,
     handleSetImportanceValue,
+    handleToggleCompare,
+    handleRemoveFromCompare,
+    handleClearCompare,
+    isUserInCompare,
   };
 }

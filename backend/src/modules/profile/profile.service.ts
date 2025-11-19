@@ -15,6 +15,7 @@ import { MailService } from '@modules/mail/mail.service';
 import {
   GetProfileDetailsDto,
   SearchUsersDto,
+  GetCompareProfilesDto,
   AddFavoriteDto,
   RemoveFavoriteDto,
   GetFavoritesDto,
@@ -29,6 +30,8 @@ import {
   VoteResponseDto,
   VoteStatsDto,
   GetMyVotesResponseDto,
+  CompareProfileDto,
+  CompareProfilesGroupedResponseDto,
 } from './dto';
 
 @Injectable()
@@ -878,6 +881,129 @@ export class ProfileService {
   }
 
   /**
+   * Compare multiple user profiles
+   * Fetches full profile details for multiple users at once
+   * Similar to getProfile but for multiple users
+   */
+  async getCompareProfiles(dto: GetCompareProfilesDto): Promise<any> {
+    const { userIds: userIdsString, viewerId } = dto;
+
+    // Parse comma-separated user IDs
+    const userIds = userIdsString
+      .split(',')
+      .map((id) => id.trim())
+      .filter((id) => id.length > 0);
+
+    if (userIds.length === 0) {
+      throw new BadRequestException('At least one user ID is required');
+    }
+
+    if (userIds.length > 10) {
+      throw new BadRequestException('Maximum 10 profiles can be compared at once');
+    }
+
+    // Fetch all users with their preferences
+    const users = await this.prisma.user.findMany({
+      where: {
+        id: { in: userIds },
+        status: 'ACTIVE',
+        searchStatus: { not: 'HIDDEN' },
+      },
+      include: {
+        images: {
+          orderBy: { createdAt: 'asc' },
+        },
+        profilePreferences: {
+          where: { visibility: 'PUBLIC' },
+          include: {
+            preference: true,
+          },
+        },
+        roommatePreferences: {
+          where: { visibility: 'PUBLIC' },
+          include: {
+            preference: true,
+          },
+        },
+      },
+    });
+
+    if (users.length === 0) {
+      throw new NotFoundException('No valid profiles found');
+    }
+
+    // Get favorite status and votes if viewer is provided
+    let favoritedUserIds = new Set<string>();
+    let myVoteMap = new Map<string, 'LIKE' | 'DISLIKE'>();
+
+    if (viewerId) {
+      const [favorites, votes] = await Promise.all([
+        this.prisma.favoriteMatch.findMany({
+          where: {
+            userId: viewerId,
+            favoritedUserId: { in: userIds },
+          },
+          select: {
+            favoritedUserId: true,
+          },
+        }),
+        this.prisma.userVote.findMany({
+          where: {
+            voterId: viewerId,
+            votedUserId: { in: userIds },
+          },
+          select: {
+            votedUserId: true,
+            voteType: true,
+          },
+        }),
+      ]);
+
+      favoritedUserIds = new Set(favorites.map((f) => f.favoritedUserId));
+      votes.forEach((vote) => {
+        myVoteMap.set(vote.votedUserId, vote.voteType as 'LIKE' | 'DISLIKE');
+      });
+    }
+
+    // Get vote counts for all users
+    const voteCounts = await this.prisma.userVote.groupBy({
+      by: ['votedUserId', 'voteType'],
+      where: {
+        votedUserId: { in: userIds },
+      },
+      _count: true,
+    });
+
+    // Build vote map
+    const voteMap = new Map<string, { likes: number; dislikes: number }>();
+    voteCounts.forEach((vc: any) => {
+      const existing = voteMap.get(vc.votedUserId) || { likes: 0, dislikes: 0 };
+      if (vc.voteType === 'LIKE') {
+        existing.likes = vc._count;
+      } else if (vc.voteType === 'DISLIKE') {
+        existing.dislikes = vc._count;
+      }
+      voteMap.set(vc.votedUserId, existing);
+    });
+
+    // Transform to CompareProfileDto array (with grouped preferences)
+    const profiles = users.map((user: any) => {
+      const isFavoritedByMe = favoritedUserIds.has(user.id);
+      const myVoteType = myVoteMap.get(user.id) || null;
+      const voteCounts = voteMap.get(user.id) || { likes: 0, dislikes: 0 };
+
+      return CompareProfileDto.fromProfile(
+        user,
+        isFavoritedByMe,
+        myVoteType,
+        voteCounts.likes,
+        voteCounts.dislikes,
+      );
+    });
+
+    return CompareProfilesGroupedResponseDto.fromProfiles(profiles);
+  }
+  /*
    * Follow a user
    */
   async followUser(
