@@ -11,6 +11,9 @@ import {
   getProfileDetails,
   toggleFavorite,
   toggleVote,
+  getIsFollowing,
+  followUser,
+  unfollowUser,
 } from '../../../services/profileService';
 import type { ProfileDetails } from '../../../types/profile';
 import Navbar from '../components/Navbar';
@@ -18,6 +21,7 @@ import ProfileHeader from '../profile/components/ProfileHeader';
 import BioSection from '../profile/components/BioSection';
 import CompareCart from './components/CompareCart';
 import useRoommatesLogic from './useRoommatesLogic';
+import FollowButton from '../profile/components/FollowButton';
 
 export default function ProfileViewPage() {
   const { userId } = useParams<{ userId: string }>();
@@ -32,6 +36,8 @@ export default function ProfileViewPage() {
   const [error, setError] = useState<string | null>(null);
   const [isFavorited, setIsFavorited] = useState(false);
   const [myVote, setMyVote] = useState<'LIKE' | 'DISLIKE' | null>(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
 
   // Compare cart logic
   const {
@@ -69,6 +75,13 @@ export default function ProfileViewPage() {
 
         // Set vote status from backend response
         setMyVote(data.myVoteType || null);
+        // Set follow status from backend
+        try {
+          const followRes = await getIsFollowing(String(userId));
+          setIsFollowing(followRes.isFollowing || false);
+        } catch (err) {
+          console.warn('Failed to fetch follow status', err);
+        }
       } catch (err: any) {
         setError(err?.message || 'Failed to load profile');
         console.error('Error fetching profile:', err);
@@ -266,6 +279,29 @@ export default function ProfileViewPage() {
                 {isFavorited ? 'Favorited' : 'Favorite'}
               </span>
             </button>
+
+            {/* Follow/Unfollow Button */}
+            <FollowButton
+              isFollowing={isFollowing}
+              loading={followLoading}
+              onToggle={async () => {
+                if (!userId) return;
+                setFollowLoading(true);
+                try {
+                  if (isFollowing) {
+                    await unfollowUser(String(userId));
+                    setIsFollowing(false);
+                  } else {
+                    await followUser(String(userId));
+                    setIsFollowing(true);
+                  }
+                } catch (err) {
+                  console.error('Follow toggle failed', err);
+                } finally {
+                  setFollowLoading(false);
+                }
+              }}
+            />
           </div>
         </div>
 

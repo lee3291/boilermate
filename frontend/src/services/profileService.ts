@@ -270,4 +270,30 @@ export const getCompareProfiles = async (
 
   const response = await api.get(`${BASE_URL}/compare`, { params });
   return response.data;
+}
+
+/**
+ * Follow a user
+ */
+export const followUser = async (userId: string): Promise<any> => {
+  const response = await api.post(`${BASE_URL}/follow/${userId}`);
+  return response.data;
+};
+
+/**
+ * Unfollow a user
+ */
+export const unfollowUser = async (userId: string): Promise<any> => {
+  const response = await api.delete(`${BASE_URL}/follow/${userId}`);
+  return response.data;
+};
+
+/**
+ * Check if current user is following another user
+ */
+export const getIsFollowing = async (
+  userId: string,
+): Promise<{ isFollowing: boolean }> => {
+  const response = await api.get(`${BASE_URL}/${userId}/is-following`);
+  return response.data;
 };
