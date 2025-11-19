@@ -35,6 +35,7 @@ import {
   VoteResponseDto,
   VoteStatsDto,
   GetMyVotesResponseDto,
+  CompareProfilesGroupedResponseDto,
 } from './dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdateAvatarDto } from './dto/update-avatar.dto';
@@ -121,7 +122,9 @@ export class ProfileController {
    */
   @Get('compare')
   @HttpCode(200)
-  async compareProfiles(@Query() dto: GetCompareProfilesDto): Promise<any> {
+  async compareProfiles(
+    @Query() dto: GetCompareProfilesDto,
+  ): Promise<CompareProfilesGroupedResponseDto> {
     return this.profileService.getCompareProfiles(dto);
   }
 

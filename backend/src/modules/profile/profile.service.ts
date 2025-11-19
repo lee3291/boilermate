@@ -28,6 +28,8 @@ import {
   VoteResponseDto,
   VoteStatsDto,
   GetMyVotesResponseDto,
+  CompareProfileDto,
+  CompareProfilesGroupedResponseDto,
 } from './dto';
 
 @Injectable()
@@ -945,13 +947,13 @@ export class ProfileService {
       voteMap.set(vc.votedUserId, existing);
     });
 
-    // Transform to ProfileDetailsDto array
+    // Transform to CompareProfileDto array (with grouped preferences)
     const profiles = users.map((user: any) => {
       const isFavoritedByMe = favoritedUserIds.has(user.id);
       const myVoteType = myVoteMap.get(user.id) || null;
       const voteCounts = voteMap.get(user.id) || { likes: 0, dislikes: 0 };
 
-      return ProfileDetailsDto.fromProfile(
+      return CompareProfileDto.fromProfile(
         user,
         isFavoritedByMe,
         myVoteType,
@@ -960,6 +962,6 @@ export class ProfileService {
       );
     });
 
-    return { profiles, count: profiles.length };
+    return CompareProfilesGroupedResponseDto.fromProfiles(profiles);
   }
 }

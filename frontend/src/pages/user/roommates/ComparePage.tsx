@@ -3,52 +3,22 @@
  * Organized by preference categories for easy comparison
  */
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { getCompareProfiles, toggleFavorite, toggleVote } from '@/services/profileService';
-import { ProfileDetails, PreferenceDetail } from '@/types/profile';
+import type { CompareProfile } from '@/types/profile';
 import Navbar from '../components/Navbar';
 import { X } from 'lucide-react';
-
-// Helper to group preferences by category
-interface CategoryGroup {
-  category: string;
-  preferences: Map<string, PreferenceDetail[]>; // preferenceLabel -> array of user preferences
-}
-
-function groupPreferencesByCategory(profiles: ProfileDetails[], type: 'lifestyle' | 'roommate'): CategoryGroup[] {
-  const categoryMap = new Map<string, Map<string, PreferenceDetail[]>>();
-
-  profiles.forEach((profile) => {
-    const prefs = type === 'lifestyle' ? profile.lifestylePreferences : profile.roommatePreferences;
-    
-    prefs.forEach((pref) => {
-      if (!categoryMap.has(pref.category)) {
-        categoryMap.set(pref.category, new Map());
-      }
-      
-      const prefMap = categoryMap.get(pref.category)!;
-      if (!prefMap.has(pref.label)) {
-        prefMap.set(pref.label, []);
-      }
-      
-      prefMap.get(pref.label)!.push(pref);
-    });
-  });
-
-  return Array.from(categoryMap.entries()).map(([category, preferences]) => ({
-    category,
-    preferences,
-  }));
-}
 
 export default function ComparePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const viewerId = user!.id;
   
-  const [profiles, setProfiles] = useState<ProfileDetails[]>([]);
+  const [profiles, setProfiles] = useState<CompareProfile[]>([]);
+  const [lifestyleCategories, setLifestyleCategories] = useState<string[]>([]);
+  const [roommateCategories, setRoommateCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,6 +44,8 @@ export default function ComparePage() {
         });
 
         setProfiles(response.profiles);
+        setLifestyleCategories(response.lifestyleCategories);
+        setRoommateCategories(response.roommateCategories);
       } catch (err: any) {
         console.error('Error fetching compare profiles:', err);
         setError(err?.message || 'Failed to load profiles');
@@ -144,10 +116,6 @@ export default function ComparePage() {
     }
   };
 
-  // Group preferences by category
-  const lifestyleCategories = useMemo(() => groupPreferencesByCategory(profiles, 'lifestyle'), [profiles]);
-  const roommateCategories = useMemo(() => groupPreferencesByCategory(profiles, 'roommate'), [profiles]);
-
   if (loading) {
     return (
       <div className='min-h-screen bg-linear-to-br from-pink-50 via-white to-purple-50'>
@@ -197,14 +165,15 @@ export default function ComparePage() {
           <div className='w-40' />
         </div>
 
-        {/* Profile Headers Row */}
-        <div className='mb-6 grid gap-4' style={{ gridTemplateColumns: `200px repeat(${profiles.length}, 1fr)` }}>
-          {/* Empty cell for sidebar alignment */}
-          <div />
-
-          {/* Profile Headers */}
-          {profiles.map((profile) => (
-            <div key={profile.id} className='relative'>
+        {/* Profile Headers Section */}
+        <div className='mb-8 rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-lg'>
+          <div className='mb-4 flex items-center gap-2'>
+            <span className='text-2xl'>👥</span>
+            <h2 className='text-lg font-bold text-gray-900'>Profiles</h2>
+          </div>
+          <div className='grid gap-6' style={{ gridTemplateColumns: `repeat(${profiles.length}, 1fr)` }}>
+            {profiles.map((profile) => (
+              <div key={profile.id} className='relative'>
               {/* Remove button */}
               <button
                 onClick={() => handleRemoveProfile(profile.id)}
@@ -313,105 +282,110 @@ export default function ComparePage() {
                   </div>
                 )}
               </div>
-            </div>
-          ))}
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Bio Section Row */}
-        <div className='mb-6 grid gap-4' style={{ gridTemplateColumns: `200px repeat(${profiles.length}, 1fr)` }}>
-          {/* Sidebar Label */}
-          <div className='flex items-start pt-2'>
-            <h3 className='text-sm font-bold text-gray-700'>📝 Bio</h3>
+        {/* Bio Section */}
+        <div className='mb-8 rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-lg'>
+          <div className='mb-4 flex items-center gap-2'>
+            <span className='text-2xl'>📝</span>
+            <h2 className='text-lg font-bold text-gray-900'>Bio</h2>
           </div>
-
-          {/* Bio Cards */}
-          {profiles.map((profile) => (
-            <div key={profile.id}>
-              {profile.bio ? (
-                <div className='rounded-xl border border-gray-200 bg-white p-3 shadow-sm'>
-                  <p className='text-sm text-gray-600'>{profile.bio}</p>
-                </div>
-              ) : (
-                <div className='rounded-xl border border-gray-200 bg-gray-50 p-3 text-center'>
-                  <p className='text-xs text-gray-400'>No bio</p>
-                </div>
-              )}
-            </div>
-          ))}
+          <div className='grid gap-6' style={{ gridTemplateColumns: `repeat(${profiles.length}, 1fr)` }}>
+            {profiles.map((profile) => (
+              <div key={profile.id}>
+                {profile.bio ? (
+                  <div className='rounded-xl border-2 border-gray-100 bg-linear-to-br from-gray-50 to-white p-4'>
+                    <p className='text-sm leading-relaxed text-gray-700'>{profile.bio}</p>
+                  </div>
+                ) : (
+                  <div className='rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 p-4 text-center'>
+                    <p className='text-sm text-gray-400'>No bio added</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Lifestyle Preferences Section */}
-        <div className='mb-6'>
-          <h2 className='mb-4 text-xl font-bold text-gray-900'>💫 Lifestyle Preferences</h2>
+        <div className='mb-8'>
+          <div className='mb-6 flex items-center gap-3'>
+            <span className='text-3xl'>💫</span>
+            <h2 className='text-2xl font-bold text-gray-900'>Lifestyle Preferences</h2>
+          </div>
           
-          {lifestyleCategories.map((categoryGroup) => (
-            <div key={categoryGroup.category} className='mb-6 grid gap-4' style={{ gridTemplateColumns: `200px repeat(${profiles.length}, 1fr)` }}>
-              {/* Sidebar Category Label */}
-              <div className='flex items-start pt-2'>
-                <h3 className='text-sm font-semibold text-gray-700'>{categoryGroup.category}</h3>
+          <div className='space-y-4'>
+            {lifestyleCategories.map((category) => (
+              <div key={category} className='rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-lg transition-all hover:shadow-xl'>
+                <div className='mb-4'>
+                  <h3 className='text-base font-bold text-gray-900 uppercase tracking-wide'>{category}</h3>
+                </div>
+                <div className='grid gap-6' style={{ gridTemplateColumns: `repeat(${profiles.length}, 1fr)` }}>
+                  {profiles.map((profile) => {
+                    const prefsInCategory = profile.lifestyleByCategory[category] || [];
+                    
+                    return (
+                      <div key={profile.id}>
+                        {prefsInCategory.length > 0 ? (
+                          <div className='grid grid-cols-2 gap-2'>
+                            {prefsInCategory.map((pref) => (
+                              <CompactPreferenceCard key={pref.id} preference={pref} category={category} />
+                            ))}
+                          </div>
+                        ) : (
+                          <div className='rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 p-4 text-center'>
+                            <p className='text-sm text-gray-400'>No preference</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-
-              {/* Preference Cards for each profile */}
-              {profiles.map((profile) => {
-                const prefsInCategory = profile.lifestylePreferences.filter(
-                  p => p.category === categoryGroup.category
-                );
-                
-                return (
-                  <div key={profile.id}>
-                    {prefsInCategory.length > 0 ? (
-                      <div className='grid grid-cols-2 gap-2'>
-                        {prefsInCategory.map((pref) => (
-                          <CompactPreferenceCard key={pref.id} preference={pref} />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className='rounded-lg border border-gray-200 bg-gray-50 p-3 text-center'>
-                        <p className='text-xs text-gray-400'>No preference</p>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         {/* Roommate Preferences Section */}
-        <div className='mb-6'>
-          <h2 className='mb-4 text-xl font-bold text-gray-900'>🏠 Roommate Preferences</h2>
+        <div className='mb-8'>
+          <div className='mb-6 flex items-center gap-3'>
+            <span className='text-3xl'>🏠</span>
+            <h2 className='text-2xl font-bold text-gray-900'>Roommate Preferences</h2>
+          </div>
           
-          {roommateCategories.map((categoryGroup) => (
-            <div key={categoryGroup.category} className='mb-6 grid gap-4' style={{ gridTemplateColumns: `200px repeat(${profiles.length}, 1fr)` }}>
-              {/* Sidebar Category Label */}
-              <div className='flex items-start pt-2'>
-                <h3 className='text-sm font-semibold text-gray-700'>{categoryGroup.category}</h3>
+          <div className='space-y-4'>
+            {roommateCategories.map((category) => (
+              <div key={category} className='rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-lg transition-all hover:shadow-xl'>
+                <div className='mb-4'>
+                  <h3 className='text-base font-bold text-gray-900 uppercase tracking-wide'>{category}</h3>
+                </div>
+                <div className='grid gap-6' style={{ gridTemplateColumns: `repeat(${profiles.length}, 1fr)` }}>
+                  {profiles.map((profile) => {
+                    const prefsInCategory = profile.roommatePreferencesByCategory[category] || [];
+                    
+                    return (
+                      <div key={profile.id}>
+                        {prefsInCategory.length > 0 ? (
+                          <div className='grid grid-cols-2 gap-2'>
+                            {prefsInCategory.map((pref) => (
+                              <CompactPreferenceCard key={pref.id} preference={pref} category={category} />
+                            ))}
+                          </div>
+                        ) : (
+                          <div className='rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 p-4 text-center'>
+                            <p className='text-sm text-gray-400'>No preference</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-
-              {/* Preference Cards for each profile */}
-              {profiles.map((profile) => {
-                const prefsInCategory = profile.roommatePreferences.filter(
-                  p => p.category === categoryGroup.category
-                );
-                
-                return (
-                  <div key={profile.id}>
-                    {prefsInCategory.length > 0 ? (
-                      <div className='grid grid-cols-2 gap-2'>
-                        {prefsInCategory.map((pref) => (
-                          <CompactPreferenceCard key={pref.id} preference={pref} />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className='rounded-lg border border-gray-200 bg-gray-50 p-3 text-center'>
-                        <p className='text-xs text-gray-400'>No preference</p>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -422,42 +396,42 @@ export default function ComparePage() {
 interface PreferenceCardProps {
   preference: {
     id: string;
-    category: string;
     label: string;
     value: string;
     importance: number;
     visibility: string;
   };
+  category: string; // Category passed separately since it's not in GroupedPreferenceDetail
 }
 
-function CompactPreferenceCard({ preference }: PreferenceCardProps) {
-  const categoryColor = getCategoryColor(preference.category);
+function CompactPreferenceCard({ preference, category }: PreferenceCardProps) {
+  const categoryColor = getCategoryColor(category);
 
   const stars = Array.from({ length: 5 }, (_, i) => {
     const filled = i < preference.importance;
     return (
-      <span key={i} className={filled ? 'text-yellow-400' : 'text-gray-300 text-xs'}>
+      <span key={i} className={filled ? 'text-yellow-400 text-sm' : 'text-gray-300 text-sm'}>
         ★
       </span>
     );
   });
 
   return (
-    <div className='group relative rounded-lg border border-gray-200 bg-linear-to-br from-white to-gray-50 p-2 transition-all hover:shadow-md'>
-      <div className='flex items-start justify-between'>
-        <div className='flex-1 min-w-0'>
-          <h3 className='mb-0.5 text-xs font-semibold text-gray-900 truncate'>{preference.label}</h3>
-          <p className='text-[10px] text-gray-600 truncate'>{preference.value}</p>
-        </div>
-
+    <div className='group relative rounded-lg border-2 border-gray-200 bg-linear-to-br from-white to-gray-50 p-3 transition-all hover:border-purple-300 hover:shadow-md'>
+      <div className='mb-1.5 flex items-start justify-between'>
+        <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${categoryColor}`}>
+          {category}
+        </span>
         {preference.visibility === 'PRIVATE' && (
-          <span className='ml-1 text-[10px]'>🔒</span>
+          <span className='text-xs'>🔒</span>
         )}
       </div>
+      
+      <h3 className='mb-1 text-xs font-bold text-gray-900'>{preference.label}</h3>
+      <p className='mb-2 text-xs text-gray-600 line-clamp-2'>{preference.value}</p>
 
-      <div className='mt-1 flex items-center gap-0.5'>
+      <div className='flex items-center gap-0.5'>
         {stars}
-        <span className='ml-1 text-[9px] text-gray-500'>({preference.importance})</span>
       </div>
     </div>
   );

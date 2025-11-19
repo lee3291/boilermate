@@ -15,6 +15,7 @@ export * from './responses/profile-summary.response.dto';
 export * from './responses/profile-details.response.dto';
 export * from './responses/search.response.dto';
 export * from './responses/compare.response.dto';
+export * from './responses/compare-grouped.response.dto';
 export * from './responses/favorite.response.dto';
 export * from './responses/vote.response.dto';
 
