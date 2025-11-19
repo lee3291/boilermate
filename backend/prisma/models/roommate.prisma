@@ -1,0 +1,63 @@
+enum RoommateRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model RoommateRequest {
+  id          String                  @id @default(uuid())
+  requesterId String
+  requestedId String
+  status      RoommateRequestStatus   @default(PENDING)
+  message     String?                 // Optional note with request
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt // Track when status changed
+
+  // RELATIONS
+  requester User @relation("RoommateRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  requested User @relation("RoommateRequested", fields: [requestedId], references: [id], onDelete: Cascade)
+  
+  @@unique([requesterId, requestedId])
+  @@index([requesterId])
+  @@index([requestedId])
+  @@index([status])
+}
+
+model Roommate {
+  id        String   @id @default(uuid())
+  user1Id   String
+  user2Id   String
+  startDate DateTime @default(now())
+  endDate   DateTime?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  
+  // RELATIONS
+  user1   User              @relation("RoommateUser1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2   User              @relation("RoommateUser2", fields: [user2Id], references: [id], onDelete: Cascade)
+  reviews RoommateReview[]
+  
+  @@unique([user1Id, user2Id])
+  @@index([user1Id])
+  @@index([user2Id])
+  @@index([isActive])
+}
+
+model RoommateReview {
+  id         String   @id @default(uuid())
+  reviewerId String
+  reviewedId String
+  roommateId String
+  rating     Int      // 1-5 stars
+  comment    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // RELATIONS
+  reviewer User     @relation("ReviewAuthor", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewed User     @relation("ReviewSubject", fields: [reviewedId], references: [id], onDelete: Cascade)
+  roommate Roommate @relation(fields: [roommateId], references: [id], onDelete: Cascade)
+  
+  @@unique([reviewerId, reviewedId, roommateId])
+  @@index([reviewedId])
+}
