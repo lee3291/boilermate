@@ -30,8 +30,18 @@ export default function CreatePollButton({
     }
 
     function handleCreate() {
-        const cleanedOptions = options.filter((o) => o.trim() !== "");
+        const cleanedOptions = options
+            .map(o => o.trim())
+            .filter(o => o !== "");
+
         if (!question.trim() || cleanedOptions.length < 1) return;
+
+        const hasDuplicates = new Set(cleanedOptions).size !== cleanedOptions.length;
+
+        if (hasDuplicates) {
+            alert("Should not have duplicate options");
+            return;
+        }
 
         onCreatePoll?.({
             question: question.trim(),
@@ -53,8 +63,8 @@ export default function CreatePollButton({
             </button>
 
             {open && (
-                <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg shadow-2xl border border-gray-200 w-full max-w-md mx-4 max-h-[90vh] flex flex-col">
+                <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+                    <div className="bg-white rounded-lg shadow-2xl border border-gray-200 w-full max-w-md mx-4 max-h-[90vh] flex flex-col pointer-events-auto">
                         <div className="flex items-center justify-between p-4 border-b">
                             <h2 className="text-xl font-semibold">Create a Poll</h2>
                             <button

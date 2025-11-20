@@ -332,9 +332,9 @@ export class ChatsController {
   /*
    * Get all poll from current chat (include options)
    */
-  @Get(':chatId/polls')
-  async getAllPolls(@Param('chatId') chatId: string): Promise<PollInGroupDto[]> {
-    return this.groupChatsService.getPolls(chatId);
+  @Get(':chatId/:userId/polls')
+  async getAllPolls(@Param('chatId') chatId: string, @Param('userId') userId: string): Promise<PollInGroupDto[]> {
+    return this.groupChatsService.getPolls(chatId, userId);
   }
   /*
    * Add more options to current poll
@@ -343,7 +343,19 @@ export class ChatsController {
   async addOption(
       @Param('pollId') pollId: string,
       @Body() body: { text: string }
-  ) {
+  ) : Promise<PollOptionDto> {
     return this.groupChatsService.addOption(pollId, body.text);
   }
+  /*
+   * Update vote/unvote
+   */
+  @Post('poll/:pollId/:userId/submit-poll')
+  async submitOption(
+      @Param('pollId') pollId: string,
+      @Param('userId') userId: string,
+      @Body() body: { options: { id: string; selected: boolean }[] }
+  )  {
+    return this.groupChatsService.submitVotes(userId, pollId, body.options);
+  }
+
 }

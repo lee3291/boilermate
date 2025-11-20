@@ -33,9 +33,7 @@ function ImageDisplay({ imageUrl, isMine, approved, messageId, currentUserId, on
                 await approveMessage(messageId, { userId: currentUserId });
                 setApprovedState(true);
                 onApproved();
-            } catch (err) {
-                console.error(err);
-            }
+            } catch (err) {}
         }
     };
 
@@ -92,6 +90,8 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
     const [hover, setHover] = useState(false);
     const [editing, setEditing] = useState(false);
     const [editText, setEditText] = useState(m.content);
+    const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
+    const [reaction, setReaction] = useState<string | null>(null);
 
     const hasImage = m.imageUrl && m.imageUrl.trim().length > 0;
     const hasContent = m.content && m.content.trim().length > 0;
@@ -101,18 +101,21 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
             try {
                 const blocked = await isBlockedBetween(currentUserId, m.senderId);
                 if (blocked) {
-                    // prevent showing message from blocked user in group chat
                     const el = document.getElementById(`msg-${m.id}`);
                     if (el) el.style.display = 'none';
                 }
-            } catch (err) {
-                console.error('Block check failed:', err);
-            }
+            } catch (err) {}
         };
         checkBlock();
     }, [m.id, m.senderId, currentUserId]);
 
     const handleApproved = () => {};
+
+    const toggleReaction = (emoji: string) => {
+        if (reaction === emoji) setReaction(null);
+        else setReaction(emoji);
+        setReactionPickerOpen(false);
+    };
 
     return (
         <div id={`msg-${m.id}`} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} w-full mb-3`}>
@@ -127,20 +130,23 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
 
                 <div className="flex flex-col">
                     {m.isEdited && (!m.isDeleted || !m.isDeletedForYou) && (
-                        <div
-                            className={`text-[11px] text-gray-400 mb-0.5 ${isMine ? 'self-end' : 'self-start'}`}>edited</div>
+                        <div className={`text-[11px] text-gray-400 mb-0.5 ${isMine ? 'self-end' : 'self-start'}`}>edited</div>
                     )}
 
-                    <div className="flex items-center gap-1">
-                        {isMine && hover && !m.isDeleted && !m.isDeletedForYou && (
+                    <div className="flex items-center gap-1 relative">
+                        {hover && !m.isDeleted && !m.isDeletedForYou && (
                             <div className="text-xs text-gray-500 mr-1">
-                                <button onClick={() => onDelete?.(m.id, false)} className="hover:underline">
-                                    Delete For You
+                                <button onClick={() => setReactionPickerOpen(!reactionPickerOpen)} className="hover:underline">
+                                    React
                                 </button>
-                                <span className="mx-1">|</span>
-                                <button onClick={() => onDelete?.(m.id, true)} className="hover:underline">
-                                    Delete For Everyone
-                                </button>
+                            </div>
+                        )}
+
+                        {reactionPickerOpen && (
+                            <div className="absolute -top-8 left-0 bg-white border rounded-full shadow px-2 py-1 flex gap-2 z-20">
+                                <button onClick={() => toggleReaction("👍")}>👍</button>
+                                <button onClick={() => toggleReaction("❤️")}>❤️</button>
+                                <button onClick={() => toggleReaction("😂")}>😂</button>
                             </div>
                         )}
 
@@ -202,6 +208,14 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
                             )}
                         </div>
                     </div>
+
+                    {reaction && (
+                        <div className={`text-[11px] text-gray-500 mt-1 flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                            <span className="px-2 py-0.5 bg-gray-100 rounded-full border text-xs">
+                                {reaction}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 {isMine && (

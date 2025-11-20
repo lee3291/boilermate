@@ -168,9 +168,9 @@ export async function createPoll(chatId: string, question: string, options: stri
 }
 
 // Get all polls for a chat
-export async function getAllPolls(chatId: string): Promise<any[]> {
+export async function getAllPolls(chatId: string, userId: string): Promise<any[]> {
   try {
-    const res = await api.get(`/chats/${encodeURIComponent(chatId)}/polls`);
+    const res = await api.get(`/chats/${encodeURIComponent(chatId)}/${encodeURIComponent(userId)}/polls`);
     console.log('get all polls', res);
     return res.data;
   } catch (error: any) {
@@ -188,6 +188,24 @@ export async function addPollOption(pollId: string, text: string): Promise<PollO
     throw error.response?.data ?? error;
   }
 }
+// Update selections from specific user
+export async function submitVotes(
+    pollId: string,
+    userId: string,
+    options: { id: string; selected: boolean }[]
+): Promise<any> {
+  try {
+    const res = await api.post(
+        `/chats/poll/${encodeURIComponent(pollId)}/${encodeURIComponent(userId)}/submit-poll`,
+        { options }
+    );
+    console.log('submit poll votes', res);
+    return res.data;
+  } catch (error: any) {
+    throw error.response?.data ?? error;
+  }
+}
+
 export default {
   createGroupChat,
   getInvitations,
@@ -202,4 +220,5 @@ export default {
   createPoll,
   getAllPolls,
   addPollOption,
+  submitVotes,
 };

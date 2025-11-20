@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 
 export interface PollOption {
     id: string;
     text: string;
     votes: number;
+    votedByUser: boolean;
 }
 
 export interface Poll {
@@ -17,11 +18,20 @@ interface PollsSidebarProps {
     polls: Poll[];
     onClose: () => void;
     onAddOption: (pollId: string, optionText: string) => Promise<PollOption>;
+    onSubmitVotes: (pollId: string, opts: { id: string; selected: boolean }[]) => Promise<any>;
 }
 
-export default function PollsSidebar({ polls, onClose, onAddOption }: PollsSidebarProps) {
+export default function PollsSidebar({ polls, onClose, onAddOption, onSubmitVotes }: PollsSidebarProps) {
     const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({});
     const [newOptionText, setNewOptionText] = useState<Record<string, string>>({});
+
+    useEffect(() => {
+        const initialSelected: Record<string, string[]> = {};
+        polls.forEach(poll => {
+            initialSelected[poll.id] = poll.options.filter(opt => opt.votedByUser).map(opt => opt.id);
+        });
+        setSelectedOptions(initialSelected);
+    }, [polls]);
 
     const handleToggleOption = (pollId: string, optionId: string) => {
         setSelectedOptions(prev => {
@@ -36,12 +46,34 @@ export default function PollsSidebar({ polls, onClose, onAddOption }: PollsSideb
     const handleAddOption = async (pollId: string) => {
         const text = newOptionText[pollId]?.trim();
         if (!text) return;
+        const existingOptions = [...(polls.find(p => p.id === pollId)?.options ?? [])];
+        for (const opt of existingOptions) {
+            if (opt.text === text) {
+                alert("This option already exists!");
+                return;
+            }
+        }
         try {
             await onAddOption(pollId, text);
-            onClose(); // close sidebar immediately
-        } catch (err) {
-            console.error("Failed to add option", err);
+            setNewOptionText(prev => ({ ...prev, [pollId]: "" }));
+            onClose();
+        } catch (err: any) {
+            if (err?.message?.includes("Option already exists")) {
+                alert("This option already exists!");
+            } else {
+                console.error("Failed to add option", err);
+            }
         }
+    };
+
+    const handleSubmitVotes = async (pollId: string, pollOptions: PollOption[]) => {
+        const selected = selectedOptions[pollId] ?? [];
+        const payload = pollOptions.map(opt => ({
+            id: opt.id,
+            selected: selected.includes(opt.id)
+        }));
+        await onSubmitVotes(pollId, payload);
+        onClose();
     };
 
     return (
@@ -62,25 +94,20 @@ export default function PollsSidebar({ polls, onClose, onAddOption }: PollsSideb
                             <div className="font-medium text-center">{poll.question}</div>
 
                             <div className="flex flex-col gap-2">
-                                {poll.options.map(opt => (
-                                    <button
-                                        key={opt.id}
-                                        className={`flex items-center justify-between p-2 rounded-lg border hover:bg-gray-50 ${
-                                            selectedOptions[poll.id]?.includes(opt.id) ? "bg-blue-100" : ""
-                                        }`}
-                                        onClick={() => handleToggleOption(poll.id, opt.id)}
-                                    >
-                                        <span className="flex-1 text-left">{opt.text}</span>
-                                        <span className="text-gray-500 mr-3">{opt.votes}</span>
-                                        <span
-                                            className={`w-4 h-4 border-2 rounded-full ${
-                                                selectedOptions[poll.id]?.includes(opt.id)
-                                                    ? "bg-blue-500 border-blue-500"
-                                                    : "border-gray-400"
-                                            }`}
-                                        ></span>
-                                    </button>
-                                ))}
+                                {poll.options.map(opt => {
+                                    const isSelected = selectedOptions[poll.id]?.includes(opt.id);
+                                    return (
+                                        <button
+                                            key={opt.id}
+                                            className={`flex items-center justify-between p-2 rounded-lg border hover:bg-gray-50 ${isSelected ? "bg-blue-100" : ""}`}
+                                            onClick={() => handleToggleOption(poll.id, opt.id)}
+                                        >
+                                            <span className="flex-1 text-left">{opt.text}</span>
+                                            <span className="text-gray-500 mr-3">{opt.votes}</span>
+                                            <span className={`w-4 h-4 border-2 rounded-full ${isSelected ? "bg-blue-500 border-blue-500" : "border-gray-400"}`}></span>
+                                        </button>
+                                    );
+                                })}
                             </div>
 
                             <div className="flex gap-2 items-center">
@@ -100,7 +127,10 @@ export default function PollsSidebar({ polls, onClose, onAddOption }: PollsSideb
                                 </button>
                             </div>
 
-                            <button className="mt-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                            <button
+                                className="mt-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                                onClick={() => handleSubmitVotes(poll.id, poll.options)}
+                            >
                                 Vote / Update
                             </button>
                         </div>

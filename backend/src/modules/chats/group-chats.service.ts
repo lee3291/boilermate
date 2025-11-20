@@ -720,7 +720,7 @@ export class GroupChatsService {
   /*
    * Get all poll from current chat (include options)
    */
-  async getPolls(chatId: string): Promise<PollDetails[]> {
+  async getPolls(chatId: string, userId: string): Promise<PollDetails[]> {
     const client: any = this.prisma as any;
 
     try {
@@ -729,25 +729,40 @@ export class GroupChatsService {
 
       const polls = await client.poll.findMany({
         where: { chatId },
-        include: { options: true },
-        orderBy: { createdAt: 'asc' } // THIS IS OK even if we don't return it
+        include: {
+          options: {
+            include: {
+              votesBy: {
+                where: { userId }
+              }
+            }
+          }
+        },
+        orderBy: { createdAt: 'asc' }
       });
 
-      return polls.map((poll: any)=> ({
+      return polls.map((poll: any) => ({
         id: poll.id,
         chatId: poll.chatId,
         question: poll.question,
-        options: poll.options.map((opt: any) => ({
-          id: opt.id,
-          text: opt.text,
-          votes: opt.votes
-        }))
+
+        // Sort
+        options: poll.options
+            .sort((a: any, b: any) => b.votes - a.votes)
+            .map((opt: any) => ({
+              id: opt.id,
+              text: opt.text,
+              votes: opt.votes,
+              votedByUser: opt.votesBy.length > 0
+            }))
       }));
     } catch (error) {
       Logger.error('getPolls error', error);
       throw new InternalServerErrorException('Failed to fetch polls');
     }
   }
+
+
 
   /**
    * Add a new option to a poll
@@ -776,5 +791,39 @@ export class GroupChatsService {
       votes: newOpt.votes
     };
   }
+
+  /*
+   * Update vote from users
+   */
+  async submitVotes(userId: string, pollId: string, options: { id: string, selected: boolean }[]) {
+    const client: any = this.prisma as any;
+
+    for (const opt of options) {
+      const hasVoted = await client.userPollVote.findUnique({
+        where: { userId_pollOptionId: { userId, pollOptionId: opt.id } }
+      });
+      // Vote
+      if (!hasVoted && opt.selected) {
+        await client.userPollVote.create({
+          data: { userId, pollOptionId: opt.id }
+        });
+        await client.pollOption.update({
+          where: { id: opt.id },
+          data: { votes: { increment: 1 } }
+        });
+      }
+      //Unvote
+      if (hasVoted && !opt.selected) {
+        await client.userPollVote.delete({
+          where: { userId_pollOptionId: { userId, pollOptionId: opt.id } }
+        });
+        await client.pollOption.update({
+          where: { id: opt.id },
+          data: { votes: { decrement: 1 } }
+        });
+      }
+    }
+  }
+
 
 }

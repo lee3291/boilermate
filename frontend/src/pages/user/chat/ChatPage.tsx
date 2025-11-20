@@ -55,11 +55,15 @@ export default function ChatPage() {
             selectedFile={logic.selectedFile}
             onFileChange={logic.handleFileChange}
             isUploadingImage={logic.isUploadingImage}
+
+            //Polls
             onCreatePoll={logic.handleCreatePoll}
             onGetPolls={logic.handleGetPolls}
-            onAddOptions={logic.handleAddOption}
-            blockedBetween={logic.blockedBetween}
+            onAddOption={logic.handleAddOption}
+            onSubmitVotes={logic.handleSubmitVotes}
+
             // Group chat props
+            blockedBetween={logic.blockedBetween}
             showGroupMembersSidebar={logic.showGroupMembersSidebar}
             onToggleGroupMembersSidebar={() => logic.setShowGroupMembersSidebar(!logic.showGroupMembersSidebar)}
             onAddMembersClick={() => logic.setShowAddMembersModal(true)}

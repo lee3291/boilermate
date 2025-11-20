@@ -29,8 +29,9 @@ export default function ChatWindow(props: {
   onDeleteGroup?: (chatId: string) => Promise<void>;
   blockedBetween?: boolean;
   onCreatePoll?: (chatId: string, question: string, options: string[]) => Promise<boolean>;
-  onGetPolls?: (chatId: string) => Promise<{ id: string; question: string; options: { id: string; text: string; votes: number }[] }[]>;
-  onAddOptions?: (pollId: string, optionText: string) => Promise<void>;
+  onGetPolls?: (chatId: string, userId: string) => Promise<{ id: string; question: string; options: { id: string; text: string; votes: number; votedByUser: boolean; }[] }[]>;
+  onAddOption: (pollId: string, optionText: string) => Promise<any>;
+  onSubmitVotes: (pollId: string, opts: { id: string; selected: boolean }[]) => Promise<any>;
 }) {
   const {
     chatId,
@@ -56,17 +57,18 @@ export default function ChatWindow(props: {
     blockedBetween,
     onCreatePoll,
     onGetPolls,
-    onAddOptions,
+    onAddOption,
+    onSubmitVotes,
   } = props;
 
-  const [polls, setPolls] = useState<{ id: string; question: string; options: { id: string; text: string; votes: number }[] }[]>([]);
+  const [polls, setPolls] = useState<{ id: string; question: string; options: { id: string; text: string; votes: number; votedByUser: boolean;}[] }[]>([]);
   const [showPollsSidebar, setShowPollsSidebar] = useState(false);
 
   // Fetch polls from backend
   const handleFetchPolls = useCallback(async () => {
-    if (!onGetPolls || !chatId) return;
+    if (!onGetPolls || !chatId || !currentUserId) return;
     try {
-      const result = await onGetPolls(chatId);
+      const result = await onGetPolls(chatId, currentUserId);
       setPolls(result || []);
     } catch (err) {
       console.error('Failed to fetch polls', err);
@@ -82,8 +84,8 @@ export default function ChatWindow(props: {
 
   // Add a new option to a poll and close the sidebar immediately
   const handleAddOption = async (pollId: string, optionText: string) => {
-    if (!onAddOptions) throw new Error("onAddOptions handler missing");
-    await onAddOptions(pollId, optionText);
+    if (!onAddOption) throw new Error("onAddOptions handler missing");
+    await onAddOption(pollId, optionText);
     setShowPollsSidebar(false);
   };
 
@@ -182,8 +184,9 @@ export default function ChatWindow(props: {
         {isGroupChat && showPollsSidebar && (
             <PollsSidebar
                 polls={polls}
-                onAddOption={handleAddOption} // adds option and closes sidebar
+                onAddOption={onAddOption} // adds option and closes sidebar
                 onClose={() => setShowPollsSidebar(false)}
+                onSubmitVotes={onSubmitVotes}
             />
         )}
       </div>

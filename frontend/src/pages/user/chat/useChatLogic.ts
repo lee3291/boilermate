@@ -30,6 +30,7 @@ import {
   createPoll as apiCreatePoll,
   getAllPolls as apiGetAllPolls,
   addPollOption as apiAddPollOption,
+    submitVotes as apiSubmitVotes,
 } from '@/services/groupChatService';
 import { compressImage } from '@/utils/imageCompression';
 import config from '@/utils/config';
@@ -629,10 +630,11 @@ export default function useChatLogic(user: User) {
   );
   //Get all polls given chat id
   const handleGetPolls = useCallback(
-      async (chatId: string) => {
+      async (chatId: string, userId: string) => {
         if (!chatId) return [];
+        if (!userId) return [];
         try {
-          const res = await apiGetAllPolls(chatId); // call backend service
+          const res = await apiGetAllPolls(chatId, userId); // call backend service
           setPolls(res || []);
           return res;
         } catch (err: any) {
@@ -643,23 +645,66 @@ export default function useChatLogic(user: User) {
       []
   );
 
+  // Add a new option in a specific poll
   const handleAddOption = useCallback(
       async (pollId: string, optionText: string) => {
         if (!pollId || !optionText.trim()) return;
 
         try {
-          const newOption = await apiAddPollOption(pollId, optionText.trim());
+          const newOption: PollOption = await apiAddPollOption(pollId, optionText.trim());
+
           setPolls(prevPolls =>
               prevPolls.map(poll => {
                 if (poll.id !== pollId) return poll;
                 return { ...poll, options: [...poll.options, newOption] };
               })
           );
+
+          return newOption; // return new option to match PollsSidebar's expected type
         } catch (err: any) {
           setError(err?.message ?? 'Failed to add poll option');
+          return undefined;
         }
       },
       []
+  );
+
+  // Update poll after a user submit
+  // Update poll after a user submits votes
+  const handleSubmitVotes = useCallback(
+      async (pollId: string, options: { id: string; selected: boolean }[]) => {
+        if (!pollId || !userId) return false;
+
+        try {
+          await apiSubmitVotes(pollId, userId, options);
+
+          // Update local poll state
+          setPolls(prevPolls =>
+              prevPolls.map(poll => {
+                if (poll.id !== pollId) return poll;
+
+                // Update each option's local "votedByUser"
+                const updatedOptions = poll.options.map(opt => {
+                  const submitted = options.find(o => o.id === opt.id);
+                  if (!submitted) return opt;
+
+                  return {
+                    ...opt,
+                    votedByUser: submitted.selected,
+                  };
+                });
+
+                return { ...poll, options: updatedOptions };
+              })
+          );
+
+          return true;
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to submit poll votes');
+          return false;
+        }
+      },
+      [userId]
   );
 
 
@@ -782,6 +827,7 @@ export default function useChatLogic(user: User) {
     handleCreatePoll,
     handleGetPolls,
     handleAddOption,
+    handleSubmitVotes,
 
     // group chat actions
     fetchInvitations,
