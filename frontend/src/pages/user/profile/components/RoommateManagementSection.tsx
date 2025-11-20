@@ -50,22 +50,31 @@ export default function RoommateManagementSection({
   loading,
 }: RoommateManagementSectionProps) {
   const [activeTab, setActiveTab] = useState<'requests' | 'roommates'>('requests');
+  const [requestSubTab, setRequestSubTab] = useState<'pending' | 'history'>('pending');
+  const [roommateSubTab, setRoommateSubTab] = useState<'active' | 'history'>('active');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showSearchModal, setShowSearchModal] = useState(false);
 
-  // Split requests into received and sent
-  const receivedRequests = requests.filter(
+  // Split requests into pending and history
+  const pendingReceivedRequests = requests.filter(
     (r) => r.requested.id === currentUserId && r.status === 'PENDING'
   );
-  const sentRequests = requests.filter(
+  const pendingSentRequests = requests.filter(
     (r) => r.requester.id === currentUserId && r.status === 'PENDING'
+  );
+  const historyReceivedRequests = requests.filter(
+    (r) => r.requested.id === currentUserId && r.status !== 'PENDING'
+  );
+  const historySentRequests = requests.filter(
+    (r) => r.requester.id === currentUserId && r.status !== 'PENDING'
   );
 
   // Count pending received requests for badge
-  const pendingReceivedCount = receivedRequests.length;
+  const pendingReceivedCount = pendingReceivedRequests.length;
 
-  // Filter active roommates
+  // Filter active and history roommates
   const activeRoommates = roommates.filter((r) => r.isActive);
+  const historyRoommates = roommates.filter((r) => !r.isActive);
 
   const handleAction = async (
     action: () => Promise<void>,
@@ -92,7 +101,7 @@ export default function RoommateManagementSection({
         </button>
       </div>
 
-      {/* Tabs */}
+      {/* Main Tabs */}
       <div className='flex gap-4 border-b border-gray-200'>
         <button
           onClick={() => setActiveTab('requests')}
@@ -117,7 +126,7 @@ export default function RoommateManagementSection({
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
-          🤝 Current Roommates
+          🤝 Roommates
         </button>
       </div>
 
@@ -129,94 +138,126 @@ export default function RoommateManagementSection({
           </div>
         ) : activeTab === 'requests' ? (
           <div className='space-y-6'>
-            {/* Received Requests */}
-            <div>
-              <h3 className='text-lg font-semibold text-gray-700 mb-4'>
-                📥 Received Requests ({receivedRequests.length})
-              </h3>
-              {receivedRequests.length === 0 ? (
-                <div className='text-center py-8 text-gray-500'>
-                  <p className='text-2xl mb-2'>📭</p>
-                  <p>No pending received requests</p>
-                </div>
-              ) : (
-                <div className='space-y-3'>
-                  {receivedRequests.map((request) => (
-                    <div
-                      key={request.id}
-                      className='p-4 border border-gray-200 rounded-lg bg-linear-to-r from-purple-50 to-pink-50 hover:shadow-md transition'
-                    >
-                      <div className='flex items-center justify-between'>
-                        <div className='flex items-center gap-4'>
-                          {/* Avatar */}
-                          <div className='w-12 h-12 rounded-full bg-linear-to-r from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold overflow-hidden'>
-                            {request.requester.avatarURL ? (
-                              <img
-                                src={request.requester.avatarURL}
-                                alt={request.requester.legalName}
-                                className='w-full h-full object-cover'
-                              />
-                            ) : (
-                              (request.requester.legalName || request.requester.email).charAt(0).toUpperCase()
-                            )}
-                          </div>
-                          {/* User Info */}
-                          <div>
-                            <h4 className='font-semibold text-gray-800'>
-                              {request.requester.legalName || request.requester.email}
-                            </h4>
-                            <p className='text-sm text-gray-600'>
-                              {new Date(request.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                        {/* Action Buttons */}
-                        <div className='flex gap-2'>
-                          <button
-                            onClick={() =>
-                              handleAction(
-                                () => onAcceptRequest(request.id),
-                                `accept-${request.id}`
-                              )
-                            }
-                            disabled={actionLoading === `accept-${request.id}`}
-                            className='px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition disabled:opacity-50 font-semibold'
-                          >
-                            {actionLoading === `accept-${request.id}` ? '...' : '✅ Accept'}
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleAction(
-                                () => onRejectRequest(request.id),
-                                `reject-${request.id}`
-                              )
-                            }
-                            disabled={actionLoading === `reject-${request.id}`}
-                            className='px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition disabled:opacity-50 font-semibold'
-                          >
-                            {actionLoading === `reject-${request.id}` ? '...' : '❌ Reject'}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+            {/* Sub-tabs for Requests */}
+            <div className='flex gap-2 mb-4'>
+              <button
+                onClick={() => setRequestSubTab('pending')}
+                className={`px-4 py-2 rounded-lg font-medium transition ${
+                  requestSubTab === 'pending'
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                ⏳ Pending
+              </button>
+              <button
+                onClick={() => setRequestSubTab('history')}
+                className={`px-4 py-2 rounded-lg font-medium transition ${
+                  requestSubTab === 'history'
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                📜 History
+              </button>
             </div>
 
-            {/* Sent Requests */}
-            <div>
-              <h3 className='text-lg font-semibold text-gray-700 mb-4'>
-                📤 Sent Requests ({sentRequests.length})
-              </h3>
-              {sentRequests.length === 0 ? (
-                <div className='text-center py-8 text-gray-500'>
-                  <p className='text-2xl mb-2'>📭</p>
-                  <p>No pending sent requests</p>
+            {requestSubTab === 'pending' ? (
+              <>
+                {/* Pending Received Requests */}
+                <div>
+                  <h3 className='text-lg font-semibold text-gray-700 mb-4'>
+                    📥 Received Requests ({pendingReceivedRequests.length})
+                  </h3>
+                  {pendingReceivedRequests.length === 0 ? (
+                    <div className='text-center py-8 text-gray-500'>
+                      <p className='text-2xl mb-2'>📭</p>
+                      <p>No pending received requests</p>
+                    </div>
+                  ) : (
+                    <div className='space-y-3'>
+                      {pendingReceivedRequests.map((request) => (
+                        <div
+                          key={request.id}
+                          className='p-4 border border-gray-200 rounded-lg bg-linear-to-r from-purple-50 to-pink-50 hover:shadow-md transition'
+                        >
+                          <div className='flex items-center justify-between'>
+                            <div className='flex items-center gap-4'>
+                              {/* Avatar */}
+                              <div className='w-12 h-12 rounded-full bg-linear-to-r from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold overflow-hidden'>
+                                {request.requester.avatarURL ? (
+                                  <img
+                                    src={request.requester.avatarURL}
+                                    alt={request.requester.legalName}
+                                    className='w-full h-full object-cover'
+                                  />
+                                ) : (
+                                  (request.requester.legalName || request.requester.email).charAt(0).toUpperCase()
+                                )}
+                              </div>
+                              {/* User Info */}
+                              <div>
+                                <h4 className='font-semibold text-gray-800'>
+                                  {request.requester.legalName || request.requester.email}
+                                </h4>
+                                <p className='text-sm text-gray-600'>
+                                  {new Date(request.createdAt).toLocaleDateString()}
+                                  {request.startDate && (
+                                    <span className='ml-2'>
+                                      📅 {new Date(request.startDate).toLocaleDateString()}
+                                      {request.endDate && ` - ${new Date(request.endDate).toLocaleDateString()}`}
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                            {/* Action Buttons */}
+                            <div className='flex gap-2'>
+                              <button
+                                onClick={() =>
+                                  handleAction(
+                                    () => onAcceptRequest(request.id),
+                                    `accept-${request.id}`
+                                  )
+                                }
+                                disabled={actionLoading === `accept-${request.id}`}
+                                className='px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition disabled:opacity-50 font-semibold'
+                              >
+                                {actionLoading === `accept-${request.id}` ? '...' : '✅ Accept'}
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleAction(
+                                    () => onRejectRequest(request.id),
+                                    `reject-${request.id}`
+                                  )
+                                }
+                                disabled={actionLoading === `reject-${request.id}`}
+                                className='px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition disabled:opacity-50 font-semibold'
+                              >
+                                {actionLoading === `reject-${request.id}` ? '...' : '❌ Reject'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className='space-y-3'>
-                  {sentRequests.map((request) => (
+
+                {/* Pending Sent Requests */}
+                <div>
+                  <h3 className='text-lg font-semibold text-gray-700 mb-4'>
+                    📤 Sent Requests ({pendingSentRequests.length})
+                  </h3>
+                  {pendingSentRequests.length === 0 ? (
+                    <div className='text-center py-8 text-gray-500'>
+                      <p className='text-2xl mb-2'>📭</p>
+                      <p>No pending sent requests</p>
+                    </div>
+                  ) : (
+                    <div className='space-y-3'>
+                      {pendingSentRequests.map((request) => (
                     <div
                       key={request.id}
                       className='p-4 border border-gray-200 rounded-lg bg-gray-50 hover:shadow-md transition'
@@ -242,6 +283,12 @@ export default function RoommateManagementSection({
                             </h4>
                             <p className='text-sm text-gray-600'>
                               {new Date(request.createdAt).toLocaleDateString()}
+                              {request.startDate && (
+                                <span className='ml-2'>
+                                  📅 {new Date(request.startDate).toLocaleDateString()}
+                                  {request.endDate && ` - ${new Date(request.endDate).toLocaleDateString()}`}
+                                </span>
+                              )}
                             </p>
                           </div>
                         </div>
@@ -262,18 +309,187 @@ export default function RoommateManagementSection({
                         </button>
                       </div>
                     </div>
-                  ))}
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </>
+            ) : (
+              // History Tab for Requests
+              <div className='space-y-6'>
+                {/* History Received Requests */}
+                <div>
+                  <h3 className='text-lg font-semibold text-gray-700 mb-4'>
+                    📥 Received Request History ({historyReceivedRequests.length})
+                  </h3>
+                  {historyReceivedRequests.length === 0 ? (
+                    <div className='text-center py-8 text-gray-500'>
+                      <p className='text-2xl mb-2'>📭</p>
+                      <p>No request history</p>
+                    </div>
+                  ) : (
+                    <div className='space-y-3'>
+                      {historyReceivedRequests.map((request) => (
+                        <div
+                          key={request.id}
+                          className={`p-4 border border-gray-200 rounded-lg transition ${
+                            request.status === 'ACCEPTED'
+                              ? 'bg-green-50'
+                              : request.status === 'REJECTED'
+                              ? 'bg-red-50'
+                              : 'bg-gray-50'
+                          }`}
+                        >
+                          <div className='flex items-center justify-between'>
+                            <div className='flex items-center gap-4'>
+                              <div className='w-12 h-12 rounded-full bg-gray-400 flex items-center justify-center text-white font-bold overflow-hidden'>
+                                {request.requester.avatarURL ? (
+                                  <img
+                                    src={request.requester.avatarURL}
+                                    alt={request.requester.legalName}
+                                    className='w-full h-full object-cover'
+                                  />
+                                ) : (
+                                  (request.requester.legalName || request.requester.email).charAt(0).toUpperCase()
+                                )}
+                              </div>
+                              <div>
+                                <h4 className='font-semibold text-gray-800'>
+                                  {request.requester.legalName || request.requester.email}
+                                </h4>
+                                <p className='text-sm text-gray-600'>
+                                  {new Date(request.createdAt).toLocaleDateString()}
+                                  {request.startDate && (
+                                    <span className='ml-2'>
+                                      📅 {new Date(request.startDate).toLocaleDateString()}
+                                      {request.endDate && ` - ${new Date(request.endDate).toLocaleDateString()}`}
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                            <span
+                              className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                                request.status === 'ACCEPTED'
+                                  ? 'bg-green-200 text-green-800'
+                                  : request.status === 'REJECTED'
+                                  ? 'bg-red-200 text-red-800'
+                                  : 'bg-gray-200 text-gray-800'
+                              }`}
+                            >
+                              {request.status === 'ACCEPTED' ? '✅ Accepted' : '❌ Rejected'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* History Sent Requests */}
+                <div>
+                  <h3 className='text-lg font-semibold text-gray-700 mb-4'>
+                    📤 Sent Request History ({historySentRequests.length})
+                  </h3>
+                  {historySentRequests.length === 0 ? (
+                    <div className='text-center py-8 text-gray-500'>
+                      <p className='text-2xl mb-2'>📭</p>
+                      <p>No request history</p>
+                    </div>
+                  ) : (
+                    <div className='space-y-3'>
+                      {historySentRequests.map((request) => (
+                        <div
+                          key={request.id}
+                          className={`p-4 border border-gray-200 rounded-lg transition ${
+                            request.status === 'ACCEPTED'
+                              ? 'bg-green-50'
+                              : request.status === 'REJECTED'
+                              ? 'bg-red-50'
+                              : 'bg-gray-50'
+                          }`}
+                        >
+                          <div className='flex items-center justify-between'>
+                            <div className='flex items-center gap-4'>
+                              <div className='w-12 h-12 rounded-full bg-gray-400 flex items-center justify-center text-white font-bold overflow-hidden'>
+                                {request.requested.avatarURL ? (
+                                  <img
+                                    src={request.requested.avatarURL}
+                                    alt={request.requested.legalName}
+                                    className='w-full h-full object-cover'
+                                  />
+                                ) : (
+                                  (request.requested.legalName || request.requested.email).charAt(0).toUpperCase()
+                                )}
+                              </div>
+                              <div>
+                                <h4 className='font-semibold text-gray-800'>
+                                  {request.requested.legalName || request.requested.email}
+                                </h4>
+                                <p className='text-sm text-gray-600'>
+                                  {new Date(request.createdAt).toLocaleDateString()}
+                                  {request.startDate && (
+                                    <span className='ml-2'>
+                                      📅 {new Date(request.startDate).toLocaleDateString()}
+                                      {request.endDate && ` - ${new Date(request.endDate).toLocaleDateString()}`}
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                            <span
+                              className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                                request.status === 'ACCEPTED'
+                                  ? 'bg-green-200 text-green-800'
+                                  : request.status === 'REJECTED'
+                                  ? 'bg-red-200 text-red-800'
+                                  : 'bg-gray-200 text-gray-800'
+                              }`}
+                            >
+                              {request.status === 'ACCEPTED' ? '✅ Accepted' : '❌ Rejected'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
-          // Current Roommates Tab
-          <div>
-            <h3 className='text-lg font-semibold text-gray-700 mb-4'>
-              🤝 Active Roommates ({activeRoommates.length})
-            </h3>
-            {activeRoommates.length === 0 ? (
+          // Roommates Tab
+          <div className='space-y-6'>
+            {/* Sub-tabs for Roommates */}
+            <div className='flex gap-2 mb-4'>
+              <button
+                onClick={() => setRoommateSubTab('active')}
+                className={`px-4 py-2 rounded-lg font-medium transition ${
+                  roommateSubTab === 'active'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                ✅ Active
+              </button>
+              <button
+                onClick={() => setRoommateSubTab('history')}
+                className={`px-4 py-2 rounded-lg font-medium transition ${
+                  roommateSubTab === 'history'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                📜 History
+              </button>
+            </div>
+
+            {roommateSubTab === 'active' ? (
+              <div>
+                <h3 className='text-lg font-semibold text-gray-700 mb-4'>
+                  🤝 Active Roommates ({activeRoommates.length})
+                </h3>
+                {activeRoommates.length === 0 ? (
               <div className='text-center py-12 text-gray-500'>
                 <p className='text-4xl mb-4'>🏠</p>
                 <p className='text-lg'>No active roommates yet</p>
@@ -335,6 +551,69 @@ export default function RoommateManagementSection({
                     </div>
                   );
                 })}
+              </div>
+            )}
+              </div>
+            ) : (
+              // History Tab for Roommates
+              <div>
+                <h3 className='text-lg font-semibold text-gray-700 mb-4'>
+                  📜 Roommate History ({historyRoommates.length})
+                </h3>
+                {historyRoommates.length === 0 ? (
+                  <div className='text-center py-12 text-gray-500'>
+                    <p className='text-4xl mb-4'>📭</p>
+                    <p className='text-lg'>No past roommates</p>
+                  </div>
+                ) : (
+                  <div className='space-y-3'>
+                    {historyRoommates.map((roommate) => {
+                      const otherUser =
+                        roommate.user1.id === currentUserId
+                          ? roommate.user2
+                          : roommate.user1;
+                      return (
+                        <div
+                          key={roommate.id}
+                          className='p-4 border border-gray-200 rounded-lg bg-gray-50 hover:shadow-md transition'
+                        >
+                          <div className='flex items-center justify-between'>
+                            <div className='flex items-center gap-4'>
+                              {/* Avatar */}
+                              <div className='w-12 h-12 rounded-full bg-gray-400 flex items-center justify-center text-white font-bold overflow-hidden'>
+                                {otherUser.avatarURL ? (
+                                  <img
+                                    src={otherUser.avatarURL}
+                                    alt={otherUser.legalName || otherUser.email}
+                                    className='w-full h-full object-cover'
+                                  />
+                                ) : (
+                                  (otherUser.legalName || otherUser.email).charAt(0).toUpperCase()
+                                )}
+                              </div>
+                              {/* User Info */}
+                              <div>
+                                <h4 className='font-semibold text-gray-800'>
+                                  {otherUser.legalName || otherUser.email}
+                                </h4>
+                                <p className='text-sm text-gray-600'>
+                                  {new Date(roommate.startDate).toLocaleDateString()}
+                                  {' - '}
+                                  {roommate.endDate
+                                    ? new Date(roommate.endDate).toLocaleDateString()
+                                    : 'Present'}
+                                </p>
+                              </div>
+                            </div>
+                            <span className='px-3 py-1 rounded-full text-sm font-semibold bg-gray-200 text-gray-800'>
+                              Ended
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </div>

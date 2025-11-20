@@ -22,6 +22,8 @@ export interface RoommateRequestDetails {
   requestedId: string;
   status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
   message?: string;
+  startDate?: Date;
+  endDate?: Date;
   createdAt: Date;
   updatedAt: Date;
   requester?: RoommateUserDetails;
@@ -68,6 +70,8 @@ export interface SendRoommateRequestDetails {
   requesterId: string;
   requestedId: string;
   message?: string;
+  startDate?: Date;
+  endDate?: Date;
 }
 
 export interface SendRoommateRequestResults {

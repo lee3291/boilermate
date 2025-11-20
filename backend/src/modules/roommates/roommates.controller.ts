@@ -42,6 +42,8 @@ export class RoommatesController {
       requesterId: dto.requesterId,
       requestedId: dto.requestedId,
       message: dto.message,
+      startDate: dto.startDate ? new Date(dto.startDate) : undefined,
+      endDate: dto.endDate ? new Date(dto.endDate) : undefined,
     });
 
     return RoommateRequestResponseDto.fromRequest(result.request);

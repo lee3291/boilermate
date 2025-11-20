@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsBoolean, IsDateString } from 'class-validator';
 
 /**
  * DTO for sending a roommate request
@@ -13,6 +13,14 @@ export class SendRoommateRequestDto {
   @IsOptional()
   @IsString()
   message?: string;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
 }
 
 /**

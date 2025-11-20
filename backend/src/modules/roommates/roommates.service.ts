@@ -72,8 +72,8 @@ export class RoommatesService {
       throw new BadRequestException('A pending request already exists between you two');
     }
 
-    // Check if they're already roommates
-    const existingRoommate = await this.prisma.roommate.findFirst({
+    // Check if they're currently active roommates
+    const existingActiveRoommate = await this.prisma.roommate.findFirst({
       where: {
         OR: [
           { user1Id: requesterId, user2Id: requestedId, isActive: true },
@@ -82,30 +82,12 @@ export class RoommatesService {
       },
     });
 
-    if (existingRoommate) {
+    if (existingActiveRoommate) {
       throw new BadRequestException('You are already roommates');
     }
 
-    // Check for recent rejection (within 30 days) - prevent spam
-    const recentRejection = await this.prisma.roommateRequest.findFirst({
-      where: {
-        requesterId,
-        requestedId,
-        status: 'REJECTED',
-        updatedAt: {
-          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
-        },
-      },
-    });
-
-    if (recentRejection) {
-      const daysSinceRejection = Math.floor(
-        (Date.now() - recentRejection.updatedAt.getTime()) / (1000 * 60 * 60 * 24)
-      );
-      throw new BadRequestException(
-        `This user rejected your request recently. Please wait ${30 - daysSinceRejection} more days.`
-      );
-    }
+    // NO MORE 30-DAY REJECTION COOLDOWN - Allow resending after rejection
+    // Users can send new requests anytime, even after rejection
 
     // Create the request
     const request = await this.prisma.roommateRequest.create({
@@ -113,6 +95,8 @@ export class RoommatesService {
         requesterId,
         requestedId,
         message,
+        startDate: details.startDate,
+        endDate: details.endDate,
         status: 'PENDING',
       },
       include: {

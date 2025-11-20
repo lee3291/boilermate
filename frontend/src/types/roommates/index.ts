@@ -27,6 +27,8 @@ export interface RoommateRequest {
   requestedId: string;
   status: RoommateRequestStatus;
   message?: string;
+  startDate?: Date;
+  endDate?: Date;
   createdAt: Date;
   updatedAt: Date;
   requester: RoommateUser;
@@ -57,6 +59,8 @@ export interface SendRoommateRequestRequest {
   requesterId: string;
   requestedId: string;
   message?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface SendRoommateRequestResponse extends RoommateRequest {}

@@ -28,6 +28,8 @@ export class RoommateRequestResponseDto {
   requestedId: string;
   status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
   message?: string;
+  startDate?: Date;
+  endDate?: Date;
   createdAt: Date;
   updatedAt: Date;
   requester?: RoommateUserResponseDto;
@@ -40,6 +42,8 @@ export class RoommateRequestResponseDto {
       requestedId: request.requestedId,
       status: request.status,
       message: request.message,
+      startDate: request.startDate,
+      endDate: request.endDate,
       createdAt: request.createdAt,
       updatedAt: request.updatedAt,
       requester: request.requester ? RoommateUserResponseDto.fromUser(request.requester) : undefined,

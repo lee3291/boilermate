@@ -10,6 +10,8 @@ model RoommateRequest {
   requestedId String
   status      RoommateRequestStatus   @default(PENDING)
   message     String?                 // Optional note with request
+  startDate   DateTime?               // Desired start date for roommate period
+  endDate     DateTime?               // Desired end date for roommate period
   createdAt   DateTime                @default(now())
   updatedAt   DateTime                @updatedAt // Track when status changed
 
@@ -17,10 +19,11 @@ model RoommateRequest {
   requester User @relation("RoommateRequester", fields: [requesterId], references: [id], onDelete: Cascade)
   requested User @relation("RoommateRequested", fields: [requestedId], references: [id], onDelete: Cascade)
   
-  @@unique([requesterId, requestedId])
+  // NO UNIQUE CONSTRAINT - Allow multiple requests over time
   @@index([requesterId])
   @@index([requestedId])
   @@index([status])
+  @@index([createdAt])
 }
 
 model Roommate {
@@ -37,10 +40,12 @@ model Roommate {
   user2   User              @relation("RoommateUser2", fields: [user2Id], references: [id], onDelete: Cascade)
   reviews RoommateReview[]
   
-  @@unique([user1Id, user2Id])
+  // NO UNIQUE CONSTRAINT - Allow multiple roommate periods between same users
   @@index([user1Id])
   @@index([user2Id])
   @@index([isActive])
+  @@index([startDate])
+  @@index([endDate])
 }
 
 model RoommateReview {

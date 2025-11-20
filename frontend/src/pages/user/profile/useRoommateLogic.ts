@@ -21,14 +21,14 @@ export default function useRoommateLogic(userId: string) {
   const [error, setError] = useState<string | null>(null);
 
   /**
-   * Fetch roommate requests (both sent and received)
+   * Fetch roommate requests (both sent and received, including history)
    */
   const fetchRequests = useCallback(async () => {
     try {
       const data = await getRoommateRequests({
         userId,
         type: 'all',
-        status: 'PENDING',
+        // Remove status filter to get all requests (pending + history)
       });
       setRequests(data.requests);
     } catch (err: any) {
@@ -38,13 +38,13 @@ export default function useRoommateLogic(userId: string) {
   }, [userId]);
 
   /**
-   * Fetch current roommates
+   * Fetch all roommates (active and history)
    */
   const fetchRoommates = useCallback(async () => {
     try {
       const data = await getRoommates({
         userId,
-        activeOnly: true,
+        activeOnly: false, // Get all roommates including history
       });
       setRoommates(data.roommates);
     } catch (err: any) {
