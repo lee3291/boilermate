@@ -209,6 +209,11 @@ export default function RoommateManagementSection({
                                     </span>
                                   )}
                                 </p>
+                                {request.message && (
+                                  <p className='text-sm text-gray-700 mt-2 italic'>
+                                    💬 &quot;{request.message}&quot;
+                                  </p>
+                                )}
                               </div>
                             </div>
                             {/* Action Buttons */}
@@ -290,6 +295,11 @@ export default function RoommateManagementSection({
                                 </span>
                               )}
                             </p>
+                            {request.message && (
+                              <p className='text-sm text-gray-700 mt-2 italic'>
+                                💬 &quot;{request.message}&quot;
+                              </p>
+                            )}
                           </div>
                         </div>
                         {/* Withdraw Button */}
@@ -353,7 +363,7 @@ export default function RoommateManagementSection({
                                   (request.requester.legalName || request.requester.email).charAt(0).toUpperCase()
                                 )}
                               </div>
-                              <div>
+                              <div className='flex-1'>
                                 <h4 className='font-semibold text-gray-800'>
                                   {request.requester.legalName || request.requester.email}
                                 </h4>
@@ -366,6 +376,11 @@ export default function RoommateManagementSection({
                                     </span>
                                   )}
                                 </p>
+                                {request.message && (
+                                  <p className='text-sm text-gray-700 mt-2 italic'>
+                                    💬 &quot;{request.message}&quot;
+                                  </p>
+                                )}
                               </div>
                             </div>
                             <span
@@ -422,7 +437,7 @@ export default function RoommateManagementSection({
                                   (request.requested.legalName || request.requested.email).charAt(0).toUpperCase()
                                 )}
                               </div>
-                              <div>
+                              <div className='flex-1'>
                                 <h4 className='font-semibold text-gray-800'>
                                   {request.requested.legalName || request.requested.email}
                                 </h4>
@@ -435,6 +450,11 @@ export default function RoommateManagementSection({
                                     </span>
                                   )}
                                 </p>
+                                {request.message && (
+                                  <p className='text-sm text-gray-700 mt-2 italic'>
+                                    💬 &quot;{request.message}&quot;
+                                  </p>
+                                )}
                               </div>
                             </div>
                             <span

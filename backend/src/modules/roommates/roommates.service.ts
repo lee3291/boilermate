@@ -111,6 +111,7 @@ export class RoommatesService {
           select: {
             id: true,
             email: true,
+            legalName: true,
             avatarURL: true,
           },
         },
@@ -159,6 +160,7 @@ export class RoommatesService {
           select: {
             id: true,
             email: true,
+            legalName: true,
             avatarURL: true,
           },
         },
@@ -166,6 +168,7 @@ export class RoommatesService {
           select: {
             id: true,
             email: true,
+            legalName: true,
             avatarURL: true,
           },
         },
@@ -195,6 +198,7 @@ export class RoommatesService {
           select: {
             id: true,
             email: true,
+            legalName: true,
             avatarURL: true,
           },
         },
@@ -202,6 +206,7 @@ export class RoommatesService {
           select: {
             id: true,
             email: true,
+            legalName: true,
             avatarURL: true,
           },
         },
@@ -233,6 +238,7 @@ export class RoommatesService {
             select: {
               id: true,
               email: true,
+              legalName: true,
               avatarURL: true,
             },
           },
@@ -240,6 +246,7 @@ export class RoommatesService {
             select: {
               id: true,
               email: true,
+              legalName: true,
               avatarURL: true,
             },
           },
@@ -251,6 +258,7 @@ export class RoommatesService {
         data: {
           user1Id: request.requesterId,
           user2Id: request.requestedId,
+          startDate: request.startDate || new Date(),
           isActive: true,
         },
         include: {
@@ -258,6 +266,7 @@ export class RoommatesService {
             select: {
               id: true,
               email: true,
+              legalName: true,
               avatarURL: true,
             },
           },
@@ -265,6 +274,7 @@ export class RoommatesService {
             select: {
               id: true,
               email: true,
+              legalName: true,
               avatarURL: true,
             },
           },
@@ -315,6 +325,7 @@ export class RoommatesService {
           select: {
             id: true,
             email: true,
+            legalName: true,
             avatarURL: true,
           },
         },
@@ -322,6 +333,7 @@ export class RoommatesService {
           select: {
             id: true,
             email: true,
+            legalName: true,
             avatarURL: true,
           },
         },
@@ -380,16 +392,21 @@ export class RoommatesService {
   async getRoommates(details: GetRoommatesDetails): Promise<GetRoommatesResults> {
     const { userId, activeOnly = true } = details;
 
-    // Build where clause
+    // Build where clause - properly structure AND condition with OR
     const whereConditions: any = {
-      OR: [
-        { user1Id: userId },
-        { user2Id: userId },
+      AND: [
+        {
+          OR: [
+            { user1Id: userId },
+            { user2Id: userId },
+          ],
+        },
       ],
     };
 
+    // Add isActive filter if needed
     if (activeOnly) {
-      whereConditions.isActive = true;
+      whereConditions.AND.push({ isActive: true });
     }
 
     const roommates = await this.prisma.roommate.findMany({
@@ -399,6 +416,7 @@ export class RoommatesService {
           select: {
             id: true,
             email: true,
+            legalName: true,
             avatarURL: true,
           },
         },
@@ -406,6 +424,7 @@ export class RoommatesService {
           select: {
             id: true,
             email: true,
+            legalName: true,
             avatarURL: true,
           },
         },
@@ -458,6 +477,7 @@ export class RoommatesService {
           select: {
             id: true,
             email: true,
+            legalName: true,
             avatarURL: true,
           },
         },
@@ -465,6 +485,7 @@ export class RoommatesService {
           select: {
             id: true,
             email: true,
+            legalName: true,
             avatarURL: true,
           },
         },
@@ -501,6 +522,7 @@ export class RoommatesService {
       select: {
         id: true,
         email: true,
+        legalName: true,
         avatarURL: true,
       },
       take: 50, // Limit results
@@ -567,6 +589,8 @@ export class RoommatesService {
       requestedId: request.requestedId,
       status: request.status,
       message: request.message,
+      startDate: request.startDate,
+      endDate: request.endDate,
       createdAt: request.createdAt,
       updatedAt: request.updatedAt,
       requester: request.requester ? this.mapUserToDetails(request.requester) : undefined,
@@ -598,6 +622,7 @@ export class RoommatesService {
     return {
       id: user.id,
       email: user.email,
+      legalName: user.legalName,
       avatarURL: user.avatarURL,
     };
   }

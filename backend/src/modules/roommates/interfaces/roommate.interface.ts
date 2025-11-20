@@ -10,6 +10,7 @@
 export interface RoommateUserDetails {
   id: string;
   email: string;
+  legalName?: string;
   avatarURL?: string;
 }
 

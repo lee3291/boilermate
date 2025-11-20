@@ -134,11 +134,14 @@ export class RoommatesController {
   @Get()
   @HttpCode(200)
   async getRoommates(@Query() dto: GetRoommatesDto): Promise<RoommatesResponseDto> {
-    this.logger.log(`Getting roommates for user ${dto.userId}`);
+    this.logger.log(`Getting roommates for user ${dto.userId}, activeOnly: ${dto.activeOnly}`);
+
+    // Convert string 'false' to boolean false (query params come as strings)
+    const activeOnly = dto.activeOnly === undefined ? true : String(dto.activeOnly) === 'true';
 
     const result = await this.roommatesService.getRoommates({
       userId: dto.userId,
-      activeOnly: dto.activeOnly,
+      activeOnly,
     });
 
     return RoommatesResponseDto.fromRoommates(result.roommates);
