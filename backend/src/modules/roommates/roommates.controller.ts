@@ -1,5 +1,6 @@
-import { Body, Controller, Delete, Get, HttpCode, Logger, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Logger, Param, Post, Put, Query } from '@nestjs/common';
 import { RoommatesService } from './roommates.service';
+import { RoommateReviewsService } from './roommate-reviews.service';
 import {
   SendRoommateRequestDto,
   GetRoommateRequestsDto,
@@ -16,18 +17,28 @@ import {
   RoommateResponseDto,
   SearchUsersResponseDto,
   SuccessResponseDto,
+  GetReviewsDto,
+  AddReviewDto,
+  UpdateReviewDto,
+  DeleteReviewDto,
+  ReviewsResponseDto,
+  RoommateReviewResponseDto,
+  DeleteReviewResponseDto,
 } from './dto';
 
 /**
  * Roommates Controller
- * Handles HTTP requests for roommate relationships
+ * Handles HTTP requests for roommate relationships and reviews
  * Converts between DTOs and service interfaces
  */
 @Controller('roommates')
 export class RoommatesController {
   private readonly logger = new Logger(RoommatesController.name);
 
-  constructor(private readonly roommatesService: RoommatesService) {}
+  constructor(
+    private readonly roommatesService: RoommatesService,
+    private readonly roommateReviewsService: RoommateReviewsService,
+  ) {}
 
   /**
    * Send a roommate request
@@ -184,5 +195,86 @@ export class RoommatesController {
     });
 
     return SearchUsersResponseDto.fromUsers(result.users);
+  }
+
+  // ============= Review Endpoints =============
+
+  /**
+   * Get all reviews for a user
+   * GET /roommates/reviews?reviewedId=xxx&roommateId=xxx
+   */
+  @Get('reviews')
+  @HttpCode(200)
+  async getReviews(@Query() dto: GetReviewsDto): Promise<ReviewsResponseDto> {
+    this.logger.log(`Getting reviews for user ${dto.reviewedId}`);
+
+    const result = await this.roommateReviewsService.getReviews({
+      reviewedId: dto.reviewedId,
+      roommateId: dto.roommateId,
+    });
+
+    return ReviewsResponseDto.fromReviews(result.reviews);
+  }
+
+  /**
+   * Add a review
+   * POST /roommates/reviews
+   */
+  @Post('reviews')
+  @HttpCode(201)
+  async addReview(@Body() dto: AddReviewDto): Promise<RoommateReviewResponseDto> {
+    this.logger.log(`Adding review from ${dto.reviewerId} for ${dto.reviewedId}`);
+
+    const result = await this.roommateReviewsService.addReview({
+      reviewerId: dto.reviewerId,
+      reviewedId: dto.reviewedId,
+      roommateId: dto.roommateId,
+      rating: dto.rating,
+      comment: dto.comment,
+    });
+
+    return RoommateReviewResponseDto.fromReview(result.review);
+  }
+
+  /**
+   * Update a review
+   * PUT /roommates/reviews/:reviewId
+   */
+  @Put('reviews/:reviewId')
+  @HttpCode(200)
+  async updateReview(
+    @Param('reviewId') reviewId: string,
+    @Body() dto: UpdateReviewDto,
+  ): Promise<RoommateReviewResponseDto> {
+    this.logger.log(`Updating review ${reviewId} by ${dto.reviewerId}`);
+
+    const result = await this.roommateReviewsService.updateReview({
+      reviewId,
+      reviewerId: dto.reviewerId,
+      rating: dto.rating,
+      comment: dto.comment,
+    });
+
+    return RoommateReviewResponseDto.fromReview(result.review);
+  }
+
+  /**
+   * Delete a review
+   * DELETE /roommates/reviews/:reviewId?reviewerId=xxx
+   */
+  @Delete('reviews/:reviewId')
+  @HttpCode(200)
+  async deleteReview(
+    @Param('reviewId') reviewId: string,
+    @Query() dto: DeleteReviewDto,
+  ): Promise<DeleteReviewResponseDto> {
+    this.logger.log(`Deleting review ${reviewId} by ${dto.reviewerId}`);
+
+    const result = await this.roommateReviewsService.deleteReview({
+      reviewId,
+      reviewerId: dto.reviewerId,
+    });
+
+    return DeleteReviewResponseDto.fromSuccess(result.success);
   }
 }

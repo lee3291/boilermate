@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { RoommatesController } from './roommates.controller';
 import { RoommatesService } from './roommates.service';
+import { RoommateReviewsService } from './roommate-reviews.service';
 import { PrismaModule } from '@core/database/prisma.module';
 
 /**
@@ -10,7 +11,7 @@ import { PrismaModule } from '@core/database/prisma.module';
 @Module({
   imports: [PrismaModule],
   controllers: [RoommatesController],
-  providers: [RoommatesService],
-  exports: [RoommatesService],
+  providers: [RoommatesService, RoommateReviewsService],
+  exports: [RoommatesService, RoommateReviewsService],
 })
 export class RoommatesModule {}

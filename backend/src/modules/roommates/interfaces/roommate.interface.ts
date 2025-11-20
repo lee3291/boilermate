@@ -166,3 +166,58 @@ export interface SearchUsersDetails {
 export interface SearchUsersResults {
   users: RoommateUserDetails[];
 }
+
+// ============= Review Interfaces =============
+
+/**
+ * Get Reviews
+ */
+export interface GetReviewsDetails {
+  reviewedId: string;
+  roommateId?: string;
+}
+
+export interface GetReviewsResults {
+  reviews: RoommateReviewDetails[];
+}
+
+/**
+ * Add Review
+ */
+export interface AddReviewDetails {
+  reviewerId: string;
+  reviewedId: string;
+  roommateId: string;
+  rating: number;
+  comment?: string;
+}
+
+export interface AddReviewResults {
+  review: RoommateReviewDetails;
+}
+
+/**
+ * Update Review
+ */
+export interface UpdateReviewDetails {
+  reviewId: string;
+  reviewerId: string;
+  rating?: number;
+  comment?: string;
+}
+
+export interface UpdateReviewResults {
+  review: RoommateReviewDetails;
+}
+
+/**
+ * Delete Review
+ */
+export interface DeleteReviewDetails {
+  reviewId: string;
+  reviewerId: string;
+}
+
+export interface DeleteReviewResults {
+  success: boolean;
+}
