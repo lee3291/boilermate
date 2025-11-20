@@ -15,11 +15,14 @@ import {
   followUser,
   unfollowUser,
 } from '../../../services/profileService';
+import { getRoommates } from '../../../services/roommatesService';
 import type { ProfileDetails } from '../../../types/profile';
+import type { Roommate } from '../../../types/roommates';
 import Navbar from '../components/Navbar';
 import ProfileHeader from '../profile/components/ProfileHeader';
 import BioSection from '../profile/components/BioSection';
 import CompareCart from './components/CompareCart';
+import ReviewsSection from './components/ReviewsSection';
 import useRoommatesLogic from './useRoommatesLogic';
 import FollowButton from '../profile/components/FollowButton';
 
@@ -38,6 +41,7 @@ export default function ProfileViewPage() {
   const [myVote, setMyVote] = useState<'LIKE' | 'DISLIKE' | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
+  const [roommates, setRoommates] = useState<Roommate[]>([]);
 
   // Compare cart logic
   const {
@@ -62,11 +66,12 @@ export default function ProfileViewPage() {
       return;
     }
 
-    const fetchProfile = async () => {
+    const fetchData = async () => {
       setLoading(true);
       setError(null);
 
       try {
+        // Fetch profile data
         const data = await getProfileDetails({ userId, viewerId });
         setProfile(data);
 
@@ -75,12 +80,24 @@ export default function ProfileViewPage() {
 
         // Set vote status from backend response
         setMyVote(data.myVoteType || null);
+        
         // Set follow status from backend
         try {
           const followRes = await getIsFollowing(String(userId));
           setIsFollowing(followRes.isFollowing || false);
         } catch (err) {
           console.warn('Failed to fetch follow status', err);
+        }
+
+        // Fetch roommate relationships for reviews
+        try {
+          const roommatesRes = await getRoommates({
+            userId: viewerId,
+            activeOnly: false,
+          });
+          setRoommates(roommatesRes.roommates);
+        } catch (err) {
+          console.warn('Failed to fetch roommates', err);
         }
       } catch (err: any) {
         setError(err?.message || 'Failed to load profile');
@@ -90,7 +107,7 @@ export default function ProfileViewPage() {
       }
     };
 
-    fetchProfile();
+    fetchData();
   }, [userId, viewerId]);
 
   const handleToggleFavorite = async () => {
@@ -408,6 +425,15 @@ export default function ProfileViewPage() {
             </div>
           )}
         </div>
+
+        {/* Reviews Section */}
+        {userId && (
+          <ReviewsSection
+            reviewedUserId={userId}
+            currentUserId={viewerId}
+            roommates={roommates}
+          />
+        )}
       </div>
 
       {/* Compare Cart */}
