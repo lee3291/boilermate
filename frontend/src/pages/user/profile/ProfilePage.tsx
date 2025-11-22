@@ -31,6 +31,7 @@ import RoommateSection from './components/RoommateSection';
 import ProfileActionBar from './components/ProfileActionBar';
 import ProfileSidebar from './components/ProfileSidebar';
 import RoommateManagementSection from './components/RoommateManagementSection';
+import MyReviewsSection from './components/MyReviewsSection';
 import { useState } from 'react';
 import DeactivateAccountModal from '@/components/DeactivateAccountModal';
 import { deactivateAccount } from '@/services/account.service';
@@ -41,7 +42,7 @@ export default function ProfilePage() {
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'roommate' | 'settings'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'roommate' | 'reviews' | 'settings'>('profile');
   const userId = user!.id;
   const logic = useProfileLogic(userId);
   
@@ -201,6 +202,11 @@ export default function ProfilePage() {
                 onRefreshRequests={roommateLogic.refreshRequests}
                 loading={roommateLogic.loading}
               />
+            )}
+
+            {/* Reviews Tab Content */}
+            {activeTab === 'reviews' && (
+              <MyReviewsSection currentUserId={userId} />
             )}
 
             {/* Settings Tab Content */}

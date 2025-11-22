@@ -13,8 +13,8 @@
  */
 
 interface ProfileSidebarProps {
-  activeTab: 'profile' | 'roommate' | 'settings';
-  onSetActiveTab: (tab: 'profile' | 'roommate' | 'settings') => void;
+  activeTab: 'profile' | 'roommate' | 'reviews' | 'settings';
+  onSetActiveTab: (tab: 'profile' | 'roommate' | 'reviews' | 'settings') => void;
 }
 
 export default function ProfileSidebar({
@@ -64,6 +64,24 @@ export default function ProfileSidebar({
           )}
         </button>
 
+        {/* My Reviews Tab Button */}
+        <button
+          onClick={() => onSetActiveTab('reviews')}
+          className={`w-full p-4 rounded-lg border-2 transition mb-3 ${
+            activeTab === 'reviews'
+              ? 'bg-linear-to-r from-yellow-50 to-orange-50 border-yellow-300 text-yellow-900'
+              : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          <div className='flex items-center justify-between'>
+            <span className='text-base font-semibold'>⭐ My Reviews</span>
+            {activeTab === 'reviews' && <span className='text-2xl'>✓</span>}
+          </div>
+          {activeTab === 'reviews' && (
+            <p className='text-sm text-yellow-700 mt-2'>View and manage reviews</p>
+          )}
+        </button>
+
         {/* Settings Tab Button */}
         <button
           onClick={() => onSetActiveTab('settings')}
@@ -87,6 +105,7 @@ export default function ProfileSidebar({
           <div className='text-sm text-gray-600'>
             {activeTab === 'profile' && '📝 Edit your bio, preferences, and personal information'}
             {activeTab === 'roommate' && '🤝 Search users, manage requests, and view current roommates'}
+            {activeTab === 'reviews' && '⭐ View reviews received and reviews you have given'}
             {activeTab === 'settings' && '🔧 Configure account settings and privacy'}
           </div>
         </div>
