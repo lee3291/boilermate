@@ -134,10 +134,10 @@ export default function ReviewsSection({
     );
   };
 
-  const calculateAverageRating = () => {
+  const calculateAverageRating = (): number => {
     if (reviews.length === 0) return 0;
     const sum = reviews.reduce((acc, review) => acc + review.rating, 0);
-    return (sum / reviews.length).toFixed(1);
+    return sum / reviews.length;
   };
 
   return (
@@ -152,7 +152,7 @@ export default function ReviewsSection({
             {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
             {reviews.length > 0 && (
               <span className='ml-2 text-yellow-500 font-semibold'>
-                {renderStars(Math.round(parseFloat(calculateAverageRating())))} {calculateAverageRating()} average
+                {renderStars(Math.round(calculateAverageRating()))} {calculateAverageRating().toFixed(1)} average
               </span>
             )}
           </p>
@@ -162,7 +162,7 @@ export default function ReviewsSection({
         {canAddReview && (
           <button
             onClick={() => setShowAddReview(!showAddReview)}
-            className='px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition font-semibold shadow-md'
+            className='px-4 py-2 bg-linear-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition font-semibold shadow-md'
           >
             {showAddReview ? '✕ Cancel' : '+ Add Review'}
           </button>
@@ -171,7 +171,7 @@ export default function ReviewsSection({
 
       {/* Add Review Form */}
       {showAddReview && (
-        <div className='mb-6 p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-200'>
+        <div className='mb-6 p-6 bg-linear-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-200'>
           <h3 className='text-lg font-semibold text-gray-800 mb-4'>
             Write a Review
           </h3>
@@ -228,7 +228,7 @@ export default function ReviewsSection({
           <button
             onClick={handleAddReview}
             disabled={submitting || !selectedRoommateId || newRating < 1}
-            className='w-full px-4 py-3 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg hover:from-green-600 hover:to-teal-600 transition font-semibold shadow-md disabled:opacity-50 disabled:cursor-not-allowed'
+            className='w-full px-4 py-3 bg-linear-to-r from-green-500 to-teal-500 text-white rounded-lg hover:from-green-600 hover:to-teal-600 transition font-semibold shadow-md disabled:opacity-50 disabled:cursor-not-allowed'
           >
             {submitting ? 'Submitting...' : '✓ Submit Review'}
           </button>
