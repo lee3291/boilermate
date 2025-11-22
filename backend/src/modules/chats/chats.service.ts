@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, ConflictException, InternalServerErrorException, BadRequestException, Logger } from '@nestjs/common';
+import { ReactionType } from '@prisma/client';
 import { 
   ChatDetails, 
   deleteMessageDetails, 
@@ -9,6 +10,7 @@ import {
   getMessagesResults, 
   MessageDetails, 
   MessageWithStatusDetails,
+  MessageReactionDetails,
   sendMessageDetails, 
   sendMessageResults,
   blockUserDetails,
@@ -977,4 +979,51 @@ export class ChatsService {
     });
     return !!block; // true if found, false if not
   }
+
+  // Express emojis
+  // Add or update emoji for a specific message
+  async addReaction(messageId: string, userId: string, reaction: ReactionType) : Promise<MessageReactionDetails> {
+    // Upsert ensures a user can only have one reaction per message
+    const msgReaction = await this.prisma.messageReaction.upsert({
+      where: {
+        messageId_userId: { messageId, userId },
+      },
+      update: { reaction },
+      create: { messageId, userId, reaction },
+    });
+
+    return {
+      messageId: msgReaction.messageId,
+      userId: msgReaction.userId,
+      reaction: msgReaction.reaction,
+    };
+  }
+  //Remove emoji
+  async removeReaction(messageId: string, userId: string): Promise<void> {
+    await this.prisma.messageReaction.deleteMany({
+      where: { messageId, userId },
+    });
+  }
+  // Total count reactions for specific msg
+  async getReactionCount(messageId: string): Promise<number> {
+    const count = await this.prisma.messageReaction.count({
+      where: { messageId },
+    });
+
+    return count;
+  }
+  // Get summary all reactions in a specific msg
+  async getReactions(messageId: string): Promise<MessageReactionDetails[]> {
+    const reactions = await this.prisma.messageReaction.findMany({
+      where: { messageId },
+      select: { userId: true, reaction: true, messageId: true },
+    });
+
+    return reactions.map(r => ({
+      messageId: r.messageId,
+      userId: r.userId,
+      reaction: r.reaction,
+    }));
+  }
+
 }

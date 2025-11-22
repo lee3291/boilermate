@@ -57,7 +57,7 @@ model Message {
   statuses         UserMessageStatus[] // Link to per-user statuses
   image            Image?      @relation(fields: [imageId], references: [id]) // link image id to image object
   approvals        MessageApproval[] // Link to all approve image message
-
+  reactions        MessageReaction[] // Link t all reactions
   // Index for fast retrieval and sorting within a single chat thread
   @@index([chatId, createdAt])
 }
@@ -126,3 +126,25 @@ model UserPollVote {
   option       PollOption     @relation(fields: [pollOptionId], references: [id])
   @@unique([userId, pollOptionId])
 }
+
+// Emoji
+enum ReactionType {
+  LIKE     // 👍
+  LOVE     // ❤️
+  HAHA     // 😂
+  WOW      // 😮
+  SAD      // 😢
+  ANGRY    // 😡
+}
+
+model MessageReaction {
+  id         String        @id @default(uuid())
+  messageId  String        // The specific message that user react
+  userId     String        // The person who do react
+  reaction   ReactionType  // Type of react
+  message    Message       @relation(fields: [messageId], references: [id])
+  user       User          @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId])
+}
+

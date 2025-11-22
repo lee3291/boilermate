@@ -19,6 +19,19 @@ export class MessageApprovalDto {
 }
 
 @Exclude()
+export class MessageReactionDto {
+
+  @Expose()
+  messageId: string;
+
+  @Expose()
+  userId: string;
+
+  @Expose()
+  reaction: string;
+}
+
+@Exclude()
 export class MessageWithStatusDto {
   @Expose()
   id: string;
@@ -56,6 +69,10 @@ export class MessageWithStatusDto {
 
   @Expose()
   approved: boolean;
+
+  @Expose()
+  @Type(() => MessageReactionDto)
+  reactions: MessageReactionDto[];
 
 
   static fromInterface(rawMessageWithStatusDetails: MessageWithStatusDetails): MessageWithStatusDto {

@@ -70,6 +70,8 @@ model User {
   votesCast     UserVote[]      @relation("VotingUser")
   // Votes this user has received
   votesReceived UserVote[]      @relation("VotedUser")
+  // Reactions that user has done
+  messageReactions MessageReaction[]
 
 
   // Relations for announcements

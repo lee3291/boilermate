@@ -92,6 +92,7 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
     const [editText, setEditText] = useState(m.content);
     const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
     const [myReaction, setMyReaction] = useState(m.myReaction || null);
+    const [reactionJustClicked, setReactionJustClicked] = useState(false);
 
     const hasImage = m.imageUrl && m.imageUrl.trim().length > 0;
     const hasContent = m.content && m.content.trim().length > 0;
@@ -113,18 +114,44 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
         if (myReaction === emoji) setMyReaction(null);
         else setMyReaction(emoji);
         setReactionPickerOpen(false);
+        setReactionJustClicked(true);
+        setTimeout(() => setReactionJustClicked(false), 80);
     };
 
     const handleApproved = () => {};
 
     return (
-        <div id={`msg-${m.id}`} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} w-full mb-3`}>
-            <div className="flex items-center gap-2" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+        <div id={`msg-${m.id}`} className={`flex flex-col w-full mb-3`}>
+            <div
+                className={`flex items-start gap-2 ${isMine ? 'justify-end' : 'justify-start'}`}
+                onMouseEnter={() => setHover(true)}
+                onMouseLeave={() => {
+                    if (!reactionPickerOpen) setHover(false);
+                }}
+            >
                 {!isMine && (
-                    <div className="flex flex-col items-center mr-2">
+                    <div className="flex flex-col items-center mt-1">
                         <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-semibold text-blue-700">
                             {senderEmail[0]?.toUpperCase() ?? '?'}
                         </div>
+                    </div>
+                )}
+
+                {hover && !reactionJustClicked && !m.isDeleted && !m.isDeletedForYou && (
+                    <div className="flex items-center text-xs text-gray-500 gap-2 mt-1">
+                        <button onClick={() => setReactionPickerOpen(!reactionPickerOpen)} className="hover:underline">
+                            React
+                        </button>
+                        {isMine && (
+                            <>
+                                <button onClick={() => onDelete?.(m.id, false)} className="hover:underline">
+                                    Delete For You
+                                </button>
+                                <button onClick={() => onDelete?.(m.id, true)} className="hover:underline">
+                                    Delete For Everyone
+                                </button>
+                            </>
+                        )}
                     </div>
                 )}
 
@@ -133,40 +160,7 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
                         <div className={`text-[11px] text-gray-400 mb-0.5 ${isMine ? 'self-end' : 'self-start'}`}>edited</div>
                     )}
 
-                    <div className="flex items-center gap-1 relative">
-                        {hover && !m.isDeleted && !m.isDeletedForYou && (
-                            <div className="text-xs text-gray-500 mr-1 flex gap-2">
-                                <button onClick={() => setReactionPickerOpen(!reactionPickerOpen)} className="hover:underline">
-                                    React
-                                </button>
-
-                                {isMine && (
-                                    <>
-                                        <button onClick={() => onDelete?.(m.id, false)} className="hover:underline">
-                                            Delete For You
-                                        </button>
-                                        <button onClick={() => onDelete?.(m.id, true)} className="hover:underline">
-                                            Delete For Everyone
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-                        )}
-
-                        {reactionPickerOpen && (
-                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white border rounded-full shadow px-3 py-2 flex gap-3 z-20">
-                                {["👍", "❤️", "😂", "😮", "😢", "😡"].map((e) => (
-                                    <button
-                                        key={e}
-                                        onClick={() => handleReact(e)}
-                                        className="text-xl hover:scale-125 transition-transform"
-                                    >
-                                        {e}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-
+                    <div className="relative flex flex-col">
                         <div
                             className={`${
                                 m.isDeleted || m.isDeletedForYou
@@ -218,17 +212,31 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
                                 </div>
                             )}
                         </div>
-                    </div>
 
-                    {myReaction && (
-                        <div className={`text-[11px] text-gray-500 mt-1 flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                            <span className="px-2 py-0.5 bg-gray-100 rounded-full border text-xs">{myReaction}</span>
-                        </div>
-                    )}
+                        {myReaction && (
+                            <div className={`text-[11px] text-gray-500 mt-1 flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                                <span className="px-2 py-0.5 bg-gray-100 rounded-full border text-xs">{myReaction}</span>
+                            </div>
+                        )}
+
+                        {reactionPickerOpen && (
+                            <div className="absolute -top-12 left-1/2 -translate-x-[40%] bg-white border rounded-full shadow px-3 py-2 flex gap-3 z-20">
+                                {['👍', '❤️', '😂', '😮', '😢', '😡'].map((e) => (
+                                    <button
+                                        key={e}
+                                        onClick={() => handleReact(e)}
+                                        className="text-xl hover:scale-125 transition-transform"
+                                    >
+                                        {e}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {isMine && (
-                    <div className="flex flex-col items-center ml-2">
+                    <div className="flex flex-col items-center mt-1">
                         <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-xs font-semibold text-green-700">
                             {senderEmail[0]?.toUpperCase() ?? '?'}
                         </div>

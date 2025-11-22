@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, HttpCode, Logger, Query } from '@nestjs/common';
 import { ChatsService } from './chats.service';
 import { GroupChatsService } from './group-chats.service';
+import { BadRequestException } from '@nestjs/common';
 import {
   SendMessageDto,
   EditMessageDto,
@@ -24,12 +25,13 @@ import {
   MessageApprovalDto,
   PollInGroupDto,
   PollOptionDto,
+    MessageReactionDto,
 } from './dto';
 import { BlockUserDto,
   UnblockUserDto,
   BlockedUserResultDto,
   SearchUnblockedUserResultDto } from './dto/block.dto';
-
+import { ReactionType } from '@prisma/client';
 /**
  * Chat endpoints
  */
@@ -357,5 +359,49 @@ export class ChatsController {
   )  {
     return this.groupChatsService.submitVotes(userId, pollId, body.options);
   }
+
+  /*
+   * Message Reactions
+   */
+  // Add or update reaction
+  @Post('messages/:messageId/:userId/reactions')
+  @HttpCode(200)
+  async addReaction(
+      @Param('messageId') messageId: string,
+      @Param('userId') userId: string,
+      @Body() body: {reaction: string }
+  ): Promise<MessageReactionDto> {
+    const reactionEnum = ReactionType[body.reaction.toUpperCase() as keyof typeof ReactionType];
+    if (!reactionEnum) {
+      throw new BadRequestException('Invalid reaction type');
+    }
+    return this.chatsService.addReaction(messageId, userId, reactionEnum);
+  }
+  // Remove reaction
+  @Delete('messages/:messageId/:userId/reactions')
+  @HttpCode(200)
+  async removeReaction(
+      @Param('messageId') messageId: string,
+      @Param('userId') userId: string
+  ): Promise<{ success: boolean }> {
+    await this.chatsService.removeReaction(messageId, userId);
+    return { success: true };
+  }
+  // Get total reactions in a specific msg
+  @Get('messages/:messageId/reactions/count')
+  @HttpCode(200)
+  async getReactionCount(@Param('messageId') messageId: string): Promise<{ count: number }> {
+    const count = await this.chatsService.getReactionCount(messageId);
+    return { count };
+  }
+  // Get summary all reactions in a specific msg
+  @Get('messages/:messageId/reactions')
+  @HttpCode(200)
+  async getReactions(@Param('messageId') messageId: string): Promise<MessageReactionDto[]> {
+    return this.chatsService.getReactions(messageId);
+  }
+
+
+
 
 }
