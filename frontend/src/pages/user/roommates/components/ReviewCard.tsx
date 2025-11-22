@@ -85,7 +85,7 @@ export default function ReviewCard({
       <div className='mb-4 flex items-center justify-between'>
         <div className='flex items-center gap-3'>
           {/* Avatar */}
-          <div className='h-12 w-12 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold overflow-hidden'>
+          <div className='h-12 w-12 rounded-full bg-linear-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold overflow-hidden'>
             {review.reviewer?.avatarURL ? (
               <img
                 src={review.reviewer.avatarURL}
@@ -106,6 +106,14 @@ export default function ReviewCard({
               {new Date(review.createdAt).toLocaleDateString()}
               {review.createdAt !== review.updatedAt && ' (edited)'}
             </p>
+            {review.roommate && (
+              <p className='text-xs text-purple-600 font-medium mt-1'>
+                🏠 Roommates: {new Date(review.roommate.startDate).toLocaleDateString()} -{' '}
+                {review.roommate.endDate
+                  ? new Date(review.roommate.endDate).toLocaleDateString()
+                  : 'Present'}
+              </p>
+            )}
           </div>
         </div>
 

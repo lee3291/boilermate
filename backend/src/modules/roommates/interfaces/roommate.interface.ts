@@ -60,6 +60,12 @@ export interface RoommateReviewDetails {
   updatedAt: Date;
   reviewer?: RoommateUserDetails;
   reviewed?: RoommateUserDetails;
+  roommate?: {
+    id: string;
+    startDate: Date;
+    endDate: Date | null;
+    isActive: boolean;
+  };
 }
 
 // ============= Service Method Interfaces =============

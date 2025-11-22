@@ -112,13 +112,12 @@ export default function MyReviewsSection({ currentUserId }: MyReviewsSectionProp
 
   // Get roommate info for a review
   const getRoommateInfo = (review: RoommateReview) => {
-    const roommate = roommates.find(r => r.id === review.roommateId);
-    if (!roommate) return null;
-
+    if (!review.roommate) return null;
+    
     return {
-      startDate: roommate.startDate,
-      endDate: roommate.endDate,
-      isActive: roommate.isActive,
+      startDate: review.roommate.startDate,
+      endDate: review.roommate.endDate,
+      isActive: review.roommate.isActive,
     };
   };
 

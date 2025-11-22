@@ -18,6 +18,22 @@ export class ReviewerResponseDto {
   }
 }
 
+export class RoommateInfoDto {
+  id: string;
+  startDate: Date;
+  endDate: Date | null;
+  isActive: boolean;
+
+  static fromRoommate(roommate: any): RoommateInfoDto {
+    return {
+      id: roommate.id,
+      startDate: roommate.startDate,
+      endDate: roommate.endDate,
+      isActive: roommate.isActive,
+    };
+  }
+}
+
 export class RoommateReviewResponseDto {
   id: string;
   reviewerId: string;
@@ -29,6 +45,7 @@ export class RoommateReviewResponseDto {
   updatedAt: Date;
   reviewer?: ReviewerResponseDto;
   reviewed?: ReviewerResponseDto;
+  roommate?: RoommateInfoDto;
 
   static fromReview(review: any): RoommateReviewResponseDto {
     return {
@@ -42,6 +59,7 @@ export class RoommateReviewResponseDto {
       updatedAt: review.updatedAt,
       reviewer: review.reviewer ? ReviewerResponseDto.fromUser(review.reviewer) : undefined,
       reviewed: review.reviewed ? ReviewerResponseDto.fromUser(review.reviewed) : undefined,
+      roommate: review.roommate ? RoommateInfoDto.fromRoommate(review.roommate) : undefined,
     };
   }
 }

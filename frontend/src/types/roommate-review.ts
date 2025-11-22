@@ -20,6 +20,12 @@ export interface RoommateReview {
   updatedAt: Date;
   reviewer?: RoommateReviewer;
   reviewed?: RoommateReviewer;
+  roommate?: {
+    id: string;
+    startDate: Date;
+    endDate: Date | null;
+    isActive: boolean;
+  };
 }
 
 // API Request/Response types

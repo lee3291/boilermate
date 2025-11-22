@@ -17,7 +17,7 @@ import {
 interface ReviewsSectionProps {
   reviewedUserId: string;
   currentUserId: string;
-  roommates: Roommate[]; // Past roommates to allow adding reviews
+  roommates: Roommate[]; // Past roommates to allow adding reviews and get date info
 }
 
 export default function ReviewsSection({

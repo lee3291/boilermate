@@ -57,6 +57,14 @@ export class RoommateReviewsService {
             avatarURL: true,
           },
         },
+        roommate: {
+          select: {
+            id: true,
+            startDate: true,
+            endDate: true,
+            isActive: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -146,6 +154,14 @@ export class RoommateReviewsService {
             avatarURL: true,
           },
         },
+        roommate: {
+          select: {
+            id: true,
+            startDate: true,
+            endDate: true,
+            isActive: true,
+          },
+        },
       },
     });
 
@@ -212,6 +228,14 @@ export class RoommateReviewsService {
             avatarURL: true,
           },
         },
+        roommate: {
+          select: {
+            id: true,
+            startDate: true,
+            endDate: true,
+            isActive: true,
+          },
+        },
       },
     });
 
@@ -272,6 +296,12 @@ export class RoommateReviewsService {
       updatedAt: review.updatedAt,
       reviewer: review.reviewer ? this.mapReviewerToDetails(review.reviewer) : undefined,
       reviewed: review.reviewed ? this.mapReviewerToDetails(review.reviewed) : undefined,
+      roommate: review.roommate ? {
+        id: review.roommate.id,
+        startDate: review.roommate.startDate,
+        endDate: review.roommate.endDate,
+        isActive: review.roommate.isActive,
+      } : undefined,
     };
   }
 

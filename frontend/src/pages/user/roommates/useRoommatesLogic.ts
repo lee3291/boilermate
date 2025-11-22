@@ -13,7 +13,13 @@ export default function useRoommatesLogic(userId: string) {
   
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
+  
+  // Separate totals for each view mode to prevent showing wrong counts when switching
+  const [searchTotal, setSearchTotal] = useState(0);
+  const [favoritesTotal, setFavoritesTotal] = useState(0);
+  const [likedTotal, setLikedTotal] = useState(0);
+  const [dislikedTotal, setDislikedTotal] = useState(0);
+  const [countsFetched, setCountsFetched] = useState(false);
   
   // View mode: 'search', 'favorites', 'liked', or 'disliked'
   const [viewMode, setViewMode] = useState<'search' | 'favorites' | 'liked' | 'disliked'>('search');
@@ -76,6 +82,45 @@ export default function useRoommatesLogic(userId: string) {
     fetchPreferencesList();
   }, []);
 
+  // Prefetch counts for all view modes on initial load
+  useEffect(() => {
+    const prefetchCounts = async () => {
+      try {
+        // Fetch favorites count
+        const favoritesResponse = await getFavorites({
+          userId,
+          page: 1,
+          limit: 1, // Only need count, not actual data
+        });
+        setFavoritesTotal(favoritesResponse.total);
+
+        // Fetch liked count
+        const likedResponse = await getMyVotes({
+          voterId: userId,
+          voteType: 'LIKE',
+          page: 1,
+          limit: 1,
+        });
+        setLikedTotal(likedResponse.total);
+
+        // Fetch disliked count
+        const dislikedResponse = await getMyVotes({
+          voterId: userId,
+          voteType: 'DISLIKE',
+          page: 1,
+          limit: 1,
+        });
+        setDislikedTotal(dislikedResponse.total);
+      } catch (err) {
+        console.error('Error prefetching counts:', err);
+      } finally {
+        setCountsFetched(true);
+      }
+    };
+    
+    prefetchCounts();
+  }, [userId]);
+
   // Fetch profiles based on view mode
   const fetchProfiles = useCallback(async () => {
     setLoading(true);
@@ -91,7 +136,7 @@ export default function useRoommatesLogic(userId: string) {
         });
         
         setProfiles(response.favorites);
-        setTotal(response.total);
+        setFavoritesTotal(response.total);
         setTotalPages(response.totalPages);
       } else if (viewMode === 'liked' || viewMode === 'disliked') {
         // Fetch votes
@@ -103,7 +148,11 @@ export default function useRoommatesLogic(userId: string) {
         });
         
         setProfiles(response.votes);
-        setTotal(response.total);
+        if (viewMode === 'liked') {
+          setLikedTotal(response.total);
+        } else {
+          setDislikedTotal(response.total);
+        }
         setTotalPages(response.totalPages);
       } else {
         // Fetch search results - use APPLIED filters
@@ -117,7 +166,7 @@ export default function useRoommatesLogic(userId: string) {
         });
         
         setProfiles(response.profiles);
-        setTotal(response.total);
+        setSearchTotal(response.total);
         setTotalPages(response.totalPages);
       }
     } catch (err: any) {
@@ -131,6 +180,16 @@ export default function useRoommatesLogic(userId: string) {
   useEffect(() => {
     fetchProfiles();
   }, [fetchProfiles]);
+
+  // Get the correct total based on current view mode
+  const getCurrentTotal = useCallback(() => {
+    switch (viewMode) {
+      case 'favorites': return favoritesTotal;
+      case 'liked': return likedTotal;
+      case 'disliked': return dislikedTotal;
+      default: return searchTotal;
+    }
+  }, [viewMode, searchTotal, favoritesTotal, likedTotal, dislikedTotal]);
 
   const handleApplyFilters = useCallback((filters: {
     preferenceIds: string[];
@@ -170,10 +229,11 @@ export default function useRoommatesLogic(userId: string) {
         )
       );
       
-      // If we're in favorites view and user unfavorited, remove from list
+      // If we're in favorites view and user unfavorited, remove from list and refetch for accurate count
       if (viewMode === 'favorites' && isFavorited) {
         setProfiles(prevProfiles => prevProfiles.filter(p => p.id !== profileId));
-        setTotal(prev => prev - 1);
+        // Refetch to get accurate total count instead of manually decrementing
+        fetchProfiles();
       }
     } catch (err: any) {
       console.error('Error toggling favorite:', err);
@@ -225,10 +285,12 @@ export default function useRoommatesLogic(userId: string) {
       // Make API call
       await toggleVote(userId, profileId, currentVote, newVote);
       
-      // If viewing liked/disliked and user removed vote, remove from list
+      // If viewing liked/disliked and user removed vote, refetch to get accurate data
       if ((viewMode === 'liked' || viewMode === 'disliked') && (currentVote === newVote || currentVote !== null)) {
+        // Remove from UI immediately
         setProfiles(prevProfiles => prevProfiles.filter(p => p.id !== profileId));
-        setTotal(prev => prev - 1);
+        // Refetch to get accurate total count instead of manually decrementing
+        fetchProfiles();
       }
     } catch (err: any) {
       console.error('Error toggling vote:', err);
@@ -312,7 +374,12 @@ export default function useRoommatesLogic(userId: string) {
     error,
     page,
     totalPages,
-    total,
+    total: getCurrentTotal(),
+    searchTotal,
+    favoritesTotal,
+    likedTotal,
+    dislikedTotal,
+    countsFetched,
     viewMode,
     allPreferences,
     selectedPreferences,
