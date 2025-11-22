@@ -91,7 +91,7 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
     const [editing, setEditing] = useState(false);
     const [editText, setEditText] = useState(m.content);
     const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
-    const [reaction, setReaction] = useState<string | null>(null);
+    const [myReaction, setMyReaction] = useState(m.myReaction || null);
 
     const hasImage = m.imageUrl && m.imageUrl.trim().length > 0;
     const hasContent = m.content && m.content.trim().length > 0;
@@ -109,13 +109,13 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
         checkBlock();
     }, [m.id, m.senderId, currentUserId]);
 
-    const handleApproved = () => {};
-
-    const toggleReaction = (emoji: string) => {
-        if (reaction === emoji) setReaction(null);
-        else setReaction(emoji);
+    const handleReact = (emoji: string) => {
+        if (myReaction === emoji) setMyReaction(null);
+        else setMyReaction(emoji);
         setReactionPickerOpen(false);
     };
+
+    const handleApproved = () => {};
 
     return (
         <div id={`msg-${m.id}`} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} w-full mb-3`}>
@@ -135,18 +135,35 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
 
                     <div className="flex items-center gap-1 relative">
                         {hover && !m.isDeleted && !m.isDeletedForYou && (
-                            <div className="text-xs text-gray-500 mr-1">
+                            <div className="text-xs text-gray-500 mr-1 flex gap-2">
                                 <button onClick={() => setReactionPickerOpen(!reactionPickerOpen)} className="hover:underline">
                                     React
                                 </button>
+
+                                {isMine && (
+                                    <>
+                                        <button onClick={() => onDelete?.(m.id, false)} className="hover:underline">
+                                            Delete For You
+                                        </button>
+                                        <button onClick={() => onDelete?.(m.id, true)} className="hover:underline">
+                                            Delete For Everyone
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         )}
 
                         {reactionPickerOpen && (
-                            <div className="absolute -top-8 left-0 bg-white border rounded-full shadow px-2 py-1 flex gap-2 z-20">
-                                <button onClick={() => toggleReaction("👍")}>👍</button>
-                                <button onClick={() => toggleReaction("❤️")}>❤️</button>
-                                <button onClick={() => toggleReaction("😂")}>😂</button>
+                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white border rounded-full shadow px-3 py-2 flex gap-3 z-20">
+                                {["👍", "❤️", "😂", "😮", "😢", "😡"].map((e) => (
+                                    <button
+                                        key={e}
+                                        onClick={() => handleReact(e)}
+                                        className="text-xl hover:scale-125 transition-transform"
+                                    >
+                                        {e}
+                                    </button>
+                                ))}
                             </div>
                         )}
 
@@ -198,22 +215,14 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
                                         />
                                     )}
                                     {hasContent && <div className={hasImage ? 'mt-2' : ''}>{m.content}</div>}
-                                    <div className="text-[10px] text-gray-400 mt-1 self-end">
-                                        {new Date(m.createdAt).toLocaleTimeString([], {
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        })}
-                                    </div>
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    {reaction && (
+                    {myReaction && (
                         <div className={`text-[11px] text-gray-500 mt-1 flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                            <span className="px-2 py-0.5 bg-gray-100 rounded-full border text-xs">
-                                {reaction}
-                            </span>
+                            <span className="px-2 py-0.5 bg-gray-100 rounded-full border text-xs">{myReaction}</span>
                         </div>
                     )}
                 </div>
