@@ -39,7 +39,7 @@ export default function ListingsCard({
     location,
     moveInStart,
     moveInEnd,
-    status, // NEW
+    status,
     widthClass = "w-140",
     widthStyle,
     saveEnabled = true,
@@ -59,7 +59,7 @@ export default function ListingsCard({
         return null;
     }, [authUser]);
 
-    // seed saved-state from cache
+
     useEffect(() => {
         if (!saveEnabled) {
             setClicked(false);
@@ -74,7 +74,7 @@ export default function ListingsCard({
         else setClicked(null);
     }, [viewerUsername, id, saveEnabled]);
 
-    // confirm saved-state from network
+
     useEffect(() => {
         if (!saveEnabled) return;
         let cancelled = false;
@@ -119,7 +119,7 @@ export default function ListingsCard({
         }
     };
 
-    // ----- Owner counts (read-only on card; no increments here) -----
+
     const [viewCount, setViewCount] = useState<number | null>(null);
     const [uniqueCount, setUniqueCount] = useState<number | null>(null);
 
@@ -146,20 +146,31 @@ export default function ListingsCard({
         return () => { cancelled = true; };
     }, [isOwner, id]);
 
-    // ---------- Owner status control (dropdown) ----------
+
     const [statusSaving, setStatusSaving] = useState(false);
     const [statusError, setStatusError] = useState<string | null>(null);
     const [listingStatus, setListingStatus] = useState<ListingStatus>(status ?? 'ACTIVE');
 
-    // keep local state in sync if parent prop changes
     useEffect(() => {
         if (status) setListingStatus(status);
     }, [status]);
 
+    const isExpired = useMemo(() => {
+        if (!moveInEnd) return false;
+        const endDate = new Date(moveInEnd);
+        if (Number.isNaN(endDate.getTime())) return false;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        endDate.setHours(0, 0, 0, 0);
+
+        return endDate < today;
+    }, [moveInEnd]);
+
     const updateStatus = async (next: ListingStatus) => {
         setStatusError(null);
         const prev = listingStatus;
-        setListingStatus(next);       // optimistic
+        setListingStatus(next);
         setStatusSaving(true);
         try {
             const res = await fetch(`${API_BASE}/listings/${id}`, {
@@ -171,12 +182,19 @@ export default function ListingsCard({
                 throw new Error(`Server returned ${res.status}`);
             }
         } catch (e: any) {
-            setListingStatus(prev);   // revert on error
+            setListingStatus(prev);
             setStatusError(e?.message || 'Failed to update status');
         } finally {
             setStatusSaving(false);
         }
     };
+
+    useEffect(() => {
+        if (!isExpired) return;
+        if (listingStatus === 'ARCHIVED') return;
+
+        updateStatus('ARCHIVED');
+    }, [isExpired, listingStatus]);
 
     const statusControl = isOwner ? (
         <div className="mt-10 flex items-center gap-3">
@@ -221,7 +239,7 @@ export default function ListingsCard({
             className="h-6 w-6 cursor-pointer select-none object-contain"
             alt="Flag listing"
             draggable={false}
-            />
+        />
     );
 
     const style = widthStyle ? { width: widthStyle } : undefined;
