@@ -23,13 +23,6 @@ export default function Listings() {
         '/listings/active',
         fetcher,
     );
-
-    // 🔹 NEW: normalize whatever the API returns into a plain array
-    const listings = useMemo(
-        () => (Array.isArray(data) ? data : (data as any)?.listings ?? []),
-        [data],
-    );
-
     const [openCreate, setOpenCreate] = useState(false);
     const [query, setQuery] = useState('');
 
@@ -62,8 +55,7 @@ export default function Listings() {
         })();
 
         (async () => {
-            // 🔹 use `listings` instead of raw `data`
-            if (!listingUser || !listings || listings.length === 0) return;
+            if (!listingUser || !data || data.length === 0) return;
             try {
                 const res = await getSavedListings(listingUser, 1, 500);
                 if (cancelled) return;
@@ -77,7 +69,7 @@ export default function Listings() {
         return () => {
             cancelled = true;
         };
-    }, [authUser, listings]);
+    }, [authUser, data]);
 
     const minMoveMs = useMemo(
         () => (minMoveIn ? new Date(minMoveIn + 'T00:00:00').getTime() : undefined),
@@ -114,17 +106,14 @@ export default function Listings() {
     }, [maxDollar]);
 
     const filtered = useMemo(() => {
-        // if we still don't have any data from SWR yet, propagate the "not loaded" state
         if (!data) return data;
-        const source = listings;
-
         const q = query.toLowerCase().trim();
 
-        return source.filter((l: any) => {
+        return data.filter((l: any) => {
             const textOk =
                 !q ||
-                (l.title ?? '').toLowerCase().includes(q) ||
-                (l.description ?? '').toLowerCase().includes(q);
+                    (l.title ?? '').toLowerCase().includes(q) ||
+                    (l.description ?? '').toLowerCase().includes(q);
 
             const price = Number(l.price ?? 0);
             const minOk = minCents === undefined || price >= minCents;
@@ -141,15 +130,14 @@ export default function Listings() {
             const moveOk = listStart <= wantEnd && listEnd >= wantStart;
             const locationOk =
                 !locFilter ||
-                String(l.location ?? '')
-                    .toLowerCase()
-                    .includes(locFilter.toLowerCase().trim());
+                    String(l.location ?? '')
+                        .toLowerCase()
+                        .includes(locFilter.toLowerCase().trim());
 
             return textOk && minOk && maxOk && moveOk && locationOk;
         });
     }, [
         data,
-        listings,
         query,
         minCents,
         maxCents,
@@ -242,7 +230,7 @@ export default function Listings() {
                             onChange={(e) => setQuery(e.target.value)}
                             placeholder='Search listings'
                             className='h-10 w-60 rounded-[100px] border border-gray-300 px-4 text-sm outline-none focus:border-gray-400'
-                        />
+                            />
 
                         <h1 className='font-sourceserif4-18pt-regular text-maingray pt-5 text-[40px] font-extralight tracking-[-0.02em]'>
                             Filter
@@ -259,7 +247,7 @@ export default function Listings() {
                                     onChange={(e) => setMinDollar(e.target.value)}
                                     placeholder='0.00'
                                     className='h-9 w-28 rounded-[100px] border border-gray-300 px-3 text-sm outline-none focus:border-gray-400'
-                                />
+                                    />
                             </div>
                             <div className='flex items-center gap-2'>
                                 <label className='text-sm text-gray-700'>Max $</label>
@@ -271,7 +259,7 @@ export default function Listings() {
                                     onChange={(e) => setMaxDollar(e.target.value)}
                                     placeholder='9999.99'
                                     className='h-9 w-28 rounded-[100px] border border-gray-300 px-3 text-sm outline-none focus:border-gray-400'
-                                />
+                                    />
                             </div>
                         </div>
 
@@ -285,7 +273,7 @@ export default function Listings() {
                                     value={minMoveIn}
                                     onChange={(e) => setMinMoveIn(e.target.value)}
                                     className='h-9 w-44 rounded-[100px] border border-gray-300 px-3 text-sm outline-none focus:border-gray-400'
-                                />
+                                    />
                             </div>
                             <div className='flex flex-col items-start gap-2'>
                                 <label className='text-sm text-gray-700'>Latest move-in</label>
@@ -294,7 +282,7 @@ export default function Listings() {
                                     value={maxMoveIn}
                                     onChange={(e) => setMaxMoveIn(e.target.value)}
                                     className='h-9 w-44 rounded-[100px] border border-gray-300 px-3 text-sm outline-none focus:border-gray-400'
-                                />
+                                    />
                             </div>
                         </div>
 
@@ -306,7 +294,7 @@ export default function Listings() {
                                 onChange={(e) => setLocFilter(e.target.value)}
                                 placeholder='e.g. West Lafayette'
                                 className='h-9 w-40 rounded-[100px] border border-gray-300 px-3 text-sm outline-none focus:border-gray-400'
-                            />
+                                />
                         </div>
 
                         <button
@@ -402,15 +390,11 @@ export default function Listings() {
                         {isLoading && <div>Loading…</div>}
                         {error && (
                             <div className='text-sm whitespace-pre-wrap text-red-600'>
-                                {String((error as any).message || error)}
+                                {String(error.message || error)}
                             </div>
                         )}
-
-                        {/* 🔹 Use `listings` instead of raw `data` here */}
-                        {listings.length === 0 && !isLoading && !error && (
-                            <div>No active listings.</div>
-                        )}
-                        {data && filtered?.length === 0 && listings.length > 0 && (
+                        {data?.length === 0 && <div>No active listings.</div>}
+                        {data && filtered?.length === 0 && data.length > 0 && (
                             <div className='font-roboto-light'>
                                 No matches for “{query}”
                                 {minDollar || maxDollar
@@ -420,26 +404,20 @@ export default function Listings() {
                             </div>
                         )}
 
-                        {displayed?.map((l: any) => {
-                            const priceCents =
-                                typeof l.price === 'number' ? l.price : Number(l.price ?? 0);
-
-                            return (
-                                <Card
-                                    key={l.id}
-                                    location={l.location}
-                                    id={l.id}
-                                    title={l.title}
-                                    author={l.user ?? 'Unknown'}
-                                    // 🔹 Safe price rendering in case price is null/undefined
-                                    price={`$${(priceCents / 100).toFixed(2)}`}
-                                    roommates={l.roommates}
-                                    body={l.description}
-                                    moveInEnd={l.moveInEnd}
-                                    moveInStart={l.moveInStart}
+                        {displayed?.map((l: any) => (
+                            <Card
+                                key={l.id}
+                                location={l.location}
+                                id={l.id}
+                                title={l.title}
+                                author={l.user ?? 'Unknown'}
+                                price={`$${(l.price / 100).toFixed(2)}`}
+                                roommates={l.roommates}
+                                body={l.description}
+                                moveInEnd={l.moveInEnd}
+                                moveInStart={l.moveInStart}
                                 />
-                            );
-                        })}
+                        ))}
                     </div>
                 </div>
             </div>
@@ -450,7 +428,7 @@ export default function Listings() {
                 onCreated={() => {
                     mutate();
                 }}
-            />
+                />
         </div>
     );
 }

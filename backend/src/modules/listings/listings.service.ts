@@ -130,6 +130,7 @@ export class ListingsService {
             status: (input as any).status ?? 'ACTIVE',
             moveInStart: parseMaybeDate((input as any).moveInStart) ?? null,
             moveInEnd: parseMaybeDate((input as any).moveInEnd) ?? null,
+            viewCount: 0,
             moveInDateOutdatedAlert:
                 typeof (input as any).moveInDateOutdatedAlert === 'boolean'
                     ? (input as any).moveInDateOutdatedAlert
@@ -138,10 +139,8 @@ export class ListingsService {
                 typeof (input as any).reportedOutdatedAlert === 'boolean'
                     ? (input as any).reportedOutdatedAlert
                     : false,
-            viewCount: 0,
         };
     }
-
 
     async findActive() {
         // Fallback: join User by Purdue username (before @) if user_reference is null
@@ -159,25 +158,10 @@ export class ListingsService {
         const activeUsernames = new Set(
             activeUsers.map((u) => u.email.split('@')[0]),
         );
-        return listings.filter((l) => activeUsernames.has(l.user));
-    }
-
-    async findAll(status?: string) {
-        const where: Prisma.ListingWhereInput = {};
-        if (status) where.status = status as any;
-        const rows = await this.prisma.listing.findMany({
-            where,
-            orderBy: { createdAt: 'desc' },
-        });
-        return rows.map((l) => this.toListingResponse(l));
-    }
-
-    async findOne(listingID: string) {
-        const row = await this.prisma.listing.findUnique({
-            where: { id: listingID },
-        });
-        if (!row) throw new NotFoundException('Listing not found');
-        return this.toListingResponse(row);
+        // Only return listings whose user (username) is active
+        return listings
+            .filter((l) => activeUsernames.has(l.user))
+            .map((l) => this.toListingResponse(l));
     }
 
     async create(
@@ -199,20 +183,17 @@ export class ListingsService {
 
         try {
             const row = await this.prisma.saved.create({
-                data: {
-                    listingId: args.listingId,
-                    username: args.username,
-                },
+                data: { listingId: args.listingId, username: args.username },
             });
             return {
-                listingId: args.listingId,
-                username: args.username,
+                listingId: row.listingId,
+                username: row.username,
                 isSaved: true,
-                createdAt: row?.createdAt?.toISOString() ?? new Date().toISOString(),
+                createdAt: row.createdAt.toISOString(),
             };
         } catch (err: any) {
             if (err?.code === P2002) {
-                const existing = await this.prisma.saved.findUnique({
+                const row = await this.prisma.saved.findUnique({
                     where: {
                         username_listingId: {
                             username: args.username,
@@ -220,16 +201,12 @@ export class ListingsService {
                         },
                     },
                 });
-                if (existing) {
-                    return {
-                        listingId: args.listingId,
-                        username: args.username,
-                        isSaved: true,
-                        createdAt:
-                            existing?.createdAt?.toISOString() ??
-                            new Date().toISOString(),
-                    };
-                }
+                return {
+                    listingId: args.listingId,
+                    username: args.username,
+                    isSaved: true,
+                    createdAt: row?.createdAt?.toISOString() ?? new Date().toISOString(),
+                };
             }
             throw err;
         }
@@ -245,33 +222,27 @@ export class ListingsService {
                     },
                 },
             });
-            return {
-                listingId: args.listingId,
-                username: args.username,
-                isSaved: false,
-            };
         } catch (err: any) {
-            if (err?.code === P2025) {
-                return {
-                    listingId: args.listingId,
-                    username: args.username,
-                    isSaved: false,
-                };
-            }
-            throw err;
+            if (err?.code !== P2025) throw err;
         }
+        return {
+            listingId: args.listingId,
+            username: args.username,
+            isSaved: false as const,
+        };
     }
 
-    async getSaveCount(listingId: string) {
+    async countSaves(listingId: string) {
         const count = await this.prisma.saved.count({ where: { listingId } });
         return { listingId, count };
     }
 
-    async getSavedBy(listingId: string, page = 1, pageSize = 20) {
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 1;
-        if (pageSize > 100) pageSize = 100;
-
+    async listSavedBy(args: {
+        listingId: string;
+        page: number;
+        pageSize: number;
+    }) {
+        const { listingId, page, pageSize } = args;
         const [total, rows] = await this.prisma.$transaction([
             this.prisma.saved.count({ where: { listingId } }),
             this.prisma.saved.findMany({
@@ -292,12 +263,13 @@ export class ListingsService {
         };
     }
 
-    async getSavedListings(username: string, page = 1, pageSize = 20) {
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 1;
-        if (pageSize > 100) pageSize = 100;
-
-        const [total, rows] = await this.prisma.$transaction([
+    async listingsSavedByUser(args: {
+        username: string;
+        page: number;
+        pageSize: number;
+    }) {
+        const { username, page, pageSize } = args;
+        const [total, saves] = await this.prisma.$transaction([
             this.prisma.saved.count({ where: { username } }),
             this.prisma.saved.findMany({
                 where: { username },
@@ -308,75 +280,100 @@ export class ListingsService {
             }),
         ]);
 
-        return {
-            username,
-            listings: rows.map((r) => this.toListingResponse(r.listing)),
-            page,
-            pageSize,
-            total,
-        };
+        // Get all active user emails and extract usernames
+        const activeUsers = await this.prisma.user.findMany({
+            where: { status: 'ACTIVE' },
+            select: { email: true },
+        });
+        const activeUsernames = new Set(
+            activeUsers.map((u) => u.email.split('@')[0]),
+        );
+
+        const listings: ListingResponse[] = saves
+            .map((s) => s.listing)
+            .filter((l) => l && l.status === 'ACTIVE' && activeUsernames.has(l.user))
+            .map((l) => this.toListingResponse(l));
+
+        return { username, listings, page, pageSize, total };
     }
 
-    async getViewCounts(listingID: string) {
-        const views = await this.prisma.listingView.count({
-            where: { listingId: listingID },
+    async recordView(args: { listingId: string; username?: string }) {
+        const { listingId, username } = args;
+        const listing = await this.prisma.listing.findUnique({
+            where: { id: listingId },
+            select: { id: true },
         });
+        if (!listing) throw new NotFoundException('Listing not found');
 
-        const uniqueViews = await this.prisma.listingView.groupBy({
-            by: ['username'],
-            where: { listingId: listingID },
-        });
-
-        return {
-            listingId: listingID,
-            views,
-            uniqueViews: uniqueViews.length,
-        };
-    }
-
-    async getViewCount(listingID: string) {
-        const views = await this.prisma.listingView.count({
-            where: { listingId: listingID },
-        });
-
-        return {
-            listingId: listingID,
-            views,
-        };
-    }
-
-    async getUniqueViewCount(listingID: string) {
-        const uniqueViews = await this.prisma.listingView.groupBy({
-            by: ['username'],
-            where: { listingId: listingID },
-        });
-
-        return {
-            listingId: listingID,
-            uniqueViews: uniqueViews.length,
-        };
-    }
-
-    async incrementView(listingID: string, username: string | null) {
         const increment = this.prisma.listing.update({
-            where: { id: listingID },
+            where: { id: listingId },
             data: { viewCount: { increment: 1 } },
+            select: { id: true, viewCount: true },
         });
 
-        const viewLog = this.prisma.listingView.create({
-            data: {
-                listingId: listingID,
-                username: username ?? 'anonymous',
-            },
-        });
+        const ops: Prisma.PrismaPromise<any>[] = [increment];
 
-        await this.prisma.$transaction([increment, viewLog]);
+        if (username && username.trim().length > 0) {
+            ops.push(
+                this.prisma.listingView.upsert({
+                    where: {
+                        username_listingId: {
+                            username: username.trim(),
+                            listingId,
+                        },
+                    },
+                    update: {},
+                    create: { username: username.trim(), listingId },
+                }),
+            );
+        }
+
+        const [after] = await this.prisma.$transaction(ops);
+        return { listingId: after.id, viewCount: after.viewCount };
     }
 
-    async update(
-        listingID: string,
-        dto: Partial<LegacyCreateListingDto>,
-    ) {
+    async getViewCounts(listingId: string) {
+        const listing = await this.prisma.listing.findUnique({
+            where: { id: listingId },
+            select: { id: true, viewCount: true },
+        });
+        if (!listing) throw new NotFoundException('Listing not found');
+
+        const uniqueCount = await this.prisma.listingView.count({
+            where: { listingId },
+        });
+        return { listingId, viewCount: listing.viewCount, uniqueCount };
+    }
+
+    async getViewCount(listingId: string) {
+        const listing = await this.prisma.listing.findUnique({
+            where: { id: listingId },
+            select: { id: true, viewCount: true },
+        });
+        if (!listing) throw new NotFoundException('Listing not found');
+        return { listingId, count: listing.viewCount };
+    }
+
+    async getUniqueViewCount(listingId: string) {
+        const exists = await this.prisma.listing.findUnique({
+            where: { id: listingId },
+            select: { id: true },
+        });
+        if (!exists) throw new NotFoundException('Listing not found');
+
+        const count = await this.prisma.listingView.count({ where: { listingId } });
+        return { listingId, count };
+    }
+
+    async findOne(listingID: string) {
+        const listing = await this.prisma.listing.findUnique({
+            where: { id: listingID },
+        });
+        if (!listing) throw new NotFoundException('Listing not found');
+        return this.toListingResponse(listing);
+    }
+
+    async update(listingID: string, dto: Partial<LegacyCreateListingDto>) {
         const patch: any = {};
         if ('title' in dto) patch.title = dto.title;
         if ('user' in dto) patch.user = dto.user;
@@ -445,6 +442,29 @@ export class ListingsService {
 
         if (!user) return [];
         return rows.map((l) => this.toListingResponse(l));
+    }
+
+    async findAll() {
+        // Fallback: join User by Purdue username (before @) if user_reference is null
+        const listings = await this.prisma.listing.findMany({
+            where: {
+                status: 'ACTIVE',
+            },
+            select: {
+                title: true,
+                location: true,
+                price: true,
+                user: true,
+            },
+        });
+        const activeUsers = await this.prisma.user.findMany({
+            where: { status: 'ACTIVE' },
+            select: { email: true },
+        });
+        const activeUsernames = new Set(
+            activeUsers.map((u) => u.email.split('@')[0]),
+        );
+        return listings.filter((l) => activeUsernames.has(l.user));
     }
 }
 

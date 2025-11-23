@@ -61,6 +61,11 @@ function assertSaveBody(body: any): asserts body is SaveListingBody {
 export class ListingsController {
     constructor(private readonly listingsService: ListingsService) {}
 
+    @Get('active')
+    getActive() {
+        return this.listingsService.findActive();
+    }
+
     @Post()
     async createStrict(@Body() rawBody: any) {
         assertCreateBody(rawBody);
@@ -81,50 +86,59 @@ export class ListingsController {
         return this.listingsService.create(body);
     }
 
-    @Post('create')
-    legacyCreate(@Body() body: any) {
-        return this.listingsService.create(body);
-    }
-
     @Post(':id/save')
-    async saveListing(
-        @Param('id') listingId: string,
-        @Body() body: any,
-    ) {
-        assertSaveBody(body);
-        return this.listingsService.saveListing({ listingId, username: body.username });
+    async saveListing(@Param('id') listingId: string, @Body() rawBody: any) {
+        assertSaveBody(rawBody);
+        const username = rawBody.username.trim();
+        return this.listingsService.saveListing({ listingId, username });
     }
 
-    @Post(':id/unsave')
-    async unsaveListing(
-        @Param('id') listingId: string,
-        @Body() body: any,
-    ) {
-        assertSaveBody(body);
-        return this.listingsService.unsaveListing({ listingId, username: body.username });
+    @Delete(':id/save')
+    async unsaveListing(@Param('id') listingId: string, @Body() rawBody: any) {
+        assertSaveBody(rawBody);
+        const username = rawBody.username.trim();
+        return this.listingsService.unsaveListing({ listingId, username });
     }
 
-    @Get()
-    findAll(@Query('status') status?: string) {
-        return this.listingsService.findAll(status);
+    @Get(':id/saves/count')
+    countSaves(@Param('id') listingId: string) {
+        return this.listingsService.countSaves(listingId);
     }
 
-    @Get('active')
-    findActive() {
-        return this.listingsService.findActive();
+    @Get(':id/saves')
+    savedBy(@Param('id') listingId: string, @Query('page') page = '1', @Query('pageSize') pageSize = '20') {
+        const p = Math.max(parseInt(String(page), 10) || 1, 1);
+        const s = Math.min(Math.max(parseInt(String(pageSize), 10) || 20, 1), 100);
+        return this.listingsService.listSavedBy({ listingId, page: p, pageSize: s });
     }
 
-    @Get(':id')
-    findOne(@Param('id') id: string) {
-        return this.listingsService.findOne(id);
+    @Get('users/:username/saved')
+    listingsSavedByUser(@Param('username') username: string, @Query('page') page = '1', @Query('pageSize') pageSize = '20') {
+        const p = Math.max(parseInt(String(page), 10) || 1, 1);
+        const s = Math.min(Math.max(parseInt(String(pageSize), 10) || 20, 1), 100);
+        return this.listingsService.listingsSavedByUser({
+            username: username.trim(),
+            page: p,
+            pageSize: s,
+        });
     }
 
-    @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.listingsService.remove(id);
+    @Get('users/:username/listings')
+    getUserListings(@Param('username') username: string, @Query('include') include?: string) {
+        const parsed = (include ?? '')
+            .split(',')
+            .map((s) => s.trim().toUpperCase())
+            .filter((s): s is ListingStatus => (STATUSES as string[]).includes(s));
+        return this.listingsService.findByUser(username, parsed.length ? parsed : undefined);
     }
 
-    @Get(':id/views')
+    @Post(':id/views')
+    recordView(@Param('id') listingId: string, @Body() body: any) {
+        const username = typeof body?.username === 'string' ? body.username.trim() : undefined;
+        return this.listingsService.recordView({ listingId, username });
+    }
+
+    @Get(':id/views/counts')
     getViewCounts(@Param('id') listingId: string) {
         return this.listingsService.getViewCounts(listingId);
     }
@@ -139,12 +153,29 @@ export class ListingsController {
         return this.listingsService.getUniqueViewCount(listingId);
     }
 
-    @Post(':id/views')
-    incrementView(
-        @Param('id') listingId: string,
-        @Body('username') username: string | null,
-    ) {
-        return this.listingsService.incrementView(listingId, username);
+    @Post('create')
+    legacyCreate(@Body() body: any) {
+        return this.listingsService.create(body);
+    }
+
+    @Get()
+    findAll() {
+        return this.listingsService.findAll();
+    }
+
+    @Get(':id')
+    legacyFindOne(@Param('id') id: string) {
+        return this.listingsService.findOne(id);
+    }
+
+    @Patch(':id')
+    legacyUpdate(@Param('id') id: string, @Body() dto: any) {
+        return this.listingsService.update(id, dto);
+    }
+
+    @Delete(':id')
+    legacyRemove(@Param('id') id: string) {
+        return this.listingsService.remove(id);
     }
 }
 
