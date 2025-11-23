@@ -139,6 +139,14 @@ export class ListingsService {
                     ? (input as any).reportedOutdatedAlert
                     : false,
             viewCount: 0,
+            moveInDateOutdatedAlert:
+                typeof (input as any).moveInDateOutdatedAlert === 'boolean'
+                    ? (input as any).moveInDateOutdatedAlert
+                    : false,
+            reportedOutdatedAlert:
+                typeof (input as any).reportedOutdatedAlert === 'boolean'
+                    ? (input as any).reportedOutdatedAlert
+                    : false,
         };
     }
 
@@ -417,6 +425,56 @@ export class ListingsService {
             where: { id: listingID },
         });
         return this.toListingResponse(deleted);
+    }
+
+    async findByUser(
+        username: string,
+        include?: ('ACTIVE' | 'INACTIVE' | 'ARCHIVED')[],
+    ) {
+        const statuses =
+            include && include.length
+                ? include
+                : (['ACTIVE', 'INACTIVE', 'ARCHIVED'] as const);
+
+        const rows = await this.prisma.listing.findMany({
+            where: {
+                user: username,
+                status: { in: statuses as any },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+
+        // Only select columns that you KNOW exist in the current DB
+        const user = await this.prisma.user.findFirst({
+            where: { email: { startsWith: username + '@' }, status: 'ACTIVE' },
+            select: { id: true }, // or email/status/etc, but NOT legalName
+        });
+
+        if (!user) return [];
+        return rows.map((l) => this.toListingResponse(l));
+    }
+
+    async findAll() {
+        // Fallback: join User by Purdue username (before @) if user_reference is null
+        const listings = await this.prisma.listing.findMany({
+            where: {
+                status: 'ACTIVE',
+            },
+            select: {
+                title: true,
+                location: true,
+                price: true,
+                user: true,
+            },
+        });
+        const activeUsers = await this.prisma.user.findMany({
+            where: { status: 'ACTIVE' },
+            select: { email: true },
+        });
+        const activeUsernames = new Set(
+            activeUsers.map((u) => u.email.split('@')[0]),
+        );
+        return listings.filter((l) => activeUsernames.has(l.user));
     }
 }
 
