@@ -15,6 +15,8 @@ type CreateListingBody = {
     moveInEnd?: string;
     mediaUrls: string[];
     status?: ListingStatus;
+    moveInDateOutdatedAlert?: boolean;
+    reportedOutdatedAlert?: boolean;
 };
 
 type SaveListingBody = { username: string };
@@ -41,6 +43,10 @@ function assertCreateBody(body: any): asserts body is CreateListingBody {
     if (!Array.isArray(body?.mediaUrls)) errors.mediaUrls = 'mediaUrls must be an array of URL strings';
     else if (body.mediaUrls.length > 20) errors.mediaUrls = 'mediaUrls max length is 20';
     if (body?.status !== undefined && !STATUSES.includes(body.status)) errors.status = `status must be one of ${STATUSES.join(', ')}`;
+    if (body?.moveInDateOutdatedAlert !== undefined && typeof body.moveInDateOutdatedAlert !== 'boolean')
+        errors.moveInDateOutdatedAlert = 'moveInDateOutdatedAlert must be a boolean';
+    if (body?.reportedOutdatedAlert !== undefined && typeof body.reportedOutdatedAlert !== 'boolean')
+        errors.reportedOutdatedAlert = 'reportedOutdatedAlert must be a boolean';
     if (Object.keys(errors).length) throw new BadRequestException({ message: 'Validation failed', errors });
 }
 
@@ -74,6 +80,8 @@ export class ListingsController {
             moveInEnd: rawBody.moveInEnd?.trim() || undefined,
             mediaUrls: rawBody.mediaUrls,
             status: rawBody.status,
+            moveInDateOutdatedAlert: rawBody.moveInDateOutdatedAlert,
+            reportedOutdatedAlert: rawBody.reportedOutdatedAlert,
         };
         return this.listingsService.create(body);
     }
@@ -170,5 +178,4 @@ export class ListingsController {
         return this.listingsService.remove(id);
     }
 }
-
 

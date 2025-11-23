@@ -18,6 +18,8 @@ type LegacyCreateListingDto = {
     status?: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
     moveInStart?: Date | string | null;
     moveInEnd?: Date | string | null;
+    moveInDateOutdatedAlert?: boolean;
+    reportedOutdatedAlert?: boolean;
 };
 
 type CreateListingDetails = {
@@ -31,6 +33,8 @@ type CreateListingDetails = {
     status?: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
     moveInStart?: Date | string | null;
     moveInEnd?: Date | string | null;
+    moveInDateOutdatedAlert?: boolean;
+    reportedOutdatedAlert?: boolean;
 };
 
 type ListingResponse = {
@@ -47,6 +51,8 @@ type ListingResponse = {
     viewCount: number;
     moveInStart: string | null;
     moveInEnd: string | null;
+    moveInDateOutdatedAlert: boolean;
+    reportedOutdatedAlert: boolean;
     createdAt: string;
     updatedAt: string;
 };
@@ -77,6 +83,8 @@ export class ListingsService {
             viewCount: l.viewCount ?? 0,
             moveInStart: this.toYMD(l.moveInStart ?? null),
             moveInEnd: this.toYMD(l.moveInEnd ?? null),
+            moveInDateOutdatedAlert: !!l.moveInDateOutdatedAlert,
+            reportedOutdatedAlert: !!l.reportedOutdatedAlert,
             createdAt:
                 l.createdAt?.toISOString?.() ?? new Date(l.createdAt).toISOString(),
             updatedAt:
@@ -123,6 +131,14 @@ export class ListingsService {
             moveInStart: parseMaybeDate((input as any).moveInStart) ?? null,
             moveInEnd: parseMaybeDate((input as any).moveInEnd) ?? null,
             viewCount: 0,
+            moveInDateOutdatedAlert:
+                typeof (input as any).moveInDateOutdatedAlert === 'boolean'
+                    ? (input as any).moveInDateOutdatedAlert
+                    : false,
+            reportedOutdatedAlert:
+                typeof (input as any).reportedOutdatedAlert === 'boolean'
+                    ? (input as any).reportedOutdatedAlert
+                    : false,
         };
     }
 
@@ -382,6 +398,10 @@ export class ListingsService {
                     : typeof dto.moveInEnd === 'string'
                     ? new Date(dto.moveInEnd)
                     : (dto.moveInEnd as Date);
+        if ('moveInDateOutdatedAlert' in dto)
+            patch.moveInDateOutdatedAlert = dto.moveInDateOutdatedAlert;
+        if ('reportedOutdatedAlert' in dto)
+            patch.reportedOutdatedAlert = dto.reportedOutdatedAlert;
 
         const updated = await this.prisma.listing.update({
             where: { id: listingID },
@@ -424,7 +444,6 @@ export class ListingsService {
         return rows.map((l) => this.toListingResponse(l));
     }
 
-
     async findAll() {
         // Fallback: join User by Purdue username (before @) if user_reference is null
         const listings = await this.prisma.listing.findMany({
@@ -448,3 +467,4 @@ export class ListingsService {
         return listings.filter((l) => activeUsernames.has(l.user));
     }
 }
+
