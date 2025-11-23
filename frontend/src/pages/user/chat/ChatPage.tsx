@@ -62,6 +62,12 @@ export default function ChatPage() {
             onAddOption={logic.handleAddOption}
             onSubmitVotes={logic.handleSubmitVotes}
 
+            //Emojis
+            onAddReaction={logic.handleAddReaction}
+            onRemoveReaction={logic.handleRemoveReaction}
+            onGetReactionCount={logic.handleGetReactionCount}
+            onGetReactions={logic.handleGetReactions}
+
             // Group chat props
             blockedBetween={logic.blockedBetween}
             showGroupMembersSidebar={logic.showGroupMembersSidebar}

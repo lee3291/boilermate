@@ -401,7 +401,4 @@ export class ChatsController {
     return this.chatsService.getReactions(messageId);
   }
 
-
-
-
 }

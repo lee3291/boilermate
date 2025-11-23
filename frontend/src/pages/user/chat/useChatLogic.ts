@@ -5,13 +5,17 @@ import {
   sendMessage as apiSendMessage,
   editMessage as apiEditMessage,
   deleteMessage as apiDeleteMessage,
-    createNormalChat as apiCreateNormalChat,
+  createNormalChat as apiCreateNormalChat,
   searchUsersForNormalChatCreation as apiSearchUsersForNormalChatCreation,
   getUserIdsCanBlock as apiSearchUsersForBlock,
-    blockUser as apiBlockUser,
-    unblockUser as apiUnblockUser,
+  blockUser as apiBlockUser,
+  unblockUser as apiUnblockUser,
   getBlockedByUserId as apiBlockedByUserId,
   isBlockedBetween as apiIsBlockBetween,
+  addReaction as apiAddReaction,
+  removeReaction as apiRemoveReaction,
+  getReactions as apiGetReactions,
+  getReactionCount as apiGetReactionCount
 } from '@/services/chatService';
 import {
   getPresignedUrl as apiGetPresignedUrl,
@@ -351,7 +355,7 @@ export default function useChatLogic(user: User) {
           imageKey,
         };
 
-        console.log('wtf', payload);
+        //console.log('wtf', payload);
 
         const res: sendMessageResponse = await apiSendMessage(payload);
 
@@ -707,6 +711,62 @@ export default function useChatLogic(user: User) {
       [userId]
   );
 
+  // Add or update a reaction
+  const handleAddReaction = useCallback(
+      async (messageId: string, userId: string, reaction: string) => {
+        if (!userId) return null;
+        try {
+          return await apiAddReaction(messageId, userId, reaction);
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to add reaction');
+          return null;
+        }
+      },
+      [userId]
+  );
+
+  // Remove a reaction
+  const handleRemoveReaction = useCallback(
+      async (messageId: string) => {
+        if (!userId) return false;
+        try {
+          await apiRemoveReaction(messageId, userId);
+          return true;
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to remove reaction');
+          return false;
+        }
+      },
+      [userId]
+  );
+
+  // Get all reactions for a message
+  const handleGetReactions = useCallback(
+      async (messageId: string) => {
+        try {
+          return await apiGetReactions(messageId);
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to fetch reactions');
+          return [];
+        }
+      },
+      []
+  );
+
+  // Get total reaction count for a message
+  const handleGetReactionCount = useCallback(
+      async (messageId: string) => {
+        try {
+          return await apiGetReactionCount(messageId);
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to fetch reaction count');
+          return 0;
+        }
+      },
+      []
+  );
+
+
 
   // Add member to group (admin only)
   const handleAddMember = useCallback(async (chatId: string, memberUserId: string) => {
@@ -823,11 +883,19 @@ export default function useChatLogic(user: User) {
     edit,
     remove,
     blockedBetween,
-      setBlockedBetween,
+    setBlockedBetween,
+
+    //Polls
     handleCreatePoll,
     handleGetPolls,
     handleAddOption,
     handleSubmitVotes,
+
+    //Emojis
+    handleAddReaction,
+    handleRemoveReaction,
+    handleGetReactions,
+    handleGetReactionCount,
 
     // group chat actions
     fetchInvitations,

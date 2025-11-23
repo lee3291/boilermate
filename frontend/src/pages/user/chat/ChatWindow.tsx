@@ -32,6 +32,10 @@ export default function ChatWindow(props: {
   onGetPolls?: (chatId: string, userId: string) => Promise<{ id: string; question: string; options: { id: string; text: string; votes: number; votedByUser: boolean; }[] }[]>;
   onAddOption: (pollId: string, optionText: string) => Promise<any>;
   onSubmitVotes: (pollId: string, opts: { id: string; selected: boolean }[]) => Promise<any>;
+  onAddReaction: (messageId: string, userId:string, reaction: string) => Promise<any>;
+  onRemoveReaction: (messageId: string) => Promise<any>;
+  onGetReactions: (messageId: string) => Promise<any[]>;
+  onGetReactionCount: (messageId: string) => Promise<number>;
 }) {
   const {
     chatId,
@@ -59,6 +63,10 @@ export default function ChatWindow(props: {
     onGetPolls,
     onAddOption,
     onSubmitVotes,
+    onAddReaction,
+    onRemoveReaction,
+    onGetReactions,
+    onGetReactionCount,
   } = props;
 
   const [polls, setPolls] = useState<{ id: string; question: string; options: { id: string; text: string; votes: number; votedByUser: boolean;}[] }[]>([]);
@@ -70,10 +78,8 @@ export default function ChatWindow(props: {
     try {
       const result = await onGetPolls(chatId, currentUserId);
       setPolls(result || []);
-    } catch (err) {
-      console.error('Failed to fetch polls', err);
-    }
-  }, [chatId, onGetPolls]);
+    } catch (err) {}
+  }, [chatId, onGetPolls, currentUserId]);
 
   // Create a new poll
   const handleCreatePoll = async (poll: { question: string; options: string[] }) => {
@@ -84,7 +90,7 @@ export default function ChatWindow(props: {
 
   // Add a new option to a poll and close the sidebar immediately
   const handleAddOption = async (pollId: string, optionText: string) => {
-    if (!onAddOption) throw new Error("onAddOptions handler missing");
+    if (!onAddOption) return;
     await onAddOption(pollId, optionText);
     setShowPollsSidebar(false);
   };
@@ -132,6 +138,10 @@ export default function ChatWindow(props: {
                       participants={selectedConversation?.participants ?? []}
                       onEdit={onEdit}
                       onDelete={onDelete}
+                      onAddReaction={onAddReaction}
+                      onRemoveReaction={onRemoveReaction}
+                      onGetReactionCount={onGetReactionCount}
+                      onGetReactions={onGetReactions}
                   />
                 </div>
             )}
@@ -184,7 +194,7 @@ export default function ChatWindow(props: {
         {isGroupChat && showPollsSidebar && (
             <PollsSidebar
                 polls={polls}
-                onAddOption={onAddOption} // adds option and closes sidebar
+                onAddOption={handleAddOption} // adds option and closes sidebar
                 onClose={() => setShowPollsSidebar(false)}
                 onSubmitVotes={onSubmitVotes}
             />

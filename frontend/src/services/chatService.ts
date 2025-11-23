@@ -200,8 +200,49 @@ export async function isBlockedBetween(user1: string, user2: string): Promise<bo
     return false;
   }
 }
+//Express emojis
+
+//Add or update emoji in a specific msg
+export async function addReaction(messageId: string, userId: string, reaction: string) {
+  try {
+    const res = await api.post(`/chats/messages/${messageId}/${userId}/reactions`, { reaction });
+    return res.data;
+  } catch (error: any) {
+    throw error.response?.data ?? error;
+  }
+}
+
+// Remove a reaction
+export async function removeReaction(messageId: string, userId: string) {
+  try {
+    await api.delete(`/chats/messages/${messageId}/${userId}/reactions`);
+  } catch (error: any) {
+    throw error.response?.data ?? error;
+  }
+}
+
+// Get all reactions for a message (who reacted and which emoji)
+export async function getReactions(messageId: string) {
+  try {
+    const res = await api.get(`/chats/messages/${messageId}/reactions`);
+    return res.data;
+  } catch (error: any) {
+    throw error.response?.data ?? error;
+  }
+}
+
+// Get total reaction count for a message
+export async function getReactionCount(messageId: string) {
+  try {
+    const res = await api.get(`/chats/messages/${messageId}/reactions/count`);
+    return res.data.count;
+  } catch (error: any) {
+    throw error.response?.data ?? error;
+  }
+}
 
 export default { getChats, sendMessage, getHistory, editMessage,
   deleteMessage, createNormalChat, searchUsersForNormalChatCreation,
   getBlockedByUserId, getUsersWhoBlockedMeIds, getUserIdsCanBlock,
-  blockUser, unblockUser, isBlockedBetween};
+  blockUser, unblockUser, isBlockedBetween, addReaction,
+  removeReaction, getReactions, getReactionCount};

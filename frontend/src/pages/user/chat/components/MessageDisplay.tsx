@@ -12,13 +12,21 @@ export default function MessageDisplay({
   currentUser,
   participants, 
   onEdit, 
-  onDelete 
+  onDelete,
+                                         onAddReaction,
+                                         onRemoveReaction,
+                                         onGetReactions,
+                                         onGetReactionCount,
 }: { 
   messages: any[]; 
   currentUser: string;
   participants: Participant[]; 
   onEdit?: (id: string, content: string) => void; 
-  onDelete?: (id: string, forEveryone: boolean) => void 
+  onDelete?: (id: string, forEveryone: boolean) => void ;
+  onAddReaction: (messageId: string, userId:string, reaction: string) => Promise<any>;
+  onRemoveReaction: (messageId: string) => Promise<any>;
+  onGetReactions: (messageId: string) => Promise<any[]>;
+  onGetReactionCount: (messageId: string) => Promise<number>;
 }) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -45,6 +53,10 @@ export default function MessageDisplay({
             senderEmail={participants.find(p => p.id === m.senderId)?.email ?? m.senderId}
             onEdit={onEdit} 
             onDelete={onDelete}
+            onAddReaction={onAddReaction}
+            onRemoveReaction={onRemoveReaction}
+            onGetReactionCount={onGetReactionCount}
+            onGetReactions={onGetReactions}
           />
         ))}
         <div ref={messagesEndRef} />

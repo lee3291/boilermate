@@ -84,15 +84,33 @@ interface MessageProps {
     senderEmail: string;
     onEdit?: (id: string, content: string) => void;
     onDelete?: (id: string, forEveryone: boolean) => void;
+    onAddReaction: (messageId: string, userId: string, reaction: string) => Promise<any>;
+    onRemoveReaction: (messageId: string) => Promise<any>;
+    onGetReactions: (messageId: string) => Promise<any[]>;
+    onGetReactionCount: (messageId: string) => Promise<number>;
 }
 
-export default function Message({ m, isMine, currentUserId, senderEmail, onEdit, onDelete }: MessageProps) {
+const emojiToType: Record<string, string> = {
+    '👍': 'LIKE',
+    '❤️': 'LOVE',
+    '😂': 'HAHA',
+    '😮': 'WOW',
+    '😢': 'SAD',
+    '😡': 'ANGRY',
+};
+
+export default function Message({ m, isMine, currentUserId, senderEmail, onEdit, onDelete,
+                                    onAddReaction,
+                                    onRemoveReaction,
+                                    onGetReactions,
+                                    onGetReactionCount}: MessageProps) {
     const [hover, setHover] = useState(false);
     const [editing, setEditing] = useState(false);
     const [editText, setEditText] = useState(m.content);
     const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
     const [myReaction, setMyReaction] = useState(m.myReaction || null);
     const [reactionJustClicked, setReactionJustClicked] = useState(false);
+    const [reactionCount, setReactionCount] = useState(0);
 
     const hasImage = m.imageUrl && m.imageUrl.trim().length > 0;
     const hasContent = m.content && m.content.trim().length > 0;
@@ -110,9 +128,34 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
         checkBlock();
     }, [m.id, m.senderId, currentUserId]);
 
-    const handleReact = (emoji: string) => {
-        if (myReaction === emoji) setMyReaction(null);
-        else setMyReaction(emoji);
+    useEffect(() => {
+        const fetchReactionCount = async () => {
+            try {
+                const count = await onGetReactionCount(m.id);
+                setReactionCount(count);
+            } catch {}
+        };
+        fetchReactionCount();
+    }, [m.id, onGetReactionCount]);
+
+    const handleReact = async (emoji: string) => {
+        const type = emojiToType[emoji];
+        if (!type) return;
+
+        try {
+            if (myReaction === emoji) {
+                await onRemoveReaction(m.id);
+                setMyReaction(null);
+            } else {
+                await onAddReaction(m.id, currentUserId, type);
+                setMyReaction(emoji);
+            }
+            const count = await onGetReactionCount(m.id);
+            setReactionCount(count);
+        } catch (err) {
+            console.error(err);
+        }
+
         setReactionPickerOpen(false);
         setReactionJustClicked(true);
         setTimeout(() => setReactionJustClicked(false), 80);
@@ -213,19 +256,19 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
                             )}
                         </div>
 
-                        {myReaction && (
+                        {reactionCount > 0 && (
                             <div className={`text-[11px] text-gray-500 mt-1 flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                                <span className="px-2 py-0.5 bg-gray-100 rounded-full border text-xs">{myReaction}</span>
+                                <span className="px-2 py-0.5 bg-gray-100 rounded-full border text-xs">{reactionCount} reactions</span>
                             </div>
                         )}
 
                         {reactionPickerOpen && (
-                            <div className="absolute -top-12 left-1/2 -translate-x-[40%] bg-white border rounded-full shadow px-3 py-2 flex gap-3 z-20">
+                            <div className="absolute top-full mt-1 left-1/2 -translate-x-1/2 bg-white border rounded-full shadow px-2 py-1 flex gap-1 z-20">
                                 {['👍', '❤️', '😂', '😮', '😢', '😡'].map((e) => (
                                     <button
                                         key={e}
                                         onClick={() => handleReact(e)}
-                                        className="text-xl hover:scale-125 transition-transform"
+                                        className="text-lg hover:scale-110 transition-transform"
                                     >
                                         {e}
                                     </button>
