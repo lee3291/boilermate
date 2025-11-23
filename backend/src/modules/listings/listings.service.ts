@@ -139,16 +139,9 @@ export class ListingsService {
                     ? (input as any).reportedOutdatedAlert
                     : false,
             viewCount: 0,
-            moveInDateOutdatedAlert:
-                typeof (input as any).moveInDateOutdatedAlert === 'boolean'
-                    ? (input as any).moveInDateOutdatedAlert
-                    : false,
-            reportedOutdatedAlert:
-                typeof (input as any).reportedOutdatedAlert === 'boolean'
-                    ? (input as any).reportedOutdatedAlert
-                    : false,
         };
     }
+
 
     async findActive() {
         // Fallback: join User by Purdue username (before @) if user_reference is null
@@ -452,29 +445,6 @@ export class ListingsService {
 
         if (!user) return [];
         return rows.map((l) => this.toListingResponse(l));
-    }
-
-    async findAll() {
-        // Fallback: join User by Purdue username (before @) if user_reference is null
-        const listings = await this.prisma.listing.findMany({
-            where: {
-                status: 'ACTIVE',
-            },
-            select: {
-                title: true,
-                location: true,
-                price: true,
-                user: true,
-            },
-        });
-        const activeUsers = await this.prisma.user.findMany({
-            where: { status: 'ACTIVE' },
-            select: { email: true },
-        });
-        const activeUsernames = new Set(
-            activeUsers.map((u) => u.email.split('@')[0]),
-        );
-        return listings.filter((l) => activeUsernames.has(l.user));
     }
 }
 
