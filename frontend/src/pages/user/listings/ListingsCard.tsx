@@ -196,6 +196,30 @@ export default function ListingsCard({
         updateStatus('ARCHIVED');
     }, [isExpired, listingStatus]);
 
+    const [flagged, setFlagged] = useState(false);
+    const [flagSaving, setFlagSaving] = useState(false);
+
+    const onToggleFlag = async () => {
+        const next = !flagged;
+        setFlagged(next);
+        setFlagSaving(true);
+        try {
+            const res = await fetch(`${API_BASE}/listings/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reportedOutdatedAlert: next }),
+            });
+            if (!res.ok) {
+                throw new Error(`Server returned ${res.status}`);
+            }
+        } catch (e) {
+            setFlagged(!next);
+            console.error(e);
+        } finally {
+            setFlagSaving(false);
+        }
+    };
+
     const statusControl = isOwner ? (
         <div className="mt-10 flex items-center gap-3">
             <label className="text-sm text-gray-600">Status:</label>
@@ -222,24 +246,25 @@ export default function ListingsCard({
     const icon = !saveEnabled ? (
         <div className="h-6 w-6" />
     ) : clicked === null ? (
-        <div className="h-6 w-6 opacity-0" />
-    ) : (
-        <img
-            src={clicked ? SaveBlack : SaveWhite}
-            className={`h-6 w-6 cursor-pointer select-none object-contain text-wrap ${saving ? "opacity-60 pointer-events-none" : ""}`}
-            alt={clicked ? "Saved" : "Save"}
-            onClick={onToggleSave}
-            draggable={false}
-        />
-    );
+            <div className="h-6 w-6 opacity-0" />
+        ) : (
+            <img
+                src={clicked ? SaveBlack : SaveWhite}
+                className={`h-6 w-6 cursor-pointer select-none object-contain text-wrap ${saving ? "opacity-60 pointer-events-none" : ""}`}
+                alt={clicked ? "Saved" : "Save"}
+                onClick={onToggleSave}
+                draggable={false}
+                />
+        );
 
     const flagIcon = (
         <img
-            src={FlagWhite}
-            className="h-6 w-6 cursor-pointer select-none object-contain"
+            src={flagged ? FlagBlack : FlagWhite}
+            className={`h-6 w-6 cursor-pointer select-none object-contain ${flagSaving ? "opacity-60 pointer-events-none" : ""}`}
             alt="Flag listing"
             draggable={false}
-        />
+            onClick={onToggleFlag}
+            />
     );
 
     const style = widthStyle ? { width: widthStyle } : undefined;
@@ -275,21 +300,20 @@ export default function ListingsCard({
                     <h1 className="pt-2 font-roboto-light text-lg text-wrap">{body}</h1>
 
                     <div className="flex justify-start gap-3">
-                        {/* If owner: show status dropdown; else: show Apply/Contact */}
                         {isOwner ? (
                             <>
                                 {statusControl}
                             </>
                         ) : (
-                            <>
-                                <button className="mt-10 h-12 w-35 bg-black text-white font-roboto-light rounded-4xl cursor-pointer">
-                                    Apply to join
-                                </button>
-                                <button className="mt-10 h-12 w-30 bg-white text-black border-black border-1 font-roboto-light rounded-4xl cursor-pointer">
-                                    Contact
-                                </button>
-                            </>
-                        )}
+                                <>
+                                    <button className="mt-10 h-12 w-35 bg-black text-white font-roboto-light rounded-4xl cursor-pointer">
+                                        Apply to join
+                                    </button>
+                                    <button className="mt-10 h-12 w-30 bg-white text-black border-black border-1 font-roboto-light rounded-4xl cursor-pointer">
+                                        Contact
+                                    </button>
+                                </>
+                            )}
 
                         <Link
                             to={`/listings/${id}`}

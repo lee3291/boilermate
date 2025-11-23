@@ -52,6 +52,11 @@ export default function MyListings() {
 
     const mine = useMemo(() => (Array.isArray(data) ? data : []), [data]);
 
+    const hasOutdatedListings = useMemo(
+        () => mine.some((l: any) => l?.moveInDateOutdatedAlert || l?.reportedOutdatedAlert),
+        [mine]
+    );
+
     return (
         <div className="h-full w-full min-h-screen">
             <Navbar />
@@ -59,6 +64,24 @@ export default function MyListings() {
                 <h1 className="font-sourceserif4-18pt-regular text-maingray text-[55px] tracking-tight">
                     Personal Listings
                 </h1>
+
+                {hasOutdatedListings && (
+                    <div className="pt-4 flex justify-center">
+                        <div className="h-18 w-[1500px] bg-yellow-100 rounded-[15px] border-2 border-amber-300">
+                            <div className="pt-[10px] px-5 flex justify-between items-center">
+                                <h2 className="font-sourceserif4-18pt-regular text-[30px] text-yellow-700">ALERT</h2>
+                                <p className="font-roboto-light text-[20px] text-yellow-700">
+                                    There are some listings that have been modified and require your action
+                                </p>
+                                <a className="cursor-pointer h-12 w-30 flex justify-center items-center border-yellow-300 border-2 bg-yellow-50 rounded-[10px] hover:bg-white">
+                                    <p className="font-roboto-light text-[18px] text-yellow-700">
+                                        REVIEW
+                                    </p>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {!authUser && (
                     <div className="mt-8 p-6 bg-white border border-gray-200 rounded-lg max-w-3xl">
