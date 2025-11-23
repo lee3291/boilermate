@@ -15,6 +15,8 @@ export interface CreateListingBody {
   status?: ListingStatus;
   moveInStart?: string;
   moveInEnd?: string;
+  moveInDateOutdatedAlert?: boolean;
+  reportedOutdatedAlert?: boolean;
 }
 
 /**
@@ -45,6 +47,8 @@ export interface ListingResponse {
 
   moveInStart: string | null; // "YYYY-MM-DD"
   moveInEnd: string | null;   // "YYYY-MM-DD"
+  moveInDateOutdatedAlert: boolean;
+  reportedOutdatedAlert: boolean;
 
   createdAt: string;    // ISO
   updatedAt: string;    // ISO
@@ -54,7 +58,6 @@ export interface ListingResponse {
 export interface CreateListingResult {
   listing: ListingResponse;
 }
-
 
 export interface SaveListingBody {
   username: string;
@@ -110,5 +113,8 @@ export interface Listing {
     media: string[];
     status: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
     viewCount: number;
+    moveInDateOutdatedAlert: boolean;
+    reportedOutdatedAlert: boolean;
     createdAt: Date;
 }
+

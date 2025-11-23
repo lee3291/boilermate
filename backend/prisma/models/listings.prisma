@@ -23,6 +23,10 @@ model Listing {
 
   moveInStart DateTime?     @db.Date
   moveInEnd   DateTime?     @db.Date
+
+  moveInDateOutdatedAlert Boolean @default(false)
+  reportedOutdatedAlert   Boolean @default(false)
+
   viewCount   Int           @default(0)
   views       ListingView[]
   createdAt   DateTime      @default(now())
