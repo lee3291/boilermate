@@ -1,7 +1,11 @@
 interface RoommatesSidebarProps {
   viewMode: 'search' | 'favorites' | 'liked' | 'disliked';
   onSetViewMode: (mode: 'search' | 'favorites' | 'liked' | 'disliked') => void;
-  total: number;
+  searchTotal: number;
+  favoritesTotal: number;
+  likedTotal: number;
+  dislikedTotal: number;
+  countsFetched: boolean;
   page: number;
   pageSize: number;
   loading: boolean;
@@ -10,11 +14,26 @@ interface RoommatesSidebarProps {
 export default function RoommatesSidebar({
   viewMode,
   onSetViewMode,
-  total,
+  searchTotal,
+  favoritesTotal,
+  likedTotal,
+  dislikedTotal,
+  countsFetched,
   page,
   pageSize,
   loading,
 }: RoommatesSidebarProps) {
+  // Get the correct total based on current view mode
+  const getCurrentTotal = () => {
+    switch (viewMode) {
+      case 'favorites': return favoritesTotal;
+      case 'liked': return likedTotal;
+      case 'disliked': return dislikedTotal;
+      default: return searchTotal;
+    }
+  };
+  
+  const total = getCurrentTotal();
   return (
     <div className='w-80 flex-shrink-0'>
       <div className='bg-white rounded-lg shadow-sm p-6 sticky top-6'>
@@ -50,9 +69,13 @@ export default function RoommatesSidebar({
             <span className='text-base font-semibold'>❤️ My Favorites</span>
             {viewMode === 'favorites' && <span className='text-2xl'>✓</span>}
           </div>
-          {viewMode === 'favorites' && (
-            <p className='text-sm text-red-700 mt-2'>{total} favorite{total !== 1 ? 's' : ''}</p>
-          )}
+          <p className='text-sm text-red-700 mt-2'>
+            {countsFetched ? (
+              `${favoritesTotal} favorite${favoritesTotal !== 1 ? 's' : ''}`
+            ) : (
+              <span className='inline-block animate-pulse'>Loading...</span>
+            )}
+          </p>
         </button>
 
         {/* Liked Mode Button */}
@@ -68,9 +91,13 @@ export default function RoommatesSidebar({
             <span className='text-base font-semibold'>👍 Liked</span>
             {viewMode === 'liked' && <span className='text-2xl'>✓</span>}
           </div>
-          {viewMode === 'liked' && (
-            <p className='text-sm text-green-700 mt-2'>{total} liked</p>
-          )}
+          <p className='text-sm text-green-700 mt-2'>
+            {countsFetched ? (
+              `${likedTotal} liked`
+            ) : (
+              <span className='inline-block animate-pulse'>Loading...</span>
+            )}
+          </p>
         </button>
 
         {/* Disliked Mode Button */}
@@ -86,9 +113,13 @@ export default function RoommatesSidebar({
             <span className='text-base font-semibold'>👎 Disliked</span>
             {viewMode === 'disliked' && <span className='text-2xl'>✓</span>}
           </div>
-          {viewMode === 'disliked' && (
-            <p className='text-sm text-orange-700 mt-2'>{total} disliked</p>
-          )}
+          <p className='text-sm text-orange-700 mt-2'>
+            {countsFetched ? (
+              `${dislikedTotal} disliked`
+            ) : (
+              <span className='inline-block animate-pulse'>Loading...</span>
+            )}
+          </p>
         </button>
 
         {viewMode === 'search' && (

@@ -78,6 +78,16 @@ model User {
     // Followers and Followings
     followers Follow[] @relation("FollowingUser")
     followings Follow[] @relation("FollowerUser")
+
+  // Roommate relations
+  roommateRequestsSent     RoommateRequest[] @relation("RoommateRequester")
+  roommateRequestsReceived RoommateRequest[] @relation("RoommateRequested")
+  
+  roommatesAsUser1         Roommate[]        @relation("RoommateUser1")
+  roommatesAsUser2         Roommate[]        @relation("RoommateUser2")
+  
+  roommateReviewsWritten   RoommateReview[]  @relation("ReviewAuthor")
+  roommateReviewsReceived  RoommateReview[]  @relation("ReviewSubject")
 }
 
 model FavoriteMatch {

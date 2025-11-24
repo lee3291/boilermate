@@ -29,6 +29,11 @@ export default function RoommatesPage() {
     page,
     totalPages,
     total,
+    searchTotal,
+    favoritesTotal,
+    likedTotal,
+    dislikedTotal,
+    countsFetched,
     viewMode,
     allPreferences,
     selectedPreferences,
@@ -94,7 +99,11 @@ export default function RoommatesPage() {
         <RoommatesSidebar
           viewMode={viewMode}
           onSetViewMode={handleSetViewMode}
-          total={total}
+          searchTotal={searchTotal}
+          favoritesTotal={favoritesTotal}
+          likedTotal={likedTotal}
+          dislikedTotal={dislikedTotal}
+          countsFetched={countsFetched}
           page={page}
           pageSize={PAGE_SIZE}
           loading={loading}
