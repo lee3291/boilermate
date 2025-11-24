@@ -9,6 +9,8 @@ import {
   UpdateReviewResults,
   DeleteReviewDetails,
   DeleteReviewResults,
+  GetEligibleRoommatesForReviewDetails,
+  GetEligibleRoommatesForReviewResults,
   RoommateReviewDetails,
   RoommateUserDetails,
 } from './interfaces';
@@ -276,6 +278,69 @@ export class RoommateReviewsService {
 
     return {
       success: true,
+    };
+  }
+
+  /**
+   * Get eligible roommate periods that can be reviewed
+   * Returns only roommate relationships that:
+   * 1. Involve both reviewerId and reviewedId
+   * 2. Have not been reviewed yet by the reviewer
+   */
+  async getEligibleRoommatesForReview(
+    details: import('./interfaces').GetEligibleRoommatesForReviewDetails,
+  ): Promise<import('./interfaces').GetEligibleRoommatesForReviewResults> {
+    const { reviewerId, reviewedId } = details;
+
+    // Validate users are different
+    if (reviewerId === reviewedId) {
+      throw new BadRequestException('Cannot review yourself');
+    }
+
+    // Find all roommate relationships between these two users
+    const roommates = await this.prisma.roommate.findMany({
+      where: {
+        OR: [
+          { user1Id: reviewerId, user2Id: reviewedId },
+          { user1Id: reviewedId, user2Id: reviewerId },
+        ],
+      },
+      select: {
+        id: true,
+        startDate: true,
+        endDate: true,
+        isActive: true,
+      },
+      orderBy: {
+        startDate: 'desc',
+      },
+    });
+
+    // Get all reviews the reviewer has already made for the reviewed user
+    const existingReviews = await this.prisma.roommateReview.findMany({
+      where: {
+        reviewerId,
+        reviewedId,
+      },
+      select: {
+        roommateId: true,
+      },
+    });
+
+    const reviewedRoommateIds = new Set(existingReviews.map((r) => r.roommateId));
+
+    // Filter out roommate periods that have already been reviewed
+    const eligibleRoommates = roommates
+      .filter((roommate) => !reviewedRoommateIds.has(roommate.id))
+      .map((roommate) => ({
+        id: roommate.id,
+        startDate: roommate.startDate,
+        endDate: roommate.endDate,
+        isActive: roommate.isActive,
+      }));
+
+    return {
+      eligibleRoommates,
     };
   }
 

@@ -18,6 +18,18 @@ import type {
 const BASE_URL = '/roommates/reviews';
 
 /**
+ * Get eligible roommate periods for review
+ * GET /roommates/reviews/eligible?reviewerId=xxx&reviewedId=xxx
+ */
+export const getEligibleRoommatesForReview = async (params: {
+  reviewerId: string;
+  reviewedId: string;
+}): Promise<{ eligibleRoommates: Array<{ id: string; startDate: Date; endDate: Date | null; isActive: boolean }> }> => {
+  const response = await api.get(`${BASE_URL}/eligible`, { params });
+  return response.data;
+};
+
+/**
  * Get all reviews for a user
  * GET /roommates/reviews?reviewedId=xxx&roommateId=xxx
  */

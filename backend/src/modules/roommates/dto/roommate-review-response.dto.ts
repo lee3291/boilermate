@@ -81,3 +81,29 @@ export class DeleteReviewResponseDto {
     return { success };
   }
 }
+
+export class EligibleRoommateDto {
+  id: string;
+  startDate: Date;
+  endDate: Date | null;
+  isActive: boolean;
+
+  static fromRoommate(roommate: any): EligibleRoommateDto {
+    return {
+      id: roommate.id,
+      startDate: roommate.startDate,
+      endDate: roommate.endDate,
+      isActive: roommate.isActive,
+    };
+  }
+}
+
+export class EligibleRoommatesForReviewResponseDto {
+  eligibleRoommates: EligibleRoommateDto[];
+
+  static fromEligibleRoommates(roommates: any[]): EligibleRoommatesForReviewResponseDto {
+    return {
+      eligibleRoommates: roommates.map(r => EligibleRoommateDto.fromRoommate(r)),
+    };
+  }
+}

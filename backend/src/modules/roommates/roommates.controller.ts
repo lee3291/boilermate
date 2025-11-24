@@ -24,6 +24,7 @@ import {
   ReviewsResponseDto,
   RoommateReviewResponseDto,
   DeleteReviewResponseDto,
+  EligibleRoommatesForReviewResponseDto,
 } from './dto';
 
 /**
@@ -214,6 +215,28 @@ export class RoommatesController {
     });
 
     return ReviewsResponseDto.fromReviews(result.reviews);
+  }
+
+  /**
+   * Get eligible roommate periods for review
+   * GET /roommates/reviews/eligible?reviewerId=xxx&reviewedId=xxx
+   */
+  @Get('reviews/eligible')
+  @HttpCode(200)
+  async getEligibleRoommatesForReview(
+    @Query('reviewerId') reviewerId: string,
+    @Query('reviewedId') reviewedId: string,
+  ): Promise<EligibleRoommatesForReviewResponseDto> {
+    this.logger.log(`Getting eligible roommates for review from ${reviewerId} for ${reviewedId}`);
+
+    const result = await this.roommateReviewsService.getEligibleRoommatesForReview({
+      reviewerId,
+      reviewedId,
+    });
+
+    return EligibleRoommatesForReviewResponseDto.fromEligibleRoommates(
+      result.eligibleRoommates,
+    );
   }
 
   /**

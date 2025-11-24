@@ -227,3 +227,23 @@ export interface DeleteReviewDetails {
 export interface DeleteReviewResults {
   success: boolean;
 }
+
+/**
+ * Get Eligible Roommate Periods for Review
+ * Returns roommate periods that can be reviewed (not yet reviewed)
+ */
+export interface GetEligibleRoommatesForReviewDetails {
+  reviewerId: string;
+  reviewedId: string;
+}
+
+export interface EligibleRoommateForReview {
+  id: string;
+  startDate: Date;
+  endDate: Date | null;
+  isActive: boolean;
+}
+
+export interface GetEligibleRoommatesForReviewResults {
+  eligibleRoommates: EligibleRoommateForReview[];
+}

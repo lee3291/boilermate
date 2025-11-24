@@ -12,12 +12,13 @@ import {
   addReview,
   updateReview,
   deleteReview,
+  getEligibleRoommatesForReview,
 } from '@/services/roommateReviewService';
 
 interface ReviewsSectionProps {
   reviewedUserId: string;
   currentUserId: string;
-  roommates: Roommate[]; // Past roommates to allow adding reviews and get date info
+  roommates: Roommate[]; // Past roommates for display purposes (can be removed if not needed elsewhere)
 }
 
 export default function ReviewsSection({
@@ -32,27 +33,22 @@ export default function ReviewsSection({
   const [newRating, setNewRating] = useState(0);
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
-
-  // Filter roommates where current user can leave a review
-  const eligibleRoommates = roommates.filter((r) => {
-    const isMyRoommate =
-      (r.user1.id === currentUserId && r.user2.id === reviewedUserId) ||
-      (r.user2.id === currentUserId && r.user1.id === reviewedUserId);
-
-    // Check if already reviewed this roommate period
-    const alreadyReviewed = reviews.some(
-      (review) =>
-        review.roommateId === r.id && review.reviewerId === currentUserId
-    );
-
-    return isMyRoommate && !alreadyReviewed;
-  });
+  
+  // Fetch eligible roommates from backend (best practice: let backend handle filtering)
+  const [eligibleRoommates, setEligibleRoommates] = useState<Array<{
+    id: string;
+    startDate: Date;
+    endDate: Date | null;
+    isActive: boolean;
+  }>>([]);
+  const [eligibleLoading, setEligibleLoading] = useState(false);
 
   const canAddReview = eligibleRoommates.length > 0;
 
   useEffect(() => {
     fetchReviews();
-  }, [reviewedUserId]);
+    fetchEligibleRoommates();
+  }, [reviewedUserId, currentUserId]);
 
   const fetchReviews = async () => {
     setLoading(true);
@@ -63,6 +59,22 @@ export default function ReviewsSection({
       console.error('Failed to fetch reviews:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchEligibleRoommates = async () => {
+    setEligibleLoading(true);
+    try {
+      const data = await getEligibleRoommatesForReview({
+        reviewerId: currentUserId,
+        reviewedId: reviewedUserId,
+      });
+      setEligibleRoommates(data.eligibleRoommates);
+    } catch (error) {
+      console.error('Failed to fetch eligible roommates:', error);
+      setEligibleRoommates([]);
+    } finally {
+      setEligibleLoading(false);
     }
   };
 
@@ -82,12 +94,13 @@ export default function ReviewsSection({
         comment: newComment || undefined,
       });
 
-      // Reset form and refresh
+      // Reset form and refresh both reviews and eligible roommates
       setShowAddReview(false);
       setSelectedRoommateId('');
       setNewRating(0);
       setNewComment('');
       await fetchReviews();
+      await fetchEligibleRoommates(); // Refresh to remove reviewed period from dropdown
     } catch (error: any) {
       console.error('Failed to add review:', error);
       alert(error?.response?.data?.message || 'Failed to add review');
@@ -112,6 +125,7 @@ export default function ReviewsSection({
   const handleDeleteReview = async (reviewId: string) => {
     await deleteReview(reviewId, { reviewerId: currentUserId });
     await fetchReviews();
+    await fetchEligibleRoommates(); // Refresh to add deleted period back to dropdown
   };
 
   const renderStars = (rating: number, interactive: boolean = false) => {
@@ -179,20 +193,28 @@ export default function ReviewsSection({
           {/* Select Roommate Period */}
           <div className='mb-4'>
             <label className='block text-sm font-medium text-gray-700 mb-2'>
-              Select Roommate Period
+              Select Roommate Period {eligibleLoading && <span className='text-xs text-gray-500'>(Loading...)</span>}
             </label>
             <select
               value={selectedRoommateId}
               onChange={(e) => setSelectedRoommateId(e.target.value)}
-              className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+              disabled={eligibleLoading || eligibleRoommates.length === 0}
+              className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed'
             >
-              <option value=''>-- Choose a roommate period --</option>
+              <option value=''>
+                {eligibleLoading 
+                  ? '-- Loading periods...' 
+                  : eligibleRoommates.length === 0 
+                    ? '-- No eligible periods --' 
+                    : '-- Choose a roommate period --'}
+              </option>
               {eligibleRoommates.map((roommate) => (
                 <option key={roommate.id} value={roommate.id}>
                   {new Date(roommate.startDate).toLocaleDateString()} -{' '}
                   {roommate.endDate
                     ? new Date(roommate.endDate).toLocaleDateString()
                     : 'Present'}
+                  {roommate.isActive && ' (Active)'}
                 </option>
               ))}
             </select>
