@@ -102,12 +102,17 @@ export class ProfileService {
         const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:5173';
         const profileUrl = `${frontendUrl}/profile/${userId}`;
 
-        this.mailService.sendBulkEmail(
-          followerEmails,
-          `Boilermate: ${username} updated their profile!`,
-          `${username} has just updated their profile. Check it out: ${profileUrl}`,
-          `<p>${username} has just updated their profile. <a href="${profileUrl}">Check it out!</a></p>`,
-        );
+        followerEmails.forEach((email) => {
+          this.mailService.sendTemplatedEmail(
+            email,
+            `Boilermate: ${username} updated their profile!`,
+            'profile-update-notification',
+            {
+              username,
+              profileUrl,
+            },
+          );
+        });
       }
     }
     // --- END EMAIL NOTIFICATION ---
@@ -899,7 +904,9 @@ export class ProfileService {
     }
 
     if (userIds.length > 10) {
-      throw new BadRequestException('Maximum 10 profiles can be compared at once');
+      throw new BadRequestException(
+        'Maximum 10 profiles can be compared at once',
+      );
     }
 
     // Fetch all users with their preferences
