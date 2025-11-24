@@ -358,6 +358,7 @@ export default function ProfileViewPage() {
             phoneNumber={profile.phoneNumber || ''}
             searchStatus={profile.searchStatus || ''}
             onSave={async () => {}}
+            isEditable={false}
           />
         )}
 

@@ -65,6 +65,23 @@ const SignUpPage = () => {
       setError('Passwords do not match.');
       return;
     }
+
+    const passwordErrors = [];
+    if (password.length <= 8) {
+      passwordErrors.push('longer than 8 characters');
+    }
+    if (!/\d/.test(password)) {
+      passwordErrors.push('at least one number');
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      passwordErrors.push('at least one special character');
+    }
+
+    if (passwordErrors.length > 0) {
+      setError(`Password must be ${passwordErrors.join(', ')}.`);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     try {
@@ -137,6 +154,10 @@ const SignUpPage = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+            <p className='text-maingray mt-2 text-xs'>
+              Password must be longer than 8 characters, and contain at least
+              one number and one special character.
+            </p>
             <InputField
               label='Confirm Password'
               id='confirmPassword'

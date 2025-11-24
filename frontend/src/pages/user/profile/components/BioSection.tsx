@@ -18,6 +18,7 @@ interface BioSectionProps {
     bio: string;
     searchStatus: string;
   }) => Promise<void>;
+  isEditable?: boolean;
 }
 
 export default function BioSection({
@@ -26,6 +27,7 @@ export default function BioSection({
   phoneNumber,
   searchStatus,
   onSave,
+  isEditable = true,
 }: BioSectionProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -38,21 +40,23 @@ export default function BioSection({
       </div>
 
       {/* Bio Text */}
-      <div className='max-h-48 overflow-auto rounded-xl border border-pink-100 bg-gradient-to-r from-pink-50 to-purple-50 p-6'>
+      <div className='max-h-48 overflow-auto rounded-xl border border-pink-100 bg-linear-to-r from-pink-50 to-purple-50 p-6'>
         <p className='text-lg leading-relaxed wrap-break-word whitespace-pre-line text-gray-700'>
           {bio}
         </p>
       </div>
 
       {/* Edit Button */}
-      <div className='mt-4 flex justify-end'>
-        <button
-          className='rounded-full bg-gradient-to-r from-pink-500 to-purple-500 px-6 py-2 font-medium text-white shadow-md transition-shadow hover:shadow-lg'
-          onClick={() => setIsModalOpen(true)}
-        >
-          ✏️ Edit Profile
-        </button>
-      </div>
+      {isEditable && (
+        <div className='mt-4 flex justify-end'>
+          <button
+            className='rounded-full bg-linear-to-r from-pink-500 to-purple-500 px-6 py-2 font-medium text-white shadow-md transition-shadow hover:shadow-lg'
+            onClick={() => setIsModalOpen(true)}
+          >
+            ✏️ Edit Profile
+          </button>
+        </div>
+      )}
 
       {/* Edit Bio Modal */}
       {isModalOpen && (
