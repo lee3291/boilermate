@@ -185,21 +185,23 @@ export class ListingsService {
         if (follows.length > 0) {
           // 2. Collect the email addresses of all followers.
           const followerEmails = follows.map((follow) => follow.follower.email);
-
-          // 3. Construct the email content.
           const authorName = author.legalName || data.user;
           const listingUrl = `${process.env.FRONTEND_URL ?? 'http://localhost:5173'}/listings/${created.id}`;
           const subject = `New Listing from ${authorName}!`;
-          const text = `Hi there,\n\n${authorName} has just posted a new listing: "${created.title}".\n\nYou can view it here: ${listingUrl}\n\nThanks,\nThe BoilerMate Team`;
-          const html = `<p>Hi there,</p><p>${authorName} has just posted a new listing: "<strong>${created.title}</strong>".</p><p>You can view it here: <a href="${listingUrl}">${listingUrl}</a></p><br><p>Thanks,</p><p>The BoilerMate Team</p>`;
 
           // 4. Send the email to all followers.
-          this.mailService.sendBulkEmail(
-            followerEmails,
-            subject,
-            text,
-            html,
-          );
+          followerEmails.forEach((email) => {
+            this.mailService.sendTemplatedEmail(
+              email,
+              subject,
+              'new-listing-notification',
+              {
+                authorName,
+                listingTitle: created.title,
+                listingUrl,
+              },
+            );
+          });
 
           this.logger.log(
             `Queued new listing notification for ${followerEmails.length} followers of user ${data.user}.`,
