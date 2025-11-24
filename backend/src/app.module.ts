@@ -19,6 +19,7 @@ import { ProfileModule } from '@modules/profile/profile.module';
 import { AnnouncementsModule } from './modules/announcements/announcements.module';
 import { VerificationModule } from './modules/verification/verification.module';
 import { TasksModule } from './modules/tasks/tasks.module';
+import { RoommatesModule } from './modules/roommates/roommates.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { TasksModule } from './modules/tasks/tasks.module';
     VerificationModule,
     AnnouncementsModule,
     TasksModule,
+    RoommatesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
