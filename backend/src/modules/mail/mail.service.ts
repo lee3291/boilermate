@@ -1,3 +1,4 @@
+import { Listing, User } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import * as path from 'path';
@@ -83,5 +84,29 @@ export class MailService {
       text,
       html: html ?? `<p>${text}</p>`,
     });
+  }
+
+  async sendReminderToUpdateListingEmail(user: User, listing: Listing) {
+    return this.sendTemplatedEmail(
+      user.email,
+      'Reminder to Update Your Listing',
+      'reminder-to-update-listing',
+      {
+        name: user.legalName,
+        listingTitle: listing.title,
+      },
+    );
+  }
+
+  async sendOutdatedListingEmail(user: User, listing: Listing) {
+    return this.sendTemplatedEmail(
+      user.email,
+      'Your Listing Has Been Archived',
+      'outdated-listing',
+      {
+        name: user.legalName,
+        listingTitle: listing.title,
+      },
+    );
   }
 }
