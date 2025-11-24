@@ -17,7 +17,6 @@
     "prisma:migrate": "prisma migrate dev --schema ./prisma",
     "prisma:seed": "ts-node prisma/seeds/preferences.seed.ts",
     "prisma:reset": "prisma migrate reset",
-
     "start:d": "dotenv -e .env -e .env.dev --override -- nest start",
     "start:dev:d": "dotenv -e .env -e .env.dev --override -- nest start --watch",
     "start:debug:d": "dotenv -e .env -e .env.dev --override -- nest start --debug --watch",
@@ -25,7 +24,6 @@
     "prisma:migrate:d": "dotenv -e .env -e .env.dev --override -- prisma migrate dev --schema ./prisma",
     "prisma:seed:d": "dotenv -e .env -e .env.dev --override -- ts-node prisma/seeds/preferences.seed.ts",
     "prisma:reset:d": "dotenv -e .env -e .env.dev --override -- prisma migrate reset",
-
     "test": "dotenv -e .env -e .env.test --override -- jest",
     "test:watch": "dotenv -e .env -e .env.test --override -- jest --watch",
     "test:cov": "dotenv -e .env -e .env.test --override -- jest --coverage",
@@ -47,6 +45,7 @@
     "@nestjs/websockets": "^11.1.6",
     "@prisma/client": "^6.19.0",
     "@sendgrid/mail": "^8.1.6",
+    "@types/nodemailer-express-handlebars": "^4.0.6",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
@@ -54,6 +53,7 @@
     "date-fns": "^4.1.0",
     "express": "^5.1.0",
     "nodemailer": "^7.0.6",
+    "nodemailer-express-handlebars": "^7.0.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
