@@ -8,6 +8,12 @@ import { ConfigService } from '@nestjs/config';
 import { UploadsService } from '../uploads/uploads.service';
 import { CreateVerificationRequestDto } from './dto/create-verification-request.dto';
 import type { VerificationStatus } from '@prisma/client';
+import { MailService } from '../mail/mail.service';
+
+interface ProfileInfo {
+  firstName?: string;
+  lastName?: string;
+}
 
 @Injectable()
 export class VerificationService {
@@ -31,6 +37,7 @@ export class VerificationService {
     private readonly prisma: PrismaService,
     private readonly uploadsService: UploadsService,
     private readonly configService: ConfigService,
+    private readonly mailService: MailService,
   ) {}
 
   async getVerificationStatus(userId: string) {
@@ -133,6 +140,14 @@ export class VerificationService {
 
     const request = await this.prisma.verificationRequest.findUnique({
       where: { id: requestId },
+      include: {
+        user: {
+          select: {
+            email: true,
+            profileInfo: true,
+          },
+        },
+      },
     });
 
     if (!request) {
@@ -140,7 +155,7 @@ export class VerificationService {
     }
 
     // Use a transaction to ensure data consistency
-    return this.prisma.$transaction(async (tx) => {
+    const updatedRequest = await this.prisma.$transaction(async (tx) => {
       // Update the verification request
       const updatedRequest = await tx.verificationRequest.update({
         where: { id: requestId },
@@ -156,6 +171,7 @@ export class VerificationService {
             select: {
               id: true,
               email: true,
+              legalName: true,
               profileInfo: true,
             },
           },
@@ -185,5 +201,27 @@ export class VerificationService {
 
       return updatedRequest;
     });
+
+    const user = updatedRequest.user;
+    const profileInfo = user.profileInfo as ProfileInfo;
+    const userName = profileInfo?.firstName ?? 'BoilerMate User';
+
+    if (status === 'APPROVED') {
+      await this.mailService.sendTemplatedEmail(
+        user.email,
+        'Your BoilerMate Account is Verified!',
+        'verification-approved',
+        { userName },
+      );
+    } else if (status === 'DECLINED') {
+      await this.mailService.sendTemplatedEmail(
+        user.email,
+        'Update on Your BoilerMate Verification Request',
+        'verification-declined',
+        { userName, reason },
+      );
+    }
+
+    return updatedRequest;
   }
 }

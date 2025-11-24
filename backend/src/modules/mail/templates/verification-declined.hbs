@@ -1,0 +1,77 @@
+<html lang='en'>
+  <head>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <title>Verification Request Update</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        background-color: #f4f4f4;
+        color: #333;
+        line-height: 1.6;
+      }
+      .container {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+        background: #fff;
+        border: 1px solid #ddd;
+      }
+      .header {
+        background: #004aad;
+        color: #ffffff;
+        padding: 10px;
+        text-align: center;
+      }
+      .content {
+        padding: 20px;
+      }
+      .reason {
+        background-color: #f9f9f9;
+        border-left: 4px solid #d9534f;
+        padding: 15px;
+        margin: 20px 0;
+      }
+      .footer {
+        margin-top: 20px;
+        text-align: center;
+        font-size: 0.8em;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='container'>
+      <div class='header'>
+        <h1>BoilerMate</h1>
+      </div>
+      <div class='content'>
+        <h2>Update on Your BoilerMate Verification Request</h2>
+        <p>
+          Hi
+          {{userName}},
+        </p>
+        <p>
+          We're writing to inform you that your recent verification request has
+          been declined.
+        </p>
+        <div class='reason'>
+          <strong>Reason for decline:</strong>
+          <p>{{reason}}</p>
+        </div>
+        <p>
+          Please review the reason above. If you believe this was a mistake or
+          if you have new information to provide, you can submit a new
+          verification request through your account settings.
+        </p>
+        <p>
+          Best regards,<br />
+          The BoilerMate Team
+        </p>
+      </div>
+      <div class='footer'>
+        <p>&copy; 2025 BoilerMate. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+</html>
