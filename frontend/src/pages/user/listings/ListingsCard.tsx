@@ -201,6 +201,15 @@ export default function ListingsCard({
 
     const onToggleFlag = async () => {
         const next = !flagged;
+
+        // Only confirm when reporting (turning the flag on)
+        if (next) {
+            const confirmed = window.confirm("Are you sure you want to report this listing as outdated?");
+            if (!confirmed) {
+                return;
+            }
+        }
+
         setFlagged(next);
         setFlagSaving(true);
         try {
@@ -257,7 +266,7 @@ export default function ListingsCard({
                 />
         );
 
-    const flagIcon = (
+    const flagIcon = !isOwner ? (
         <img
             src={flagged ? FlagBlack : FlagWhite}
             className={`h-6 w-6 cursor-pointer select-none object-contain ${flagSaving ? "opacity-60 pointer-events-none" : ""}`}
@@ -265,8 +274,7 @@ export default function ListingsCard({
             draggable={false}
             onClick={onToggleFlag}
             />
-    );
-
+    ) : null;
     const style = widthStyle ? { width: widthStyle } : undefined;
 
     return (

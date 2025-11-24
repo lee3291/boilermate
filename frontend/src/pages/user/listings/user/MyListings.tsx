@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Navbar from "../../components/Navbar";
 import ListingsCard from "../ListingsCard";
 import { useAuth } from "../../../../contexts/AuthContext";
 import useSWR from "swr";
 import { fetcher } from "../../../../services/listingsFetcher";
 import { Link } from "react-router-dom";
+import ReviewListingsModal from "./ReviewListingsModal"; // <-- adjust path if needed
 
 type ListingStatus = "ACTIVE" | "INACTIVE" | "ARCHIVED";
 
@@ -27,6 +28,7 @@ function emailLocalPart(e?: string | null) {
 
 export default function MyListings() {
     const { user: authUser } = useAuth();
+    const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
     const me = useMemo(() => {
         if (!authUser) return null;
@@ -52,10 +54,31 @@ export default function MyListings() {
 
     const mine = useMemo(() => (Array.isArray(data) ? data : []), [data]);
 
-    const hasOutdatedListings = useMemo(
-        () => mine.some((l: any) => l?.moveInDateOutdatedAlert || l?.reportedOutdatedAlert),
+    const hasMoveInDateIssues = useMemo(
+        () => mine.some((l: any) => l?.moveInDateOutdatedAlert),
         [mine]
     );
+
+    const hasDescriptionIssues = useMemo(
+        () => mine.some((l: any) => l?.reportedOutdatedAlert),
+        [mine]
+    );
+
+    const hasOutdatedListings = hasMoveInDateIssues || hasDescriptionIssues;
+
+    const handleOpenReviewModal = () => {
+        setIsReviewModalOpen(true);
+    };
+
+    const handleCloseReviewModal = () => {
+        setIsReviewModalOpen(false);
+    };
+
+    const handleResolveIssues = () => {
+        // TODO: hook this up to your actual "resolve" flow (e.g. navigate to a filtered list,
+        // open a dedicated page, or trigger an API call).
+        setIsReviewModalOpen(false);
+    };
 
     return (
         <div className="h-full w-full min-h-screen">
@@ -73,11 +96,15 @@ export default function MyListings() {
                                 <p className="font-roboto-light text-[20px] text-yellow-700">
                                     There are some listings that have been modified and require your action
                                 </p>
-                                <a className="cursor-pointer h-12 w-30 flex justify-center items-center border-yellow-300 border-2 bg-yellow-50 rounded-[10px] hover:bg-white">
+                                <button
+                                    type="button"
+                                    onClick={handleOpenReviewModal}
+                                    className="cursor-pointer h-12 px-4 flex justify-center items-center border-yellow-300 border-2 bg-yellow-50 rounded-[10px] hover:bg-white"
+                                >
                                     <p className="font-roboto-light text-[18px] text-yellow-700">
                                         REVIEW
                                     </p>
-                                </a>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -128,7 +155,7 @@ export default function MyListings() {
                                 status={toListingStatus(l.status)}
                                 widthClass="w-120"
                                 saveEnabled={false}
-                                />
+                            />
                         ))}
                     </div>
                 )}
@@ -141,6 +168,14 @@ export default function MyListings() {
                     </div>
                 )}
             </div>
+
+            <ReviewListingsModal
+                isOpen={isReviewModalOpen}
+                onClose={handleCloseReviewModal}
+                onResolve={handleResolveIssues}
+                hasMoveInDateIssues={hasMoveInDateIssues}
+                hasDescriptionIssues={hasDescriptionIssues}
+            />
         </div>
     );
 }
