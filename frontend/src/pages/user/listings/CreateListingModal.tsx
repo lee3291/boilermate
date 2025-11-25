@@ -32,9 +32,6 @@ export default function CreateListingModal({
 
     const deriveUsername = () => {
         if (!user) return null;
-        // prefer explicit username/displayName if present, otherwise use email local-part, otherwise id
-        // note: AuthContext currently provides email and id; this covers both cases.
-        // cast to string and trim defensively
         // @ts-ignore - user type may not have .displayName/.username; check them safely at runtime
         const maybeUsername = (user.username || user.displayName) as string | undefined;
         if (maybeUsername && maybeUsername.trim()) return maybeUsername.trim();

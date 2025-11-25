@@ -59,7 +59,6 @@ export default function ListingsCard({
         return null;
     }, [authUser]);
 
-
     useEffect(() => {
         if (!saveEnabled) {
             setClicked(false);
@@ -73,7 +72,6 @@ export default function ListingsCard({
         if (hint === true) setClicked(true);
         else setClicked(null);
     }, [viewerUsername, id, saveEnabled]);
-
 
     useEffect(() => {
         if (!saveEnabled) return;
@@ -119,7 +117,6 @@ export default function ListingsCard({
         }
     };
 
-
     const [viewCount, setViewCount] = useState<number | null>(null);
     const [uniqueCount, setUniqueCount] = useState<number | null>(null);
 
@@ -146,7 +143,6 @@ export default function ListingsCard({
         return () => { cancelled = true; };
     }, [isOwner, id]);
 
-
     const [statusSaving, setStatusSaving] = useState(false);
     const [statusError, setStatusError] = useState<string | null>(null);
     const [listingStatus, setListingStatus] = useState<ListingStatus>(status ?? 'ACTIVE');
@@ -166,6 +162,43 @@ export default function ListingsCard({
 
         return endDate < today;
     }, [moveInEnd]);
+
+    useEffect(() => {
+        if (!isOwner) return;
+        if (!moveInEnd) return;
+
+        const endDate = new Date(moveInEnd);
+        if (Number.isNaN(endDate.getTime())) return;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        endDate.setHours(0, 0, 0, 0);
+
+        const shouldFlagOutdated = endDate < today; // "move out date is after today"
+
+        if (!shouldFlagOutdated) return;
+
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch(`${API_BASE}/listings/${id}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ moveInDateOutdatedAlert: true }),
+                });
+                if (!res.ok) {
+                    console.error(
+                        "[ListingsCard] Failed to set moveInDateOutdatedAlert",
+                        res.status
+                    );
+                }
+            } catch (e) {
+                if (!cancelled) console.error(e);
+            }
+        })();
+
+        return () => { cancelled = true; };
+    }, [id, moveInEnd, isOwner]);
 
     const updateStatus = async (next: ListingStatus) => {
         setStatusError(null);
@@ -244,7 +277,6 @@ export default function ListingsCard({
                     <option value="INACTIVE">PAUSED</option>
                     <option value="ARCHIVED">EXPIRED</option>
                 </select>
-                {/* caret */}
                 <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-700">▾</span>
             </div>
             {statusSaving && <span className="text-xs text-gray-500">Saving…</span>}
@@ -255,16 +287,16 @@ export default function ListingsCard({
     const icon = !saveEnabled ? (
         <div className="h-6 w-6" />
     ) : clicked === null ? (
-            <div className="h-6 w-6 opacity-0" />
-        ) : (
-            <img
-                src={clicked ? SaveBlack : SaveWhite}
-                className={`h-6 w-6 cursor-pointer select-none object-contain text-wrap ${saving ? "opacity-60 pointer-events-none" : ""}`}
-                alt={clicked ? "Saved" : "Save"}
-                onClick={onToggleSave}
-                draggable={false}
-                />
-        );
+        <div className="h-6 w-6 opacity-0" />
+    ) : (
+        <img
+            src={clicked ? SaveBlack : SaveWhite}
+            className={`h-6 w-6 cursor-pointer select-none object-contain text-wrap ${saving ? "opacity-60 pointer-events-none" : ""}`}
+            alt={clicked ? "Saved" : "Save"}
+            onClick={onToggleSave}
+            draggable={false}
+        />
+    );
 
     const flagIcon = !isOwner ? (
         <img
@@ -273,8 +305,9 @@ export default function ListingsCard({
             alt="Flag listing"
             draggable={false}
             onClick={onToggleFlag}
-            />
+        />
     ) : null;
+
     const style = widthStyle ? { width: widthStyle } : undefined;
 
     return (
@@ -313,15 +346,15 @@ export default function ListingsCard({
                                 {statusControl}
                             </>
                         ) : (
-                                <>
-                                    <button className="mt-10 h-12 w-35 bg-black text-white font-roboto-light rounded-4xl cursor-pointer">
-                                        Apply to join
-                                    </button>
-                                    <button className="mt-10 h-12 w-30 bg-white text-black border-black border-1 font-roboto-light rounded-4xl cursor-pointer">
-                                        Contact
-                                    </button>
-                                </>
-                            )}
+                            <>
+                                <button className="mt-10 h-12 w-35 bg-black text-white font-roboto-light rounded-4xl cursor-pointer">
+                                    Apply to join
+                                </button>
+                                <button className="mt-10 h-12 w-30 bg-white text-black border-black border-1 font-roboto-light rounded-4xl cursor-pointer">
+                                    Contact
+                                </button>
+                            </>
+                        )}
 
                         <Link
                             to={`/listings/${id}`}

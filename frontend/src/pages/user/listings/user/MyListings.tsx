@@ -5,7 +5,8 @@ import { useAuth } from "../../../../contexts/AuthContext";
 import useSWR from "swr";
 import { fetcher } from "../../../../services/listingsFetcher";
 import { Link } from "react-router-dom";
-import ReviewListingsModal from "./ReviewListingsModal"; // <-- adjust path if needed
+import ReviewListingsModal from "./ReviewListingsModal"; // <-- existing
+import ResolveListingsModal from "./ResolveListingsModal"; // <-- NEW
 
 type ListingStatus = "ACTIVE" | "INACTIVE" | "ARCHIVED";
 
@@ -29,6 +30,7 @@ function emailLocalPart(e?: string | null) {
 export default function MyListings() {
     const { user: authUser } = useAuth();
     const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+    const [isResolveModalOpen, setIsResolveModalOpen] = useState(false); // <-- NEW
 
     const me = useMemo(() => {
         if (!authUser) return null;
@@ -47,7 +49,7 @@ export default function MyListings() {
         return me.username ?? me.emailLocal ?? me.id ?? null;
     }, [me]);
 
-    const { data, error, isLoading } = useSWR(
+    const { data, error, isLoading, mutate } = useSWR( // <-- mutate added
         apiUsername ? `/listings/users/${encodeURIComponent(apiUsername)}/listings` : null,
         fetcher
     );
@@ -66,6 +68,15 @@ export default function MyListings() {
 
     const hasOutdatedListings = hasMoveInDateIssues || hasDescriptionIssues;
 
+    // NEW: all listings that need to be resolved
+    const listingsNeedingReview = useMemo(
+        () =>
+            mine.filter(
+                (l: any) => l?.moveInDateOutdatedAlert || l?.reportedOutdatedAlert
+            ),
+        [mine]
+    );
+
     const handleOpenReviewModal = () => {
         setIsReviewModalOpen(true);
     };
@@ -75,9 +86,18 @@ export default function MyListings() {
     };
 
     const handleResolveIssues = () => {
-        // TODO: hook this up to your actual "resolve" flow (e.g. navigate to a filtered list,
-        // open a dedicated page, or trigger an API call).
+        // open resolve flow and close the initial info modal
         setIsReviewModalOpen(false);
+        setIsResolveModalOpen(true);
+    };
+
+    const handleCloseResolveModal = () => {
+        setIsResolveModalOpen(false);
+    };
+
+    const handleResolveFlowCompleted = async () => {
+        // refresh listings after resolving
+        await mutate();
     };
 
     return (
@@ -133,14 +153,14 @@ export default function MyListings() {
                                 title={String(l.title ?? l.name ?? "Untitled")}
                                 author={String(
                                     l.user ??
-                                        l.author ??
-                                        l.owner ??
-                                        l.createdBy ??
-                                        (l.user?.username ??
-                                            (typeof l.user?.email === "string" && l.user.email.includes("@")
-                                                ? l.user.email.split("@")[0]
-                                                : undefined)) ??
-                                        "Unknown"
+                                    l.author ??
+                                    l.owner ??
+                                    l.createdBy ??
+                                    (l.user?.username ??
+                                        (typeof l.user?.email === "string" && l.user.email.includes("@")
+                                            ? l.user.email.split("@")[0]
+                                            : undefined)) ??
+                                    "Unknown"
                                 )}
                                 price={
                                     typeof l.price === "number"
@@ -161,10 +181,9 @@ export default function MyListings() {
                 )}
 
                 {!isLoading && !error && me && mine.length === 0 && (
-                    <div className="mt-8 p-6 bg-white border border-gray-200 rounded-lg max-w-3xl">
-                        <h2 className="text-2xl font-roboto-bold mb-2">No personal listings found</h2>
+                    <div className="mt-8">
+                        <h2 className="text-2xl font-roboto-light mb-2">No personal listings found</h2>
                         <p className="text-gray-600 mb-4">You haven't created any listings yet.</p>
-                        <Link to="/create-listing" className="px-4 py-2 bg-black text-white rounded-3xl">Create a new listing</Link>
                     </div>
                 )}
             </div>
@@ -175,6 +194,13 @@ export default function MyListings() {
                 onResolve={handleResolveIssues}
                 hasMoveInDateIssues={hasMoveInDateIssues}
                 hasDescriptionIssues={hasDescriptionIssues}
+            />
+
+            <ResolveListingsModal
+                isOpen={isResolveModalOpen}
+                onClose={handleCloseResolveModal}
+                onCompleted={handleResolveFlowCompleted}
+                listings={listingsNeedingReview}
             />
         </div>
     );
