@@ -138,7 +138,7 @@ export default function ListingsCard({
                     setViewCount(json.viewCount ?? 0);
                     setUniqueCount(json.uniqueCount ?? 0);
                 }
-            } catch {}
+            } catch { }
         })();
         return () => { cancelled = true; };
     }, [isOwner, id]);
@@ -229,10 +229,59 @@ export default function ListingsCard({
         updateStatus('ARCHIVED');
     }, [isExpired, listingStatus]);
 
+    // ---- FLAG STATE (per-user reports) ----
     const [flagged, setFlagged] = useState(false);
     const [flagSaving, setFlagSaving] = useState(false);
+    const [flagCount, setFlagCount] = useState<number | null>(null);
+
+    // Initialize flag based on whether this user has reported the listing
+    useEffect(() => {
+        if (!viewerUsername || !id) {
+            setFlagged(false);
+            setFlagCount(null);
+            return;
+        }
+
+        let cancelled = false;
+
+        (async () => {
+            try {
+                const res = await fetch(
+                    `${API_BASE}/listings/${id}/report?username=${encodeURIComponent(
+                        viewerUsername,
+                    )}`,
+                );
+                if (!res.ok) return;
+                const json = await res.json();
+                if (cancelled) return;
+
+                setFlagged(!!json.isReported);
+                if (typeof json.reportCount === "number") {
+                    setFlagCount(json.reportCount);
+                } else {
+                    setFlagCount(null);
+                }
+            } catch (e) {
+                if (!cancelled) {
+                    console.error(e);
+                    setFlagged(false);
+                    setFlagCount(null);
+                }
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [viewerUsername, id]);
 
     const onToggleFlag = async () => {
+        if (!viewerUsername) {
+            alert("Please sign in to report listings.");
+            return;
+        }
+        if (flagSaving) return;
+
         const next = !flagged;
 
         // Only confirm when reporting (turning the flag on)
@@ -243,20 +292,31 @@ export default function ListingsCard({
             }
         }
 
+        // Optimistic UI
         setFlagged(next);
         setFlagSaving(true);
         try {
-            const res = await fetch(`${API_BASE}/listings/${id}`, {
-                method: 'PATCH',
+            const res = await fetch(`${API_BASE}/listings/${id}/report`, {
+                method: next ? 'POST' : 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ reportedOutdatedAlert: next }),
+                body: JSON.stringify({ username: viewerUsername }),
             });
             if (!res.ok) {
                 throw new Error(`Server returned ${res.status}`);
             }
+            const json = await res.json();
+
+            if (typeof json.isReported === "boolean") {
+                setFlagged(json.isReported);
+            }
+            if (typeof json.reportCount === "number") {
+                setFlagCount(json.reportCount);
+            }
         } catch (e) {
-            setFlagged(!next);
             console.error(e);
+            // Revert on error
+            setFlagged(!next);
+            alert("Could not update report status.");
         } finally {
             setFlagSaving(false);
         }

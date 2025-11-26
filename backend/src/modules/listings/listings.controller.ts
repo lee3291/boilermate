@@ -112,6 +112,55 @@ export class ListingsController {
         return this.listingsService.listSavedBy({ listingId, page: p, pageSize: s });
     }
 
+    // ---- NEW: per-user reports / flags ----
+
+    @Post(':id/report')
+    async reportListing(@Param('id') listingId: string, @Body() rawBody: any) {
+        assertSaveBody(rawBody);
+        const username = rawBody.username.trim();
+        return this.listingsService.reportListing({ listingId, username });
+    }
+
+    @Delete(':id/report')
+    async unreportListing(@Param('id') listingId: string, @Body() rawBody: any) {
+        assertSaveBody(rawBody);
+        const username = rawBody.username.trim();
+        return this.listingsService.unreportListing({ listingId, username });
+    }
+
+    // NEW: check if a specific user has reported this listing (and get current report count)
+    @Get(':id/report')
+    async isReported(
+        @Param('id') listingId: string,
+        @Query('username') username?: string,
+    ) {
+        if (!username || typeof username !== 'string' || !username.trim()) {
+            throw new BadRequestException('username query param is required');
+        }
+        return this.listingsService.isReported({
+            listingId,
+            username: username.trim(),
+        });
+    }
+
+    @Get(':id/reports/count')
+    countReports(@Param('id') listingId: string) {
+        return this.listingsService.countReports(listingId);
+    }
+
+    @Get(':id/reports')
+    reportedBy(
+        @Param('id') listingId: string,
+        @Query('page') page = '1',
+        @Query('pageSize') pageSize = '20',
+    ) {
+        const p = Math.max(parseInt(String(page), 10) || 1, 1);
+        const s = Math.min(Math.max(parseInt(String(pageSize), 10) || 20, 1), 100);
+        return this.listingsService.listReportedBy({ listingId, page: p, pageSize: s });
+    }
+
+    // ----------------------------------------
+
     @Get('users/:username/saved')
     listingsSavedByUser(@Param('username') username: string, @Query('page') page = '1', @Query('pageSize') pageSize = '20') {
         const p = Math.max(parseInt(String(page), 10) || 1, 1);

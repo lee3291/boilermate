@@ -263,6 +263,164 @@ export class ListingsService {
         };
     }
 
+    // ---- NEW: per-user reports / flags ----
+
+    async reportListing(args: { listingId: string; username: string }) {
+        const exists = await this.prisma.listing.findUnique({
+            where: { id: args.listingId },
+            select: { id: true },
+        });
+        if (!exists) {
+            throw new BadRequestException(`Listing ${args.listingId} does not exist`);
+        }
+
+        try {
+            const row = await this.prisma.listingReport.create({
+                data: { listingId: args.listingId, username: args.username },
+            });
+
+            const count = await this.prisma.listingReport.count({
+                where: { listingId: args.listingId },
+            });
+
+            // reportedOutdatedAlert should be true only when there are 2 or more reports
+            await this.prisma.listing.update({
+                where: { id: args.listingId },
+                data: { reportedOutdatedAlert: count >= 2 },
+            });
+
+            return {
+                listingId: row.listingId,
+                username: row.username,
+                isReported: true as const,
+                reportCount: count,
+                createdAt: row.createdAt.toISOString(),
+            };
+        } catch (err: any) {
+            if (err?.code === P2002) {
+                const existing = await this.prisma.listingReport.findUnique({
+                    where: {
+                        username_listingId: {
+                            username: args.username,
+                            listingId: args.listingId,
+                        },
+                    },
+                });
+
+                const count = await this.prisma.listingReport.count({
+                    where: { listingId: args.listingId },
+                });
+
+                await this.prisma.listing.update({
+                    where: { id: args.listingId },
+                    data: { reportedOutdatedAlert: count >= 2 },
+                });
+
+                return {
+                    listingId: args.listingId,
+                    username: args.username,
+                    isReported: true as const,
+                    reportCount: count,
+                    createdAt:
+                        existing?.createdAt?.toISOString() ??
+                        new Date().toISOString(),
+                };
+            }
+            throw err;
+        }
+    }
+
+    async unreportListing(args: { listingId: string; username: string }) {
+        try {
+            await this.prisma.listingReport.delete({
+                where: {
+                    username_listingId: {
+                        username: args.username,
+                        listingId: args.listingId,
+                    },
+                },
+            });
+        } catch (err: any) {
+            if (err?.code !== P2025) throw err;
+        }
+
+        const count = await this.prisma.listingReport.count({
+            where: { listingId: args.listingId },
+        });
+
+        await this.prisma.listing.update({
+            where: { id: args.listingId },
+            data: { reportedOutdatedAlert: count >= 2 },
+        });
+
+        return {
+            listingId: args.listingId,
+            username: args.username,
+            isReported: false as const,
+            reportCount: count,
+        };
+    }
+
+    // Check if a user has reported this listing (and get current count)
+    async isReported(args: { listingId: string; username: string }) {
+        const row = await this.prisma.listingReport.findUnique({
+            where: {
+                username_listingId: {
+                    username: args.username,
+                    listingId: args.listingId,
+                },
+            },
+        });
+
+        const count = await this.prisma.listingReport.count({
+            where: { listingId: args.listingId },
+        });
+
+        return {
+            listingId: args.listingId,
+            username: args.username,
+            isReported: !!row,
+            reportCount: count,
+        };
+    }
+
+    async countReports(listingId: string) {
+        const count = await this.prisma.listingReport.count({ where: { listingId } });
+        return { listingId, count };
+    }
+
+    async listReportedBy(args: {
+        listingId: string;
+        page: number;
+        pageSize: number;
+    }) {
+        const { listingId, page, pageSize } = args;
+
+        const [total, rows] = await this.prisma.$transaction([
+            this.prisma.listingReport.count({ where: { listingId } }),
+            this.prisma.listingReport.findMany({
+                where: { listingId },
+                select: { username: true, createdAt: true },
+                orderBy: { createdAt: 'desc' },
+                skip: (page - 1) * pageSize,
+                take: pageSize,
+            }),
+        ]);
+
+        return {
+            listingId,
+            reports: rows.map((r) => ({
+                username: r.username,
+                createdAt: r.createdAt.toISOString(),
+            })),
+            page,
+            pageSize,
+            total,
+        };
+    }
+
+    // ----------------------------------------
+
     async listingsSavedByUser(args: {
         username: string;
         page: number;

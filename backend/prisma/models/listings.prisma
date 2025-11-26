@@ -34,6 +34,8 @@ model Listing {
 
   saves       Saved[]
 
+  reports     ListingReport[]
+
   userId      String?
   user_reference     User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -57,6 +59,18 @@ model Saved {
 }
 
 model ListingView {
+  username   String
+  listingId  String
+  createdAt  DateTime      @default(now())
+
+  listing    Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@id([username, listingId])
+  @@index([username])
+  @@index([listingId])
+}
+
+model ListingReport {
   username   String
   listingId  String
   createdAt  DateTime      @default(now())
