@@ -51,7 +51,7 @@ export default function RoommateSection({
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="rounded-full bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-2 text-white font-medium shadow-md hover:shadow-lg transition-all hover:scale-105"
+          className="rounded-full bg-linear-to-r from-purple-500 to-pink-500 px-6 py-2 text-white font-medium shadow-md hover:shadow-lg transition-all hover:scale-105"
         >
           + Add Preference
         </button>

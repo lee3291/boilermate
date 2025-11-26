@@ -11,6 +11,7 @@ import Navbar from '../components/Navbar';
 import RoommatesSidebar from './components/RoommatesSidebar';
 import FilterBar from './components/FilterBar';
 import ProfileCard from './components/ProfileCard';
+import CompareCart from './components/CompareCart';
 
 const PAGE_SIZE = 9; // 3x3 grid
 
@@ -28,12 +29,18 @@ export default function RoommatesPage() {
     page,
     totalPages,
     total,
+    searchTotal,
+    favoritesTotal,
+    likedTotal,
+    dislikedTotal,
+    countsFetched,
     viewMode,
     allPreferences,
     selectedPreferences,
     importanceOperator,
     importanceValue,
     expandedCategories,
+    compareUsers,
     setPage,
     handleSetViewMode,
     handleApplyFilters,
@@ -44,6 +51,10 @@ export default function RoommatesPage() {
     handleToggleCategory,
     handleSetImportanceOperator,
     handleSetImportanceValue,
+    handleToggleCompare,
+    handleRemoveFromCompare,
+    handleClearCompare,
+    isUserInCompare,
   } = useRoommatesLogic(userId);
 
   const handleViewProfile = (profileId: string) => {
@@ -88,7 +99,11 @@ export default function RoommatesPage() {
         <RoommatesSidebar
           viewMode={viewMode}
           onSetViewMode={handleSetViewMode}
-          total={total}
+          searchTotal={searchTotal}
+          favoritesTotal={favoritesTotal}
+          likedTotal={likedTotal}
+          dislikedTotal={dislikedTotal}
+          countsFetched={countsFetched}
           page={page}
           pageSize={PAGE_SIZE}
           loading={loading}
@@ -123,6 +138,9 @@ export default function RoommatesPage() {
                 onToggleFavorite={handleToggleFavorite}
                 onToggleVote={handleToggleVote}
                 isOwnProfile={profile.id === userId}
+                onToggleCompare={handleToggleCompare}
+                isInCompare={isUserInCompare(profile.id)}
+                canAddMore={compareUsers.length < 3}
               />
             ))}
           </div>
@@ -153,6 +171,13 @@ export default function RoommatesPage() {
           )}
         </div>
       </div>
+
+      {/* Compare Cart - Fixed at bottom-right */}
+      <CompareCart
+        users={compareUsers}
+        onRemove={handleRemoveFromCompare}
+        onClear={handleClearCompare}
+      />
     </div>
   );
 }

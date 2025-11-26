@@ -37,6 +37,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ProfilePage from './pages/user/profile/ProfilePage.tsx';
 import RoommatesPage from './pages/user/roommates/RoommatesPage.tsx';
 import ProfileViewPage from './pages/user/roommates/ProfileViewPage.tsx';
+import ComparePage from './pages/user/roommates/ComparePage.tsx';
 // Ethan
 //import PublicProfilePage from './pages/user/PublicProfilePage';
 
@@ -107,6 +108,10 @@ const router = createBrowserRouter([
       {
         path: '/roommates',
         element: <RoommatesPage />,
+      },
+      {
+        path: '/roommates/compare',
+        element: <ComparePage />,
       },
       {
         path: '/profile/:userId',

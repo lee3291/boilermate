@@ -1,4 +1,5 @@
 import type { ProfileSummary } from '@/types/profile';
+import { Check } from 'lucide-react';
 
 interface ProfileCardProps {
   profile: ProfileSummary;
@@ -6,9 +7,21 @@ interface ProfileCardProps {
   onToggleFavorite: (profileId: string, isFavorited: boolean) => Promise<void>;
   onToggleVote: (profileId: string, currentVote: 'LIKE' | 'DISLIKE' | null, newVote: 'LIKE' | 'DISLIKE') => Promise<void>;
   isOwnProfile: boolean;
+  onToggleCompare?: (userId: string, userEmail: string) => void;
+  isInCompare?: boolean;
+  canAddMore?: boolean;
 }
 
-export default function ProfileCard({ profile, onViewProfile, onToggleFavorite, onToggleVote, isOwnProfile }: ProfileCardProps) {
+export default function ProfileCard({ 
+  profile, 
+  onViewProfile, 
+  onToggleFavorite, 
+  onToggleVote, 
+  isOwnProfile,
+  onToggleCompare,
+  isInCompare = false,
+  canAddMore = true,
+}: ProfileCardProps) {
   // Helper to get display name (TODO: Use real name fields when available)
   const displayName = profile.email.split('@')[0]; // Use email username part for now
   const isFavorited = profile.isFavoritedByMe || false;
@@ -18,14 +31,41 @@ export default function ProfileCard({ profile, onViewProfile, onToggleFavorite, 
     <div className='relative'>
       <div className="absolute h-100 w-140 z-0 bg-black/20 blur-[5px] rounded-lg" />
       <div className="relative h-100 w-140 z-10 border-black border-[1.5px] bg-white rounded-lg">
-        {/* Heart button - top right */}
+        {/* Compare checkbox - top right */}
+        {!isOwnProfile && onToggleCompare && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleCompare(profile.id, profile.email);
+            }}
+            disabled={!isInCompare && !canAddMore}
+            className={`absolute top-4 right-4 z-20 w-10 h-10 rounded border-2 transition-all flex items-center justify-center ${
+              isInCompare
+                ? 'bg-blue-600 border-blue-600 text-white'
+                : canAddMore
+                ? 'bg-white border-gray-300 hover:border-blue-600'
+                : 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
+            }`}
+            title={
+              isInCompare
+                ? 'Remove from comparison'
+                : canAddMore
+                ? 'Add to comparison'
+                : 'Maximum 3 users for comparison'
+            }
+          >
+            {isInCompare && <Check size={20} strokeWidth={3} />}
+          </button>
+        )}
+        
+        {/* Heart button - below compare checkbox */}
         {!isOwnProfile && (
           <button
             onClick={(e) => {
               e.stopPropagation();
               onToggleFavorite(profile.id, isFavorited);
             }}
-            className='absolute top-4 right-4 z-20 p-2 rounded-full bg-white/90 hover:bg-white shadow-md transition-all hover:scale-110'
+            className='absolute top-16 right-4 z-20 p-2 rounded-full bg-white/90 hover:bg-white shadow-md transition-all hover:scale-110'
             title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
           >
             <span className='text-2xl'>
