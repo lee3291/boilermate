@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { useAuth } from '../../../contexts/AuthContext';
 import SaveBlack from "../../../assets/images/save-black.png";
 import SaveWhite from "../../../assets/images/save-white.png";
+import FlagBlack from "../../../assets/images/flag-black.png";
+import FlagWhite from "../../../assets/images/flag-white.png";
 import { toggleSave } from "../../../services/saves";
 import { getSavedListings } from "../../../services/savedListings";
 import { getSavedHint, setSavedHint } from "../../../services/savedCache";
@@ -37,7 +39,7 @@ export default function ListingsCard({
     location,
     moveInStart,
     moveInEnd,
-    status, // NEW
+    status,
     widthClass = "w-140",
     widthStyle,
     saveEnabled = true,
@@ -57,7 +59,6 @@ export default function ListingsCard({
         return null;
     }, [authUser]);
 
-    // seed saved-state from cache
     useEffect(() => {
         if (!saveEnabled) {
             setClicked(false);
@@ -72,7 +73,6 @@ export default function ListingsCard({
         else setClicked(null);
     }, [viewerUsername, id, saveEnabled]);
 
-    // confirm saved-state from network
     useEffect(() => {
         if (!saveEnabled) return;
         let cancelled = false;
@@ -117,7 +117,6 @@ export default function ListingsCard({
         }
     };
 
-    // ----- Owner counts (read-only on card; no increments here) -----
     const [viewCount, setViewCount] = useState<number | null>(null);
     const [uniqueCount, setUniqueCount] = useState<number | null>(null);
 
@@ -139,25 +138,72 @@ export default function ListingsCard({
                     setViewCount(json.viewCount ?? 0);
                     setUniqueCount(json.uniqueCount ?? 0);
                 }
-            } catch {}
+            } catch { }
         })();
         return () => { cancelled = true; };
     }, [isOwner, id]);
 
-    // ---------- Owner status control (dropdown) ----------
     const [statusSaving, setStatusSaving] = useState(false);
     const [statusError, setStatusError] = useState<string | null>(null);
     const [listingStatus, setListingStatus] = useState<ListingStatus>(status ?? 'ACTIVE');
 
-    // keep local state in sync if parent prop changes
     useEffect(() => {
         if (status) setListingStatus(status);
     }, [status]);
 
+    const isExpired = useMemo(() => {
+        if (!moveInEnd) return false;
+        const endDate = new Date(moveInEnd);
+        if (Number.isNaN(endDate.getTime())) return false;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        endDate.setHours(0, 0, 0, 0);
+
+        return endDate < today;
+    }, [moveInEnd]);
+
+    useEffect(() => {
+        if (!isOwner) return;
+        if (!moveInEnd) return;
+
+        const endDate = new Date(moveInEnd);
+        if (Number.isNaN(endDate.getTime())) return;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        endDate.setHours(0, 0, 0, 0);
+
+        const shouldFlagOutdated = endDate < today; // "move out date is after today"
+
+        if (!shouldFlagOutdated) return;
+
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch(`${API_BASE}/listings/${id}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ moveInDateOutdatedAlert: true }),
+                });
+                if (!res.ok) {
+                    console.error(
+                        "[ListingsCard] Failed to set moveInDateOutdatedAlert",
+                        res.status
+                    );
+                }
+            } catch (e) {
+                if (!cancelled) console.error(e);
+            }
+        })();
+
+        return () => { cancelled = true; };
+    }, [id, moveInEnd, isOwner]);
+
     const updateStatus = async (next: ListingStatus) => {
         setStatusError(null);
         const prev = listingStatus;
-        setListingStatus(next);       // optimistic
+        setListingStatus(next);
         setStatusSaving(true);
         try {
             const res = await fetch(`${API_BASE}/listings/${id}`, {
@@ -169,10 +215,110 @@ export default function ListingsCard({
                 throw new Error(`Server returned ${res.status}`);
             }
         } catch (e: any) {
-            setListingStatus(prev);   // revert on error
+            setListingStatus(prev);
             setStatusError(e?.message || 'Failed to update status');
         } finally {
             setStatusSaving(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!isExpired) return;
+        if (listingStatus === 'ARCHIVED') return;
+
+        updateStatus('ARCHIVED');
+    }, [isExpired, listingStatus]);
+
+    // ---- FLAG STATE (per-user reports) ----
+    const [flagged, setFlagged] = useState(false);
+    const [flagSaving, setFlagSaving] = useState(false);
+    const [flagCount, setFlagCount] = useState<number | null>(null);
+
+    // Initialize flag based on whether this user has reported the listing
+    useEffect(() => {
+        if (!viewerUsername || !id) {
+            setFlagged(false);
+            setFlagCount(null);
+            return;
+        }
+
+        let cancelled = false;
+
+        (async () => {
+            try {
+                const res = await fetch(
+                    `${API_BASE}/listings/${id}/report?username=${encodeURIComponent(
+                        viewerUsername,
+                    )}`,
+                );
+                if (!res.ok) return;
+                const json = await res.json();
+                if (cancelled) return;
+
+                setFlagged(!!json.isReported);
+                if (typeof json.reportCount === "number") {
+                    setFlagCount(json.reportCount);
+                } else {
+                    setFlagCount(null);
+                }
+            } catch (e) {
+                if (!cancelled) {
+                    console.error(e);
+                    setFlagged(false);
+                    setFlagCount(null);
+                }
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [viewerUsername, id]);
+
+    const onToggleFlag = async () => {
+        if (!viewerUsername) {
+            alert("Please sign in to report listings.");
+            return;
+        }
+        if (flagSaving) return;
+
+        const next = !flagged;
+
+        // Only confirm when reporting (turning the flag on)
+        if (next) {
+            const confirmed = window.confirm("Are you sure you want to report this listing as outdated?");
+            if (!confirmed) {
+                return;
+            }
+        }
+
+        // Optimistic UI
+        setFlagged(next);
+        setFlagSaving(true);
+        try {
+            const res = await fetch(`${API_BASE}/listings/${id}/report`, {
+                method: next ? 'POST' : 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: viewerUsername }),
+            });
+            if (!res.ok) {
+                throw new Error(`Server returned ${res.status}`);
+            }
+            const json = await res.json();
+
+            if (typeof json.isReported === "boolean") {
+                setFlagged(json.isReported);
+            }
+            if (typeof json.reportCount === "number") {
+                setFlagCount(json.reportCount);
+            }
+        } catch (e) {
+            console.error(e);
+            // Revert on error
+            setFlagged(!next);
+            alert("Could not update report status.");
+        } finally {
+            setFlagSaving(false);
         }
     };
 
@@ -191,7 +337,6 @@ export default function ListingsCard({
                     <option value="INACTIVE">PAUSED</option>
                     <option value="ARCHIVED">EXPIRED</option>
                 </select>
-                {/* caret */}
                 <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-700">▾</span>
             </div>
             {statusSaving && <span className="text-xs text-gray-500">Saving…</span>}
@@ -206,12 +351,22 @@ export default function ListingsCard({
     ) : (
         <img
             src={clicked ? SaveBlack : SaveWhite}
-            className={`h-6 w-auto cursor-pointer select-none ${saving ? "opacity-60 pointer-events-none" : ""}`}
+            className={`h-6 w-6 cursor-pointer select-none object-contain text-wrap ${saving ? "opacity-60 pointer-events-none" : ""}`}
             alt={clicked ? "Saved" : "Save"}
             onClick={onToggleSave}
             draggable={false}
         />
     );
+
+    const flagIcon = !isOwner ? (
+        <img
+            src={flagged ? FlagBlack : FlagWhite}
+            className={`h-6 w-6 cursor-pointer select-none object-contain ${flagSaving ? "opacity-60 pointer-events-none" : ""}`}
+            alt="Flag listing"
+            draggable={false}
+            onClick={onToggleFlag}
+        />
+    ) : null;
 
     const style = widthStyle ? { width: widthStyle } : undefined;
 
@@ -220,13 +375,16 @@ export default function ListingsCard({
             <div className={`absolute h-100 ${widthClass} z-0 bg-black/20 blur-[5px] rounded-lg`} style={style} />
             <div className={`relative h-100 ${widthClass} z-10 border-black border-[1.5px] bg-white rounded-lg`} style={style}>
                 <div className="py-5 px-5">
-                    <div className="flex justify-between">
-                        <h1 className="font-roboto-regular text-3xl tracking-[-0.4pt]">{title}</h1>
-                        <div className="flex items-center gap-3">
+                    <div className="flex items-center">
+                        <h1 className="flex-[3] font-roboto-regular text-3xl tracking-[-0.4pt]">{title}</h1>
+                        <div className="flex-[2] flex items-center">
                             <h1 className="mt-1 font-sourceserif4-18pt-regular text-[20px] text-gray-400 tracking-[-0.4pt]">
                                 {location}
                             </h1>
-                            {icon}
+                            <div className="shrink-0 flex flex-col gap-3">
+                                {icon}
+                                {flagIcon}
+                            </div>
                         </div>
                     </div>
 
@@ -243,7 +401,6 @@ export default function ListingsCard({
                     <h1 className="pt-2 font-roboto-light text-lg text-wrap">{body}</h1>
 
                     <div className="flex justify-start gap-3">
-                        {/* If owner: show status dropdown; else: show Apply/Contact */}
                         {isOwner ? (
                             <>
                                 {statusControl}
