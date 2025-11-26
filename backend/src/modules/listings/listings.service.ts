@@ -2,9 +2,11 @@ import {
     Injectable,
     BadRequestException,
     NotFoundException,
+    Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../core/database/prisma.service';
 import { Prisma } from '@prisma/client';
+import { MailService } from '../mail/mail.service';
 
 type LegacyCreateListingDto = {
     title: string;
@@ -62,7 +64,12 @@ const P2025 = 'P2025';
 
 @Injectable()
 export class ListingsService {
-    constructor(private readonly prisma: PrismaService) {}
+    private readonly logger = new Logger(ListingsService.name);
+
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly mailService: MailService,
+    ) {}
 
     private toYMD(d: Date | null): string | null {
         return d ? d.toISOString().slice(0, 10) : null;
@@ -142,6 +149,8 @@ export class ListingsService {
         };
     }
 
+    // ----------------- BASIC LISTING QUERIES -----------------
+
     async findActive() {
         // Fallback: join User by Purdue username (before @) if user_reference is null
         const listings = await this.prisma.listing.findMany({
@@ -169,8 +178,62 @@ export class ListingsService {
     ): Promise<{ listing: ListingResponse }> {
         const data = this.normalizeCreateInput(input);
         const created = await this.prisma.listing.create({ data });
+
+        // ---- Notification Logic for Followers (from first service) ----
+        try {
+            // 1. Find the author of the listing to get their followers.
+            const author = await this.prisma.user.findFirst({
+                where: { email: { startsWith: data.user + '@' } },
+                select: { id: true, legalName: true },
+            });
+
+            if (author) {
+                const follows = await this.prisma.follow.findMany({
+                    where: { followingId: author.id },
+                    include: {
+                        follower: {
+                            select: { email: true },
+                        },
+                    },
+                });
+
+                if (follows.length > 0) {
+                    const followerEmails = follows.map((follow) => follow.follower.email);
+                    const authorName = author.legalName || data.user;
+                    const listingUrl = `${
+                        process.env.FRONTEND_URL ?? 'http://localhost:5173'
+                    }/listings/${created.id}`;
+                    const subject = `New Listing from ${authorName}!`;
+
+                    followerEmails.forEach((email) => {
+                        this.mailService.sendTemplatedEmail(
+                            email,
+                            subject,
+                            'new-listing-notification',
+                            {
+                                authorName,
+                                listingTitle: created.title,
+                                listingUrl,
+                            },
+                        );
+                    });
+
+                    this.logger.log(
+                        `Queued new listing notification for ${followerEmails.length} followers of user ${data.user}.`,
+                    );
+                }
+            }
+        } catch (error: any) {
+            this.logger.warn(
+                `Failed to queue new listing notification for listing ${created.id}: ${error.message}`,
+            );
+        }
+        // ---- End of Notification Logic ----
+
         return { listing: this.toListingResponse(created) };
     }
+
+    // ----------------- SAVES -----------------
 
     async saveListing(args: { listingId: string; username: string }) {
         const exists = await this.prisma.listing.findUnique({
@@ -263,7 +326,7 @@ export class ListingsService {
         };
     }
 
-    // ---- NEW: per-user reports / flags ----
+    // ----------------- REPORTS / OUTDATED FLAGS -----------------
 
     async reportListing(args: { listingId: string; username: string }) {
         const exists = await this.prisma.listing.findUnique({
@@ -322,8 +385,7 @@ export class ListingsService {
                     isReported: true as const,
                     reportCount: count,
                     createdAt:
-                        existing?.createdAt?.toISOString() ??
-                        new Date().toISOString(),
+                        existing?.createdAt?.toISOString() ?? new Date().toISOString(),
                 };
             }
             throw err;
@@ -361,7 +423,6 @@ export class ListingsService {
         };
     }
 
-    // Check if a user has reported this listing (and get current count)
     async isReported(args: { listingId: string; username: string }) {
         const row = await this.prisma.listingReport.findUnique({
             where: {
@@ -419,7 +480,7 @@ export class ListingsService {
         };
     }
 
-    // ----------------------------------------
+    // ----------------- VIEWS -----------------
 
     async listingsSavedByUser(args: {
         username: string;
@@ -523,6 +584,8 @@ export class ListingsService {
         return { listingId, count };
     }
 
+    // ----------------- CRUD & USER FILTERS -----------------
+
     async findOne(listingID: string) {
         const listing = await this.prisma.listing.findUnique({
             where: { id: listingID },
@@ -595,7 +658,7 @@ export class ListingsService {
         // Only select columns that you KNOW exist in the current DB
         const user = await this.prisma.user.findFirst({
             where: { email: { startsWith: username + '@' }, status: 'ACTIVE' },
-            select: { id: true }, // or email/status/etc, but NOT legalName
+            select: { id: true }, // or email/status/etc, but NOT legalName here
         });
 
         if (!user) return [];
