@@ -34,6 +34,8 @@ import type {
   GetMyVotesResponse,
   GetVoteStatsRequest,
   VoteStatsResponse,
+  CompareProfilesRequest,
+  CompareProfilesResponse,
 } from '../types/profile';
 
 const BASE_URL = '/profile';
@@ -243,4 +245,55 @@ export const toggleVote = async (
     // Add or update vote
     await voteUser({ voterId, votedUserId, voteType: newVote });
   }
+};
+
+/**
+ * Compare multiple user profiles
+ * Fetches full details for multiple users for side-by-side comparison
+ */
+export const getCompareProfiles = async (
+  request: CompareProfilesRequest,
+): Promise<CompareProfilesResponse> => {
+  const { userIds, viewerId } = request;
+
+  if (userIds.length === 0) {
+    throw new Error('At least one user ID is required');
+  }
+
+  const params: any = {
+    userIds: userIds.join(','), // Send as comma-separated string
+  };
+
+  if (viewerId) {
+    params.viewerId = viewerId;
+  }
+
+  const response = await api.get(`${BASE_URL}/compare`, { params });
+  return response.data;
+}
+
+/**
+ * Follow a user
+ */
+export const followUser = async (userId: string): Promise<any> => {
+  const response = await api.post(`${BASE_URL}/follow/${userId}`);
+  return response.data;
+};
+
+/**
+ * Unfollow a user
+ */
+export const unfollowUser = async (userId: string): Promise<any> => {
+  const response = await api.delete(`${BASE_URL}/follow/${userId}`);
+  return response.data;
+};
+
+/**
+ * Check if current user is following another user
+ */
+export const getIsFollowing = async (
+  userId: string,
+): Promise<{ isFollowing: boolean }> => {
+  const response = await api.get(`${BASE_URL}/${userId}/is-following`);
+  return response.data;
 };

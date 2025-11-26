@@ -8,11 +8,14 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '@core/database/prisma.service';
+import { MailService } from '@modules/mail/mail.service';
 import {
   GetProfileDetailsDto,
   SearchUsersDto,
+  GetCompareProfilesDto,
   AddFavoriteDto,
   RemoveFavoriteDto,
   GetFavoritesDto,
@@ -27,10 +30,13 @@ import {
   VoteResponseDto,
   VoteStatsDto,
   GetMyVotesResponseDto,
+  CompareProfileDto,
+  CompareProfilesGroupedResponseDto,
 } from './dto';
 
 @Injectable()
 export class ProfileService {
+  private readonly logger = new Logger(ProfileService.name);
   /**
    * Update current user's avatar URL
    */
@@ -73,9 +79,50 @@ export class ProfileService {
       where: { id: userId },
       data,
     });
+
+    // --- EMAIL NOTIFICATION ---
+    // After a user updates their profile, find their followers and notify them.
+    const followers = await this.prisma.follow.findMany({
+      where: { followingId: userId },
+      include: { follower: true },
+    });
+
+    if (followers.length > 0) {
+      const followerEmails = followers.map((f) => f.follower.email);
+      const updatedUser = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (updatedUser) {
+        const username = updatedUser.email.split('@')[0];
+        this.logger.log(
+          `Notifying ${followerEmails.length} followers of profile update for ${username}`,
+        );
+
+        const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:5173';
+        const profileUrl = `${frontendUrl}/profile/${userId}`;
+
+        followerEmails.forEach((email) => {
+          this.mailService.sendTemplatedEmail(
+            email,
+            `Boilermate: ${username} updated their profile!`,
+            'profile-update-notification',
+            {
+              username,
+              profileUrl,
+            },
+          );
+        });
+      }
+    }
+    // --- END EMAIL NOTIFICATION ---
+
     return user;
   }
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mailService: MailService,
+  ) {}
 
   /**
    * Get current user's full profile
@@ -836,5 +883,198 @@ export class ProfileService {
     ]);
 
     return VoteStatsDto.fromStats(userId, likesReceived, dislikesReceived);
+  }
+
+  /**
+   * Compare multiple user profiles
+   * Fetches full profile details for multiple users at once
+   * Similar to getProfile but for multiple users
+   */
+  async getCompareProfiles(dto: GetCompareProfilesDto): Promise<any> {
+    const { userIds: userIdsString, viewerId } = dto;
+
+    // Parse comma-separated user IDs
+    const userIds = userIdsString
+      .split(',')
+      .map((id) => id.trim())
+      .filter((id) => id.length > 0);
+
+    if (userIds.length === 0) {
+      throw new BadRequestException('At least one user ID is required');
+    }
+
+    if (userIds.length > 10) {
+      throw new BadRequestException(
+        'Maximum 10 profiles can be compared at once',
+      );
+    }
+
+    // Fetch all users with their preferences
+    const users = await this.prisma.user.findMany({
+      where: {
+        id: { in: userIds },
+        status: 'ACTIVE',
+        searchStatus: { not: 'HIDDEN' },
+      },
+      include: {
+        images: {
+          orderBy: { createdAt: 'asc' },
+        },
+        profilePreferences: {
+          where: { visibility: 'PUBLIC' },
+          include: {
+            preference: true,
+          },
+        },
+        roommatePreferences: {
+          where: { visibility: 'PUBLIC' },
+          include: {
+            preference: true,
+          },
+        },
+      },
+    });
+
+    if (users.length === 0) {
+      throw new NotFoundException('No valid profiles found');
+    }
+
+    // Get favorite status and votes if viewer is provided
+    let favoritedUserIds = new Set<string>();
+    let myVoteMap = new Map<string, 'LIKE' | 'DISLIKE'>();
+
+    if (viewerId) {
+      const [favorites, votes] = await Promise.all([
+        this.prisma.favoriteMatch.findMany({
+          where: {
+            userId: viewerId,
+            favoritedUserId: { in: userIds },
+          },
+          select: {
+            favoritedUserId: true,
+          },
+        }),
+        this.prisma.userVote.findMany({
+          where: {
+            voterId: viewerId,
+            votedUserId: { in: userIds },
+          },
+          select: {
+            votedUserId: true,
+            voteType: true,
+          },
+        }),
+      ]);
+
+      favoritedUserIds = new Set(favorites.map((f) => f.favoritedUserId));
+      votes.forEach((vote) => {
+        myVoteMap.set(vote.votedUserId, vote.voteType as 'LIKE' | 'DISLIKE');
+      });
+    }
+
+    // Get vote counts for all users
+    const voteCounts = await this.prisma.userVote.groupBy({
+      by: ['votedUserId', 'voteType'],
+      where: {
+        votedUserId: { in: userIds },
+      },
+      _count: true,
+    });
+
+    // Build vote map
+    const voteMap = new Map<string, { likes: number; dislikes: number }>();
+    voteCounts.forEach((vc: any) => {
+      const existing = voteMap.get(vc.votedUserId) || { likes: 0, dislikes: 0 };
+      if (vc.voteType === 'LIKE') {
+        existing.likes = vc._count;
+      } else if (vc.voteType === 'DISLIKE') {
+        existing.dislikes = vc._count;
+      }
+      voteMap.set(vc.votedUserId, existing);
+    });
+
+    // Transform to CompareProfileDto array (with grouped preferences)
+    const profiles = users.map((user: any) => {
+      const isFavoritedByMe = favoritedUserIds.has(user.id);
+      const myVoteType = myVoteMap.get(user.id) || null;
+      const voteCounts = voteMap.get(user.id) || { likes: 0, dislikes: 0 };
+
+      return CompareProfileDto.fromProfile(
+        user,
+        isFavoritedByMe,
+        myVoteType,
+        voteCounts.likes,
+        voteCounts.dislikes,
+      );
+    });
+
+    return CompareProfilesGroupedResponseDto.fromProfiles(profiles);
+  }
+  /*
+   * Follow a user
+   */
+  async followUser(
+    followerId: string,
+    followingId: string,
+  ): Promise<{ message: string; followId: string }> {
+    if (followerId === followingId) {
+      throw new BadRequestException('You cannot follow yourself');
+    }
+    try {
+      const follow = await this.prisma.follow.create({
+        data: {
+          followerId,
+          followingId,
+        },
+      });
+      return { message: 'Followed user successfully', followId: follow.id };
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException('Already following this user');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Unfollow a user
+   */
+  async unfollowUser(
+    followerId: string,
+    followingId: string,
+  ): Promise<{ message: string }> {
+    const follow = await this.prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId,
+          followingId,
+        },
+      },
+    });
+    if (!follow) {
+      throw new NotFoundException('Follow relationship not found');
+    }
+    await this.prisma.follow.delete({
+      where: { id: follow.id },
+    });
+    return { message: 'Unfollowed user successfully' };
+  }
+
+  /**
+   * Check if follower is following another user
+   */
+  async isFollowing(
+    followerId: string,
+    followingId: string,
+  ): Promise<{ isFollowing: boolean }> {
+    const follow = await this.prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId,
+          followingId,
+        },
+      },
+    });
+    return { isFollowing: !!follow };
   }
 }

@@ -54,11 +54,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = (newToken: string) => {
     setToken(newToken);
+    // Clear comparison data when logging in to a different account
+    localStorage.removeItem('compareUserIds');
   };
 
   const logout = () => {
     setToken(null);
     localStorage.removeItem('access_token');
+    // Clear comparison data on logout
+    localStorage.removeItem('compareUserIds');
   };
 
   return (
