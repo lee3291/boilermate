@@ -174,7 +174,7 @@ export default function ListingsCard({
         today.setHours(0, 0, 0, 0);
         endDate.setHours(0, 0, 0, 0);
 
-        const shouldFlagOutdated = endDate < today; // "move out date is after today"
+        const shouldFlagOutdated = endDate < today;
 
         if (!shouldFlagOutdated) return;
 
@@ -229,12 +229,12 @@ export default function ListingsCard({
         updateStatus('ARCHIVED');
     }, [isExpired, listingStatus]);
 
-    // ---- FLAG STATE (per-user reports) ----
+
     const [flagged, setFlagged] = useState(false);
     const [flagSaving, setFlagSaving] = useState(false);
     const [flagCount, setFlagCount] = useState<number | null>(null);
 
-    // Initialize flag based on whether this user has reported the listing
+
     useEffect(() => {
         if (!viewerUsername || !id) {
             setFlagged(false);
@@ -284,7 +284,7 @@ export default function ListingsCard({
 
         const next = !flagged;
 
-        // Only confirm when reporting (turning the flag on)
+
         if (next) {
             const confirmed = window.confirm("Are you sure you want to report this listing as outdated?");
             if (!confirmed) {
@@ -292,7 +292,7 @@ export default function ListingsCard({
             }
         }
 
-        // Optimistic UI
+
         setFlagged(next);
         setFlagSaving(true);
         try {
@@ -314,7 +314,7 @@ export default function ListingsCard({
             }
         } catch (e) {
             console.error(e);
-            // Revert on error
+
             setFlagged(!next);
             alert("Could not update report status.");
         } finally {

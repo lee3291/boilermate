@@ -5,7 +5,7 @@ export type ListingForCompare = {
     title: string;
     user: string;
     description?: string;
-    price: number; // cents
+    price: number;
     location: string;
     moveInStart: string | null;
     moveInEnd: string | null;

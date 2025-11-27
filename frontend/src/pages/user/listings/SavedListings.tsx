@@ -4,14 +4,14 @@ import Navbar from '../components/Navbar';
 
 import { getSavedListings } from '../../../services/savedListings';
 import { useAuth } from '../../../contexts/AuthContext';
-import ListingComparison, { type ListingForCompare } from './ListingComparison'; // <- ADD
+import ListingComparison, { type ListingForCompare } from './ListingComparison';
 
 type Listing = {
     id: string;
     title: string;
     user: string;
     description?: string;
-    price: number; // cents
+    price: number;
     location: string;
     moveInStart: string | null;
     moveInEnd: string | null;
@@ -75,7 +75,7 @@ export default function SavedListings() {
                 if (ac.signal.aborted) return;
                 setListings(res.listings);
                 setTotal(res.total);
-                // Clear selections if items changed
+
                 clearSelection();
             } catch (e: any) {
                 if (ac.signal.aborted) return;
@@ -88,7 +88,7 @@ export default function SavedListings() {
         return () => ac.abort();
     }, [listingUser, page]);
 
-    // show auth-loading state if auth is still initializing
+
     if (authLoading) {
         return (
             <div className='w-full'>

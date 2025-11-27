@@ -112,7 +112,7 @@ export class ListingsController {
         return this.listingsService.listSavedBy({ listingId, page: p, pageSize: s });
     }
 
-    // ---- NEW: per-user reports / flags ----
+
 
     @Post(':id/report')
     async reportListing(@Param('id') listingId: string, @Body() rawBody: any) {
@@ -128,7 +128,7 @@ export class ListingsController {
         return this.listingsService.unreportListing({ listingId, username });
     }
 
-    // NEW: check if a specific user has reported this listing (and get current report count)
+
     @Get(':id/report')
     async isReported(
         @Param('id') listingId: string,
@@ -158,8 +158,6 @@ export class ListingsController {
         const s = Math.min(Math.max(parseInt(String(pageSize), 10) || 20, 1), 100);
         return this.listingsService.listReportedBy({ listingId, page: p, pageSize: s });
     }
-
-    // ----------------------------------------
 
     @Get('users/:username/saved')
     listingsSavedByUser(@Param('username') username: string, @Query('page') page = '1', @Query('pageSize') pageSize = '20') {

@@ -124,7 +124,7 @@ export default function CreateListingModal({
                 title: title.trim(),
                 user: listingUser,
                 description: description.trim(),
-                price: Math.round(Number(price || 0) * 100), // cents, matches Int in schema
+                price: Math.round(Number(price || 0) * 100),
                 location: location.trim(),
                 moveInStart: toISODateOrNull(moveInStart),
                 moveInEnd: toISODateOrNull(moveInEnd),
@@ -207,7 +207,6 @@ export default function CreateListingModal({
                                 />
                         </div>
 
-                        {/* Price + Location */}
                         <div className="grid grid-cols-1 gap-3">
                             <div className="space-y-1">
                                 <label htmlFor="price" className="font-roboto-regular text-gray-700">
@@ -242,7 +241,6 @@ export default function CreateListingModal({
                             </div>
                         </div>
 
-                        {/* Roommates + (optional) anything else */}
                         <div className="grid grid-cols-1 gap-3">
                             <div className="space-y-1">
                                 <label htmlFor="roommates" className="font-roboto-regular text-gray-700">
@@ -256,7 +254,7 @@ export default function CreateListingModal({
                                     step={1}
                                     value={roommates}
                                     onChange={(e) => {
-                                        // keep it numeric-only; allow blank for editing
+
                                         const v = e.target.value;
                                         if (v === "") return setRoommates("");
                                         if (/^\d+$/.test(v)) setRoommates(v);
@@ -267,7 +265,6 @@ export default function CreateListingModal({
                                     />
                             </div>
 
-                            {/* spacer, or you could add another field later */}
                             <div />
                         </div>
 
