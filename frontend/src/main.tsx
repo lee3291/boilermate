@@ -50,6 +50,11 @@ import ReCaptchaPage from './pages/reCaptcha/reCaptchaForm';
 import AnnouncementsDashboard from './pages/admin/AnnouncementsDashboard.tsx';
 import UserAnnouncements from "./pages/admin/UserAnnouncements";
 
+import { AuthProvider } from './contexts/AuthContext';
+import { Home } from 'lucide-react';
+import MyListings from './pages/user/listings/user/MyListings.tsx';
+import BugDashboard from './pages/admin/BugDashboard.tsx';
+import Dashboard from './pages/user/listings/dashboard/Dashboard.tsx';
 
 const router = createBrowserRouter([
   // Public routes
@@ -187,15 +192,14 @@ const router = createBrowserRouter([
         path: "/announcementspage",
         element: <UserAnnouncements />,
       },
-
+      {
+        path: "/dashboard",
+        element: <Dashboard />,
+      },
     ],
   },
 ]);
 
-import { AuthProvider } from './contexts/AuthContext';
-import { Home } from 'lucide-react';
-import MyListings from './pages/user/listings/user/MyListings.tsx';
-import BugDashboard from './pages/admin/BugDashboard.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

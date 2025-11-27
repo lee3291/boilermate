@@ -4,6 +4,13 @@ enum ListingStatus {
   ARCHIVED
 }
 
+enum RoommateApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
 // ---------------- Core: Listing ----------------
 // (from diagram: listingID, creatorID, title, description, pricing, location, media, status, viewCount, createdAt)
 // creatorId   String?
@@ -77,7 +84,36 @@ model ListingReport {
 
   listing    Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
+  roommateApplications RoommateApplication[]
+
   @@id([username, listingId])
   @@index([username])
   @@index([listingId])
 }
+
+model RoommateApplication {
+  id          String                     @id @default(cuid())
+
+  listingId   String
+  listing     Listing                    @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  applicantId String
+  applicant   User                       @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+
+  status      RoommateApplicationStatus  @default(PENDING)
+
+  message     String?                    @db.Text
+
+  preferenceSnapshot Json?
+
+  decidedAt   DateTime?
+  createdAt   DateTime                   @default(now())
+  updatedAt   DateTime                   @updatedAt
+
+  @@unique([listingId, applicantId])
+
+  @@index([applicantId])
+  @@index([listingId])
+  @@index([status])
+}
+
