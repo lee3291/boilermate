@@ -4,17 +4,17 @@ interface ResolveListingsModalProps {
     isOpen: boolean;
     onClose: () => void;
     onCompleted: () => void;
-    listings: any[]; // replace with your Listing type if you have one
+    listings: any[];
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "";
 
 function apiUrl(path: string) {
-    // path is like `/listings/:id`
+
     return `${API_BASE_URL}${path}`;
 }
 
-// Uses NestJS @Patch(':id') and @Delete(':id') on ListingsController
+
 async function updateListing(listingId: string, payload: any) {
     const path = `/listings/${encodeURIComponent(listingId)}`;
     const url = apiUrl(path);
@@ -53,7 +53,7 @@ async function updateListing(listingId: string, payload: any) {
                         : JSON.stringify(data.message);
             }
         } catch {
-            // ignore JSON parse errors, keep default msg
+
         }
         throw new Error(msg);
     }
@@ -98,7 +98,7 @@ async function deleteListing(listingId: string) {
                         : JSON.stringify(data.message);
             }
         } catch {
-            // ignore JSON parse errors, keep default msg
+
         }
         throw new Error(msg);
     }
@@ -133,7 +133,7 @@ const ResolveListingsModal: React.FC<ResolveListingsModalProps> = ({
     const hasDescriptionIssue = !!currentListing?.reportedOutdatedAlert;
     const hasMoveInDateIssue = !!currentListing?.moveInDateOutdatedAlert;
 
-    // Seed local form state whenever we switch listings
+
     useEffect(() => {
         if (!currentListing) return;
 
@@ -155,7 +155,7 @@ const ResolveListingsModal: React.FC<ResolveListingsModalProps> = ({
         setIsSubmitting(false);
     }, [currentListing, currentIndex, total, hasDescriptionIssue, hasMoveInDateIssue]);
 
-    // Reset index when opening
+
     useEffect(() => {
         if (isOpen) {
             console.log("[ResolveListingsModal] opened with listings", listings);

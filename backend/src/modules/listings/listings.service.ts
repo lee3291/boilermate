@@ -149,17 +149,17 @@ export class ListingsService {
         };
     }
 
-    // ----------------- BASIC LISTING QUERIES -----------------
+
 
     async findActive() {
-        // Fallback: join User by Purdue username (before @) if user_reference is null
+
         const listings = await this.prisma.listing.findMany({
             where: {
                 status: 'ACTIVE',
             },
             orderBy: { createdAt: 'desc' },
         });
-        // Get all active user emails and extract username
+
         const activeUsers = await this.prisma.user.findMany({
             where: { status: 'ACTIVE' },
             select: { email: true },
@@ -167,7 +167,7 @@ export class ListingsService {
         const activeUsernames = new Set(
             activeUsers.map((u) => u.email.split('@')[0]),
         );
-        // Only return listings whose user (username) is active
+
         return listings
             .filter((l) => activeUsernames.has(l.user))
             .map((l) => this.toListingResponse(l));
@@ -179,9 +179,9 @@ export class ListingsService {
         const data = this.normalizeCreateInput(input);
         const created = await this.prisma.listing.create({ data });
 
-        // ---- Notification Logic for Followers (from first service) ----
+
         try {
-            // 1. Find the author of the listing to get their followers.
+
             const author = await this.prisma.user.findFirst({
                 where: { email: { startsWith: data.user + '@' } },
                 select: { id: true, legalName: true },
@@ -228,12 +228,12 @@ export class ListingsService {
                 `Failed to queue new listing notification for listing ${created.id}: ${error.message}`,
             );
         }
-        // ---- End of Notification Logic ----
+
 
         return { listing: this.toListingResponse(created) };
     }
 
-    // ----------------- SAVES -----------------
+
 
     async saveListing(args: { listingId: string; username: string }) {
         const exists = await this.prisma.listing.findUnique({
@@ -326,7 +326,7 @@ export class ListingsService {
         };
     }
 
-    // ----------------- REPORTS / OUTDATED FLAGS -----------------
+
 
     async reportListing(args: { listingId: string; username: string }) {
         const exists = await this.prisma.listing.findUnique({
@@ -346,7 +346,7 @@ export class ListingsService {
                 where: { listingId: args.listingId },
             });
 
-            // reportedOutdatedAlert should be true only when there are 2 or more reports
+
             await this.prisma.listing.update({
                 where: { id: args.listingId },
                 data: { reportedOutdatedAlert: count >= 2 },
@@ -480,7 +480,7 @@ export class ListingsService {
         };
     }
 
-    // ----------------- VIEWS -----------------
+
 
     async listingsSavedByUser(args: {
         username: string;
@@ -499,7 +499,7 @@ export class ListingsService {
             }),
         ]);
 
-        // Get all active user emails and extract usernames
+
         const activeUsers = await this.prisma.user.findMany({
             where: { status: 'ACTIVE' },
             select: { email: true },
@@ -584,7 +584,7 @@ export class ListingsService {
         return { listingId, count };
     }
 
-    // ----------------- CRUD & USER FILTERS -----------------
+
 
     async findOne(listingID: string) {
         const listing = await this.prisma.listing.findUnique({
@@ -655,10 +655,10 @@ export class ListingsService {
             orderBy: { createdAt: 'desc' },
         });
 
-        // Only select columns that you KNOW exist in the current DB
+
         const user = await this.prisma.user.findFirst({
             where: { email: { startsWith: username + '@' }, status: 'ACTIVE' },
-            select: { id: true }, // or email/status/etc, but NOT legalName here
+            select: { id: true },
         });
 
         if (!user) return [];
@@ -666,7 +666,7 @@ export class ListingsService {
     }
 
     async findAll() {
-        // Fallback: join User by Purdue username (before @) if user_reference is null
+
         const listings = await this.prisma.listing.findMany({
             where: {
                 status: 'ACTIVE',

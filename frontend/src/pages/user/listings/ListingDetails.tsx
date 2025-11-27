@@ -67,7 +67,7 @@ export default function ListingDetails() {
         }).catch(() => {});
     }, [id, viewerUsername]);
 
-    // If owner, fetch counts for display
+
     useEffect(() => {
         if (!isOwner) return;
         let cancelled = false;
