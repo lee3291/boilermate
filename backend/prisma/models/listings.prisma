@@ -43,6 +43,8 @@ model Listing {
 
   reports     ListingReport[]
 
+  roommateApplications RoommateApplication[]
+
   userId      String?
   user_reference     User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -84,8 +86,6 @@ model ListingReport {
 
   listing    Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
-  roommateApplications RoommateApplication[]
-
   @@id([username, listingId])
   @@index([username])
   @@index([listingId])
@@ -98,7 +98,6 @@ model RoommateApplication {
   listing     Listing                    @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
   applicantId String
-  applicant   User                       @relation(fields: [applicantId], references: [id], onDelete: Cascade)
 
   status      RoommateApplicationStatus  @default(PENDING)
 

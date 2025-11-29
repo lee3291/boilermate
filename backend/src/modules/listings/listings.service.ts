@@ -59,6 +59,24 @@ type ListingResponse = {
     updatedAt: string;
 };
 
+type RoommateApplicationStatus =
+    | 'PENDING'
+    | 'ACCEPTED'
+    | 'REJECTED'
+    | 'WITHDRAWN';
+
+type RoommateApplicationResponse = {
+    id: string;
+    listingId: string;
+    applicantId: string;
+    status: RoommateApplicationStatus;
+    message: string | null;
+    preferenceSnapshot: any | null;
+    decidedAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
 const P2002 = 'P2002';
 const P2025 = 'P2025';
 
@@ -96,6 +114,30 @@ export class ListingsService {
                 l.createdAt?.toISOString?.() ?? new Date(l.createdAt).toISOString(),
             updatedAt:
                 l.updatedAt?.toISOString?.() ?? new Date(l.updatedAt).toISOString(),
+        };
+    }
+
+    private toRoommateApplicationResponse(app: any): RoommateApplicationResponse {
+        return {
+            id: app.id,
+            listingId: app.listingId,
+            applicantId: app.applicantId,
+            status: app.status,
+            message: app.message ?? null,
+            preferenceSnapshot:
+                app.preferenceSnapshot !== undefined
+                    ? app.preferenceSnapshot
+                    : null,
+            decidedAt: app.decidedAt
+                ? app.decidedAt.toISOString?.() ??
+                        new Date(app.decidedAt).toISOString()
+                : null,
+            createdAt:
+                app.createdAt?.toISOString?.() ??
+                    new Date(app.createdAt).toISOString(),
+            updatedAt:
+                app.updatedAt?.toISOString?.() ??
+                    new Date(app.updatedAt).toISOString(),
         };
     }
 
@@ -149,10 +191,7 @@ export class ListingsService {
         };
     }
 
-
-
     async findActive() {
-
         const listings = await this.prisma.listing.findMany({
             where: {
                 status: 'ACTIVE',
@@ -179,9 +218,7 @@ export class ListingsService {
         const data = this.normalizeCreateInput(input);
         const created = await this.prisma.listing.create({ data });
 
-
         try {
-
             const author = await this.prisma.user.findFirst({
                 where: { email: { startsWith: data.user + '@' } },
                 select: { id: true, legalName: true },
@@ -198,7 +235,9 @@ export class ListingsService {
                 });
 
                 if (follows.length > 0) {
-                    const followerEmails = follows.map((follow) => follow.follower.email);
+                    const followerEmails = follows.map(
+                        (follow) => follow.follower.email,
+                    );
                     const authorName = author.legalName || data.user;
                     const listingUrl = `${
                         process.env.FRONTEND_URL ?? 'http://localhost:5173'
@@ -229,11 +268,8 @@ export class ListingsService {
             );
         }
 
-
         return { listing: this.toListingResponse(created) };
     }
-
-
 
     async saveListing(args: { listingId: string; username: string }) {
         const exists = await this.prisma.listing.findUnique({
@@ -241,7 +277,9 @@ export class ListingsService {
             select: { id: true },
         });
         if (!exists) {
-            throw new BadRequestException(`Listing ${args.listingId} does not exist`);
+            throw new BadRequestException(
+                `Listing ${args.listingId} does not exist`,
+            );
         }
 
         try {
@@ -268,7 +306,8 @@ export class ListingsService {
                     listingId: args.listingId,
                     username: args.username,
                     isSaved: true,
-                    createdAt: row?.createdAt?.toISOString() ?? new Date().toISOString(),
+                    createdAt:
+                        row?.createdAt?.toISOString() ?? new Date().toISOString(),
                 };
             }
             throw err;
@@ -326,15 +365,15 @@ export class ListingsService {
         };
     }
 
-
-
     async reportListing(args: { listingId: string; username: string }) {
         const exists = await this.prisma.listing.findUnique({
             where: { id: args.listingId },
             select: { id: true },
         });
         if (!exists) {
-            throw new BadRequestException(`Listing ${args.listingId} does not exist`);
+            throw new BadRequestException(
+                `Listing ${args.listingId} does not exist`,
+            );
         }
 
         try {
@@ -345,7 +384,6 @@ export class ListingsService {
             const count = await this.prisma.listingReport.count({
                 where: { listingId: args.listingId },
             });
-
 
             await this.prisma.listing.update({
                 where: { id: args.listingId },
@@ -385,7 +423,8 @@ export class ListingsService {
                     isReported: true as const,
                     reportCount: count,
                     createdAt:
-                        existing?.createdAt?.toISOString() ?? new Date().toISOString(),
+                        existing?.createdAt?.toISOString() ??
+                            new Date().toISOString(),
                 };
             }
             throw err;
@@ -446,7 +485,9 @@ export class ListingsService {
     }
 
     async countReports(listingId: string) {
-        const count = await this.prisma.listingReport.count({ where: { listingId } });
+        const count = await this.prisma.listingReport.count({
+            where: { listingId },
+        });
         return { listingId, count };
     }
 
@@ -480,8 +521,6 @@ export class ListingsService {
         };
     }
 
-
-
     async listingsSavedByUser(args: {
         username: string;
         page: number;
@@ -499,7 +538,6 @@ export class ListingsService {
             }),
         ]);
 
-
         const activeUsers = await this.prisma.user.findMany({
             where: { status: 'ACTIVE' },
             select: { email: true },
@@ -510,7 +548,12 @@ export class ListingsService {
 
         const listings: ListingResponse[] = saves
             .map((s) => s.listing)
-            .filter((l) => l && l.status === 'ACTIVE' && activeUsernames.has(l.user))
+            .filter(
+                (l) =>
+                    l &&
+                        l.status === 'ACTIVE' &&
+                        activeUsernames.has((l as any).user),
+            )
             .map((l) => this.toListingResponse(l));
 
         return { username, listings, page, pageSize, total };
@@ -584,8 +627,6 @@ export class ListingsService {
         return { listingId, count };
     }
 
-
-
     async findOne(listingID: string) {
         const listing = await this.prisma.listing.findUnique({
             where: { id: listingID },
@@ -655,7 +696,6 @@ export class ListingsService {
             orderBy: { createdAt: 'desc' },
         });
 
-
         const user = await this.prisma.user.findFirst({
             where: { email: { startsWith: username + '@' }, status: 'ACTIVE' },
             select: { id: true },
@@ -666,7 +706,6 @@ export class ListingsService {
     }
 
     async findAll() {
-
         const listings = await this.prisma.listing.findMany({
             where: {
                 status: 'ACTIVE',
@@ -687,5 +726,167 @@ export class ListingsService {
         );
         return listings.filter((l) => activeUsernames.has(l.user));
     }
+
+    async createRoommateApplication(args: {
+        listingId: string;
+        applicantId: string;
+        message?: string;
+        preferenceSnapshot?: any;
+    }): Promise<{ application: RoommateApplicationResponse; created: boolean }> {
+        const { listingId, applicantId, message, preferenceSnapshot } = args;
+
+        const listing = await this.prisma.listing.findUnique({
+            where: { id: listingId },
+            select: { id: true },
+        });
+        if (!listing) {
+            throw new BadRequestException(`Listing ${listingId} does not exist`);
+        }
+
+        try {
+            const created = await this.prisma.roommateApplication.create({
+                data: {
+                    listingId,
+                    applicantId,
+                    message: message ?? null,
+                    preferenceSnapshot:
+                        preferenceSnapshot === undefined ? undefined : preferenceSnapshot,
+                },
+            });
+
+            return {
+                application: this.toRoommateApplicationResponse(created),
+                created: true,
+            };
+        } catch (err: any) {
+            if (err?.code === 'P2002') {
+                const existing = await this.prisma.roommateApplication.findUnique({
+                    where: {
+                        listingId_applicantId: { listingId, applicantId },
+                    },
+                });
+                if (!existing) throw err;
+
+                return {
+                    application: this.toRoommateApplicationResponse(existing),
+                    created: false,
+                };
+            }
+            throw err;
+        }
+    }
+
+
+    async updateRoommateApplicationStatus(args: {
+        applicationId: string;
+        status: RoommateApplicationStatus;
+    }): Promise<RoommateApplicationResponse> {
+        const { applicationId, status } = args;
+
+        try {
+            const updated = await this.prisma.roommateApplication.update({
+                where: { id: applicationId },
+                data: {
+                    status,
+                    decidedAt:
+                        status === 'PENDING'
+                            ? null
+                            : new Date(),
+                },
+            });
+
+            return this.toRoommateApplicationResponse(updated);
+        } catch (err: any) {
+            if (err?.code === P2025) {
+                throw new NotFoundException('Roommate application not found');
+            }
+            throw err;
+        }
+    }
+
+    async listRoommateApplicationsByListing(args: {
+        listingId: string;
+        status?: RoommateApplicationStatus;
+        page: number;
+        pageSize: number;
+    }): Promise<{
+        listingId: string;
+        applications: RoommateApplicationResponse[];
+        page: number;
+        pageSize: number;
+        total: number;
+    }> {
+        const { listingId, status, page, pageSize } = args;
+
+        const where: Prisma.RoommateApplicationWhereInput = {
+            listingId,
+        };
+        if (status) {
+            where.status = status as any;
+        }
+
+        const [total, rows] = await this.prisma.$transaction([
+            this.prisma.roommateApplication.count({ where }),
+            this.prisma.roommateApplication.findMany({
+                where,
+                orderBy: { createdAt: 'desc' },
+                skip: (page - 1) * pageSize,
+                take: pageSize,
+            }),
+        ]);
+
+        return {
+            listingId,
+            applications: rows.map((r) =>
+                this.toRoommateApplicationResponse(r),
+            ),
+            page,
+            pageSize,
+            total,
+        };
+    }
+
+    async listRoommateApplicationsByApplicant(args: {
+        applicantId: string;
+        status?: RoommateApplicationStatus;
+        page: number;
+        pageSize: number;
+    }): Promise<{
+        applicantId: string;
+        applications: RoommateApplicationResponse[];
+        page: number;
+        pageSize: number;
+        total: number;
+    }> {
+        const { applicantId, status, page, pageSize } = args;
+
+        const where: Prisma.RoommateApplicationWhereInput = {
+            applicantId,
+        };
+        if (status) {
+            where.status = status as any;
+        }
+
+        const [total, rows] = await this.prisma.$transaction([
+            this.prisma.roommateApplication.count({ where }),
+            this.prisma.roommateApplication.findMany({
+                where,
+                orderBy: { createdAt: 'desc' },
+                skip: (page - 1) * pageSize,
+                take: pageSize,
+            }),
+        ]);
+
+        return {
+            applicantId,
+            applications: rows.map((r) =>
+                this.toRoommateApplicationResponse(r),
+            ),
+            page,
+            pageSize,
+            total,
+        };
+    }
+
 }
 
