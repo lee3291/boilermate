@@ -26,6 +26,7 @@ import {
   PollInGroupDto,
   PollOptionDto,
     MessageReactionDto,
+    PinnedMessageDto,
 } from './dto';
 import { BlockUserDto,
   UnblockUserDto,
@@ -399,6 +400,39 @@ export class ChatsController {
   @HttpCode(200)
   async getReactions(@Param('messageId') messageId: string): Promise<MessageReactionDto[]> {
     return this.chatsService.getReactions(messageId);
+  }
+
+  // Pin a message
+  @Post(':chatId/:messageId/:userId/pin')
+  @HttpCode(200)
+  async pinMessage(
+      @Param('chatId') chatId: string,
+      @Param('messageId') messageId: string,
+      @Param('userId') userId: string
+  ): Promise<{ success: boolean }> {
+    const result = await this.chatsService.pinMessage(chatId, messageId, userId);
+    return { success: result };
+  }
+
+  // Pin a message
+  @Delete(':chatId/:messageId/:userId/pin')
+  @HttpCode(200)
+  async unpinMessage(
+      @Param('chatId') chatId: string,
+      @Param('messageId') messageId: string,
+      @Param('userId') userId: string
+  ): Promise<{ success: boolean }> {
+    const result = await this.chatsService.unpinMessage(chatId, messageId, userId);
+    return { success: result };
+  }
+
+  // Get all pinned messages in a chat
+  @Get(':chatId/pinned-messages')
+  @HttpCode(200)
+  async getPinnedMessages(
+      @Param('chatId') chatId: string
+  ): Promise<PinnedMessageDto[]> {
+    return this.chatsService.getPinnedMessages(chatId);
   }
 
 }

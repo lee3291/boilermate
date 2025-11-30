@@ -102,7 +102,7 @@ const typeToEmoji: Record<string, string> = {
 };
 
 export default function Message({ m, isMine, currentUserId, senderEmail, onEdit, onDelete,
-                                    onAddReaction, onRemoveReaction, onGetReactions, onGetReactionCount }: any) {
+                                    onAddReaction, onRemoveReaction, onGetReactions, onGetReactionCount}: any) {
     const [hover, setHover] = useState(false);
     const [editing, setEditing] = useState(false);
     const [editText, setEditText] = useState(m.content);
@@ -211,6 +211,9 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
                                 </button>
                                 <button onClick={() => onDelete?.(m.id, true)} className="hover:underline">
                                     Delete For Everyone
+                                </button>
+                                <button onClick={() => onDelete?.(m.id, true)} className="hover:underline">
+                                    Pin
                                 </button>
                             </>
                         )}

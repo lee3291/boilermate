@@ -1037,6 +1037,97 @@ export class ChatsService {
       reaction: r.reaction
     }));
   }
+  //Pin msg
+  async pinMessage(chatId: string, messageId: string, userId: string): Promise<boolean> {
+    // Fetch the message to check sender
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+    });
+
+    if (!message || message.senderId !== userId) {
+      // Message not found or user is not the sender
+      return false;
+    }
+
+    // Check if already pinned
+    const existing = await this.prisma.pinnedMessage.findUnique({
+      where: {
+        messageId_chatId: {
+          messageId,
+          chatId,
+        },
+      },
+    });
+
+    if (existing) {
+      return false;
+    }
+
+    // Create pinned message
+    await this.prisma.pinnedMessage.create({
+      data: {
+        messageId,
+        chatId,
+        pinnedById: userId,
+      },
+    });
+
+    return true;
+  }
+
+  //Unpin msg
+  async unpinMessage(chatId: string, messageId: string, userId: string): Promise<boolean> {
+    // Check if the pinned record exists
+    const pinned = await this.prisma.pinnedMessage.findUnique({
+      where: {
+        messageId_chatId: {
+          messageId,
+          chatId,
+        },
+      },
+      include: {
+        message: true,
+      },
+    });
+
+    if (!pinned) {
+      return false;
+    }
+
+    if (pinned.message.senderId !== userId) {
+      return false;
+    }
+
+    // Perform unpin
+    await this.prisma.pinnedMessage.delete({
+      where: {
+        messageId_chatId: {
+          messageId,
+          chatId,
+        },
+      },
+    });
+
+    return true;
+  }
+
+  //Get all pin msgs in specific chat
+  async getPinnedMessages(chatId: string) {
+    const pinnedMessages = await this.prisma.pinnedMessage.findMany({
+      where: { chatId },
+      orderBy: { createdAt: 'asc' }, // oldest first
+      include: {
+        message: {
+          include: {
+            sender: true,
+          },
+        },
+        pinnedBy: true,
+      },
+    });
+
+    return pinnedMessages;
+  }
 
 
 }

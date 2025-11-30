@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import ImageUploadButton from './ImageUploadButton';
 import CreatePollButton from './CreatePollButton';
+import PinnedMessageButton from './PinnedMessageButton';
 import type { Chat, MessageWithStatus } from '@/types/chats/chat';
 
 export default function InputBar({
@@ -12,6 +13,7 @@ export default function InputBar({
   selectedFile, // new prop for displaying selected file
   isUploading, // new prop for showing upload state
                                      onCreatePoll,
+                                     onViewAllPinnedMessages,
                                  }: {
   value?: string;
     selectedConversation?: Chat | null;
@@ -21,6 +23,7 @@ export default function InputBar({
   selectedFile?: File | null; // currently selected file
   isUploading?: boolean; // whether image is being uploaded
     onCreatePoll?: (poll: { question: string; options: string[] }) => void; //Handle for poll in chat
+    onViewAllPinnedMessages?: () => void;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -61,6 +64,10 @@ export default function InputBar({
                 <CreatePollButton onCreatePoll={onCreatePoll} />
             </>
         )}
+        <>
+            <PinnedMessageButton onViewAllPinnedMessages={onViewAllPinnedMessages} />
+        </>
+
 
       {/* Message textarea - disabled when file is selected */}
       <textarea

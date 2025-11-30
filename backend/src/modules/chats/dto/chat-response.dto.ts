@@ -22,6 +22,28 @@ export class ParticipantDto {
     return plainToInstance(ParticipantDto, rawParticipant, { excludeExtraneousValues: true });
   }
 }
+@Exclude()
+export class PinnedMessageDto {
+  @Expose()
+  id: string;
+
+  @Expose()
+  messageId: string;
+
+  @Expose()
+  chatId: string;
+
+  @Expose()
+  pinnedById?: string;
+
+  @Expose()
+  createdAt: Date;
+
+  static fromInterface(raw: any): PinnedMessageDto {
+    return plainToInstance(PinnedMessageDto, raw, { excludeExtraneousValues: true });
+  }
+}
+
 
 @Exclude()
 export class ChatDto {
@@ -52,6 +74,10 @@ export class ChatDto {
   @Expose()
   @Type(() => ParticipantDto) // Transform nested array of participants
   participants?: ParticipantDto[];
+
+  @Expose()
+  @Type(() => PinnedMessageDto) // Transform nested array of pinned msgs
+  pinnedMessages?: PinnedMessageDto[];
 
   static fromInterface(rawChatDetails: ChatDetails): ChatDto {
     return plainToInstance(ChatDto, rawChatDetails, { excludeExtraneousValues: true });

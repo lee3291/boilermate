@@ -72,7 +72,8 @@ model User {
   votesReceived UserVote[]      @relation("VotedUser")
   // Reactions that user has done
   messageReactions MessageReaction[]
-
+  // Pinned messages that user has done
+  pinnedMessages PinnedMessage[]  @relation("PinnedBy")
 
   // Relations for announcements
   announcements             Announcement[]             @relation("UserAnnouncements")

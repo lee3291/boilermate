@@ -19,7 +19,8 @@ model Chat {
   participants ChatParticipant[]  // A chat has many participants (members).
   creator      User?              @relation(fields: [creatorId], references: [id])
   polls        Poll[]             // A chat has many polls.
-  
+  pinnedMessages PinnedMessage[]  // A chat has many pinned msgs
+
   // Index for fast sorting of the user's conversation list
   @@index([latestMessageAt])
 }
@@ -57,7 +58,8 @@ model Message {
   statuses         UserMessageStatus[] // Link to per-user statuses
   image            Image?      @relation(fields: [imageId], references: [id]) // link image id to image object
   approvals        MessageApproval[] // Link to all approve image message
-  reactions        MessageReaction[] // Link t all reactions
+  reactions        MessageReaction[] // Link to all reactions
+  pinnedMessages PinnedMessage[]  // Link to all pinned messages
   // Index for fast retrieval and sorting within a single chat thread
   @@index([chatId, createdAt])
 }
@@ -146,5 +148,23 @@ model MessageReaction {
   user       User          @relation(fields: [userId], references: [id])
 
   @@unique([messageId, userId])
+}
+
+// Represents a pinned message in a chat
+model PinnedMessage {
+  id         String   @id @default(uuid())
+  messageId  String   // The message that got pinned
+  chatId     String   // The chat where the message is pinned
+  pinnedById String?  // Who pinned the message
+  createdAt  DateTime @default(now())
+
+  // Relations
+  message    Message  @relation(fields: [messageId], references: [id])
+  chat       Chat     @relation(fields: [chatId], references: [id])
+  pinnedBy   User?    @relation("PinnedBy", fields: [pinnedById], references: [id])
+
+  // Ensure a message is pinned only once per chat
+  @@unique([messageId, chatId])
+  @@index([chatId, createdAt])
 }
 
