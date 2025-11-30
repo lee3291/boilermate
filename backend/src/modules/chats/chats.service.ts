@@ -1013,17 +1013,26 @@ export class ChatsService {
     return count;
   }
   // Get summary all reactions in a specific msg
-  async getReactions(messageId: string): Promise<MessageReactionDetails[]> {
+  async getReactions(messageId: string): Promise<Array<{ messageId: string; userId: string; email: string; reaction: ReactionType }>> {
     const reactions = await this.prisma.messageReaction.findMany({
       where: { messageId },
-      select: { userId: true, reaction: true, messageId: true },
+      select: {
+        messageId: true,
+        userId: true,
+        reaction: true,
+        user: {
+          select: { email: true }
+        }
+      }
     });
 
     return reactions.map(r => ({
       messageId: r.messageId,
       userId: r.userId,
-      reaction: r.reaction,
+      email: r.user.email,
+      reaction: r.reaction
     }));
   }
+
 
 }

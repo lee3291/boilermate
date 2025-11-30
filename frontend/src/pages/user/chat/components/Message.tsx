@@ -33,7 +33,7 @@ function ImageDisplay({ imageUrl, isMine, approved, messageId, currentUserId, on
                 await approveMessage(messageId, { userId: currentUserId });
                 setApprovedState(true);
                 onApproved();
-            } catch (err) {}
+            } catch {}
         }
     };
 
@@ -99,11 +99,17 @@ const emojiToType: Record<string, string> = {
     '😡': 'ANGRY',
 };
 
+const typeToEmoji: Record<string, string> = {
+    LIKE: '👍',
+    LOVE: '❤️',
+    HAHA: '😂',
+    WOW: '😮',
+    SAD: '😢',
+    ANGRY: '😡',
+};
+
 export default function Message({ m, isMine, currentUserId, senderEmail, onEdit, onDelete,
-                                    onAddReaction,
-                                    onRemoveReaction,
-                                    onGetReactions,
-                                    onGetReactionCount}: MessageProps) {
+                                    onAddReaction, onRemoveReaction, onGetReactions, onGetReactionCount }: MessageProps) {
     const [hover, setHover] = useState(false);
     const [editing, setEditing] = useState(false);
     const [editText, setEditText] = useState(m.content);
@@ -111,6 +117,8 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
     const [myReaction, setMyReaction] = useState(m.myReaction || null);
     const [reactionJustClicked, setReactionJustClicked] = useState(false);
     const [reactionCount, setReactionCount] = useState(0);
+    const [reactionModalOpen, setReactionModalOpen] = useState(false);
+    const [reactionsList, setReactionsList] = useState<any[]>([]);
 
     const hasImage = m.imageUrl && m.imageUrl.trim().length > 0;
     const hasContent = m.content && m.content.trim().length > 0;
@@ -119,11 +127,9 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
         const checkBlock = async () => {
             try {
                 const blocked = await isBlockedBetween(currentUserId, m.senderId);
-                if (blocked) {
-                    const el = document.getElementById(`msg-${m.id}`);
-                    if (el) el.style.display = 'none';
-                }
-            } catch (err) {}
+                const el = document.getElementById(`msg-${m.id}`);
+                if (blocked && el) el.style.display = 'none';
+            } catch {}
         };
         checkBlock();
     }, [m.id, m.senderId, currentUserId]);
@@ -152,9 +158,7 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
             }
             const count = await onGetReactionCount(m.id);
             setReactionCount(count);
-        } catch (err) {
-            console.error(err);
-        }
+        } catch {}
 
         setReactionPickerOpen(false);
         setReactionJustClicked(true);
@@ -257,8 +261,28 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
                         </div>
 
                         {reactionCount > 0 && (
-                            <div className={`text-[11px] text-gray-500 mt-1 flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                                <span className="px-2 py-0.5 bg-gray-100 rounded-full border text-xs">{reactionCount} reactions</span>
+                            <div
+                                className={`text-[11px] text-gray-500 mt-1 flex ${
+                                    isMine ? 'justify-end' : 'justify-start'
+                                }`}
+                            >
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            const list = await onGetReactions(m.id);
+                                            setReactionsList(
+                                                list.map(r => ({
+                                                    ...r,
+                                                    userEmail: r.email,  // FIX
+                                                }))
+                                            );
+                                            setReactionModalOpen(true);
+                                        } catch {}
+                                    }}
+                                    className="px-2 py-0.5 bg-gray-100 rounded-full border text-xs hover:bg-gray-200"
+                                >
+                                    {reactionCount} reactions
+                                </button>
                             </div>
                         )}
 
@@ -286,6 +310,45 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
                     </div>
                 )}
             </div>
+
+            {reactionModalOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+                    onClick={() => setReactionModalOpen(false)}
+                >
+                    <div
+                        className="bg-white rounded-lg p-4 w-80 shadow-lg"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="text-lg font-semibold mb-3">Reactions</div>
+
+                        {reactionsList.length === 0 ? (
+                            <div className="text-sm text-gray-500">No reactions yet.</div>
+                        ) : (
+                            <div className="flex flex-col gap-2">
+                                {reactionsList.map((r, index) => (
+                                    <div key={index} className="flex items-center justify-between border-b pb-1">
+                                        <div className="flex gap-2 items-center text-sm text-gray-800">
+                                            <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-xs text-blue-700">
+                                                {r.userEmail?.[0]?.toUpperCase() ?? '?'}
+                                            </div>
+                                            <span>{r.userEmail ?? r.userId}</span>
+                                        </div>
+                                        <div className="text-lg">{typeToEmoji[r.reaction] ?? '❓'}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <button
+                            className="mt-4 w-full bg-blue-600 text-white py-1.5 rounded-lg"
+                            onClick={() => setReactionModalOpen(false)}
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
