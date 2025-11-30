@@ -32,7 +32,9 @@ import ProfileActionBar from './components/ProfileActionBar';
 import ProfileSidebar from './components/ProfileSidebar';
 import RoommateManagementSection from './components/RoommateManagementSection';
 import MyReviewsSection from './components/MyReviewsSection';
-import { useState } from 'react';
+import SettingsSection from './components/SettingsSection';
+import type { NotificationSettings } from './components/SettingsSection';
+import { useState, useEffect } from 'react';
 import DeactivateAccountModal from '@/components/DeactivateAccountModal';
 import { deactivateAccount } from '@/services/account.service';
 import FollowButton from './components/FollowButton';
@@ -42,15 +44,74 @@ export default function ProfilePage() {
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'roommate' | 'reviews' | 'settings'>('profile');
+  const [activeTab, setActiveTab] = useState<
+    'profile' | 'roommate' | 'reviews' | 'settings'
+  >('profile');
+
+  // State for settings
+  const [notificationSettings, setNotificationSettings] =
+    useState<NotificationSettings | null>(null);
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+
   const userId = user!.id;
   const logic = useProfileLogic(userId);
-  
+
   // Roommate logic hook
   const roommateLogic = useRoommateLogic(userId);
 
   // Use real profile data from backend
   const profile = logic.profileData;
+
+  // Fetch settings when the settings tab is active
+  useEffect(() => {
+    if (activeTab === 'settings') {
+      const fetchSettings = async () => {
+        setSettingsLoading(true);
+        setSettingsError(null);
+        try {
+          // TODO: Replace with actual API call
+          // const data = await getNotificationSettings();
+          // setNotificationSettings(data);
+
+          // Simulate API call
+          setTimeout(() => {
+            setNotificationSettings({
+              email_on_follow_profile_update: true,
+              email_on_follow_new_listing: true,
+              email_on_listing_outdated: true,
+              email_on_listing_27days_old: false,
+            });
+            setSettingsLoading(false);
+          }, 1000);
+        } catch (error) {
+          setSettingsError('Failed to load settings. Please try again.');
+          setSettingsLoading(false);
+        }
+      };
+      fetchSettings();
+    }
+  }, [activeTab]);
+
+  // Handler to update settings
+  const handleUpdateSettings = async (
+    key: keyof NotificationSettings,
+    enabled: boolean,
+  ) => {
+    if (!notificationSettings) return;
+
+    const updatedSettings = { ...notificationSettings, [key]: enabled };
+    setNotificationSettings(updatedSettings);
+
+    try {
+      // TODO: Replace with actual API call
+      // await updateNotificationSettings(updatedSettings);
+    } catch (error) {
+      setSettingsError('Failed to save settings. Please try again.');
+      // Revert optimistic update on failure
+      setNotificationSettings(notificationSettings);
+    }
+  };
 
   // Only show follow/unfollow button if viewing another user's profile
   const isOtherUser = profile && profile.id !== userId;
@@ -70,13 +131,10 @@ export default function ProfilePage() {
         {/* Two-column layout: Sidebar + Main content */}
         <div className='flex gap-6'>
           {/* Navigation Sidebar */}
-          <ProfileSidebar
-            activeTab={activeTab}
-            onSetActiveTab={setActiveTab}
-          />
+          <ProfileSidebar activeTab={activeTab} onSetActiveTab={setActiveTab} />
 
           {/* Main Content */}
-          <div className='flex-1 max-w-4xl'>
+          <div className='max-w-4xl flex-1'>
             {logic.error && (
               <div className='mb-6 rounded-xl border border-red-200 bg-red-50 p-4'>
                 <p className='text-sm text-red-600'>⚠️ {logic.error}</p>
@@ -94,7 +152,8 @@ export default function ProfilePage() {
                       legalName: profile.legalName || '',
                       email: profile.email || '',
                       name: profile.legalName || profile.name || '',
-                      profileImage: profile.avatarURL || profile.profileImage || '',
+                      profileImage:
+                        profile.avatarURL || profile.profileImage || '',
                       phoneNumber: profile.phoneNumber || '',
                       searchStatus: profile.searchStatus || '',
                       isVerified: profile.isVerified || false,
@@ -147,7 +206,7 @@ export default function ProfilePage() {
                   onRemovePreference={logic.handleDeleteRoommatePreference}
                   loading={logic.loadingRoommate || logic.loadingMasterList}
                 />
-                
+
                 {/* Section 5: Action Bar (Buttons) */}
                 <ProfileActionBar
                   actions={[
@@ -163,7 +222,8 @@ export default function ProfilePage() {
                           {
                             label: 'Verification Requests',
                             onClick: () => {
-                              window.location.href = '/admin/verification-requests';
+                              window.location.href =
+                                '/admin/verification-requests';
                             },
                             type: 'primary' as const,
                           },
@@ -176,7 +236,7 @@ export default function ProfilePage() {
                     },
                   ]}
                 />
-                
+
                 {isOtherUser && (
                   <div className='mt-4 flex justify-center'>
                     <FollowButton
@@ -211,10 +271,11 @@ export default function ProfilePage() {
 
             {/* Settings Tab Content */}
             {activeTab === 'settings' && (
-              <div className='bg-white rounded-xl shadow-sm p-8'>
-                <h2 className='text-3xl font-bold text-gray-800 mb-4'>⚙️ Settings</h2>
-                <p className='text-gray-600'>Settings functionality coming soon...</p>
-              </div>
+              <SettingsSection
+                settings={notificationSettings}
+                onUpdate={handleUpdateSettings}
+                loading={settingsLoading}
+              />
             )}
           </div>
         </div>
