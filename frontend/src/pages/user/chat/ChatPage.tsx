@@ -68,6 +68,9 @@ export default function ChatPage() {
             onGetReactionCount={logic.handleGetReactionCount}
             onGetReactions={logic.handleGetReactions}
 
+            //Pinned msgs
+            onPinMessage={logic.handlePinMessage}
+
             // Group chat props
             blockedBetween={logic.blockedBetween}
             showGroupMembersSidebar={logic.showGroupMembersSidebar}

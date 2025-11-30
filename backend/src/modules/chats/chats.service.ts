@@ -1112,22 +1112,35 @@ export class ChatsService {
   }
 
   //Get all pin msgs in specific chat
-  async getPinnedMessages(chatId: string) {
-    const pinnedMessages = await this.prisma.pinnedMessage.findMany({
+  async getPinnedMessages(
+      chatId: string
+  ): Promise<Array<{
+    id: string;
+    messageId: string;
+    chatId: string;
+    pinnedById?: string;
+    createdAt: Date;
+  }>> {
+    const pinned = await this.prisma.pinnedMessage.findMany({
       where: { chatId },
-      orderBy: { createdAt: 'asc' }, // oldest first
-      include: {
-        message: {
-          include: {
-            sender: true,
-          },
-        },
-        pinnedBy: true,
+      select: {
+        id: true,
+        messageId: true,
+        chatId: true,
+        pinnedById: true,
+        createdAt: true
       },
+      orderBy: {
+        createdAt: "asc" // oldest → newest
+      }
     });
 
-    return pinnedMessages;
+    return pinned.map(p => ({
+      id: p.id,
+      messageId: p.messageId,
+      chatId: p.chatId,
+      pinnedById: p.pinnedById ?? undefined,
+      createdAt: p.createdAt
+    }));
   }
-
-
 }

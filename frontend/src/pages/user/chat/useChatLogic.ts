@@ -15,7 +15,8 @@ import {
   addReaction as apiAddReaction,
   removeReaction as apiRemoveReaction,
   getReactions as apiGetReactions,
-  getReactionCount as apiGetReactionCount
+  getReactionCount as apiGetReactionCount,
+    pinMessage as apiPinMessage,
 } from '@/services/chatService';
 import {
   getPresignedUrl as apiGetPresignedUrl,
@@ -710,6 +711,25 @@ export default function useChatLogic(user: User) {
       },
       [userId]
   );
+  // Pin msg
+  const handlePinMessage = useCallback(
+      async (chatId: string, messageId: string, userId: string): Promise<boolean> => {
+        try {
+          const success = await apiPinMessage(chatId, messageId, userId);
+          if (success) {
+            alert('Pinned message successfully!');
+          } else {
+            alert('Failed to pin message!');
+          }
+          return success;
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to pin message');
+          return false;
+        }
+      },
+      []
+  );
+
 
   // Add or update a reaction
   const handleAddReaction = useCallback(
@@ -890,6 +910,9 @@ export default function useChatLogic(user: User) {
     handleGetPolls,
     handleAddOption,
     handleSubmitVotes,
+
+    // Pin/Unpin
+    handlePinMessage,
 
     //Emojis
     handleAddReaction,

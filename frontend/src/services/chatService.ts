@@ -241,8 +241,18 @@ export async function getReactionCount(messageId: string) {
   }
 }
 
+//Pin msg
+export async function pinMessage(chatId: string, messageId: string, userId: string): Promise<boolean> {
+  try {
+    const res = await api.post(`/chats/${chatId}/${messageId}/${userId}/pin`);
+    return res.data.success;
+  } catch (error: any) {
+    throw error.response?.data ?? error;
+  }
+}
+
 export default { getChats, sendMessage, getHistory, editMessage,
   deleteMessage, createNormalChat, searchUsersForNormalChatCreation,
   getBlockedByUserId, getUsersWhoBlockedMeIds, getUserIdsCanBlock,
   blockUser, unblockUser, isBlockedBetween, addReaction,
-  removeReaction, getReactions, getReactionCount};
+  removeReaction, getReactions, getReactionCount, pinMessage};
