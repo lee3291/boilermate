@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { approveMessage, isBlockedBetween } from '@/services/chatService';
+import { X } from 'lucide-react';
 
 interface ImageDisplayProps {
     imageUrl: string;
@@ -8,6 +9,11 @@ interface ImageDisplayProps {
     messageId: string;
     currentUserId: string;
     onApproved: () => void;
+}
+
+interface Reaction {
+    email?: string;
+    reaction: string;
 }
 
 function ImageDisplay({ imageUrl, isMine, approved, messageId, currentUserId, onApproved }: ImageDisplayProps) {
@@ -77,19 +83,6 @@ function ImageDisplay({ imageUrl, isMine, approved, messageId, currentUserId, on
     );
 }
 
-interface MessageProps {
-    m: any;
-    isMine: boolean;
-    currentUserId: string;
-    senderEmail: string;
-    onEdit?: (id: string, content: string) => void;
-    onDelete?: (id: string, forEveryone: boolean) => void;
-    onAddReaction: (messageId: string, userId: string, reaction: string) => Promise<any>;
-    onRemoveReaction: (messageId: string) => Promise<any>;
-    onGetReactions: (messageId: string) => Promise<any[]>;
-    onGetReactionCount: (messageId: string) => Promise<number>;
-}
-
 const emojiToType: Record<string, string> = {
     '👍': 'LIKE',
     '❤️': 'LOVE',
@@ -109,7 +102,7 @@ const typeToEmoji: Record<string, string> = {
 };
 
 export default function Message({ m, isMine, currentUserId, senderEmail, onEdit, onDelete,
-                                    onAddReaction, onRemoveReaction, onGetReactions, onGetReactionCount }: MessageProps) {
+                                    onAddReaction, onRemoveReaction, onGetReactions, onGetReactionCount }: any) {
     const [hover, setHover] = useState(false);
     const [editing, setEditing] = useState(false);
     const [editText, setEditText] = useState(m.content);
@@ -139,6 +132,17 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
             try {
                 const count = await onGetReactionCount(m.id);
                 setReactionCount(count);
+                const list = await onGetReactions(m.id);
+                setReactionsList(
+                    list
+                        .filter((r: Reaction) => r.email) // only keep reactions with email
+                        .map((r: Reaction) => ({
+                            userEmail: r.email, // use email only
+                            reaction: r.reaction,
+                        }))
+                );
+                const myR = list.find((r: any) => r.userId === currentUserId);
+                setMyReaction(myR ? typeToEmoji[myR.reaction] : null);
             } catch {}
         };
         fetchReactionCount();
@@ -158,6 +162,17 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
             }
             const count = await onGetReactionCount(m.id);
             setReactionCount(count);
+            const list = await onGetReactions(m.id);
+            setReactionsList(
+                list
+                    .filter((r: Reaction) => r.email) // only keep reactions with email
+                    .map((r: Reaction) => ({
+                        userEmail: r.email, // use email only
+                        reaction: r.reaction,
+                    }))
+            );
+            const myR = list.find((r: any) => r.userId === currentUserId);
+            setMyReaction(myR ? typeToEmoji[myR.reaction] : null);
         } catch {}
 
         setReactionPickerOpen(false);
@@ -260,7 +275,7 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
                             )}
                         </div>
 
-                        {reactionCount > 0 && (
+                        {!m.isDeletedForYou && !m.isDeleted && reactionCount > 0 && (
                             <div
                                 className={`text-[11px] text-gray-500 mt-1 flex ${
                                     isMine ? 'justify-end' : 'justify-start'
@@ -269,13 +284,6 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
                                 <button
                                     onClick={async () => {
                                         try {
-                                            const list = await onGetReactions(m.id);
-                                            setReactionsList(
-                                                list.map(r => ({
-                                                    ...r,
-                                                    userEmail: r.email,  // FIX
-                                                }))
-                                            );
                                             setReactionModalOpen(true);
                                         } catch {}
                                     }}
@@ -286,17 +294,20 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
                             </div>
                         )}
 
+
                         {reactionPickerOpen && (
                             <div className="absolute top-full mt-1 left-1/2 -translate-x-1/2 bg-white border rounded-full shadow px-2 py-1 flex gap-1 z-20">
                                 {['👍', '❤️', '😂', '😮', '😢', '😡'].map((e) => (
                                     <button
                                         key={e}
                                         onClick={() => handleReact(e)}
-                                        className="text-lg hover:scale-110 transition-transform"
+                                        className={`text-lg hover:scale-110 transition-transform rounded-full p-1
+            ${myReaction === e ? 'bg-gray-300' : 'bg-white'}`}
                                     >
                                         {e}
                                     </button>
                                 ))}
+
                             </div>
                         )}
                     </div>
@@ -312,40 +323,49 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
             </div>
 
             {reactionModalOpen && (
-                <div
-                    className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-                    onClick={() => setReactionModalOpen(false)}
-                >
+                <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-auto bg-black/50"
+                     onClick={() => setReactionModalOpen(false)}>
+
                     <div
-                        className="bg-white rounded-lg p-4 w-80 shadow-lg"
+                        className="bg-white rounded-lg shadow-2xl border border-gray-200 w-full max-w-sm mx-4 max-h-[85vh] flex flex-col pointer-events-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="text-lg font-semibold mb-3">Reactions</div>
+                        <div className="flex items-center justify-between p-4 border-b">
+                            <h2 className="text-lg font-semibold">Reactions</h2>
+                            <button
+                                onClick={() => setReactionModalOpen(false)}
+                                className="text-gray-500 hover:text-gray-700 transition-colors"
+                            >
+                                <X size={22} />
+                            </button>
+                        </div>
 
-                        {reactionsList.length === 0 ? (
-                            <div className="text-sm text-gray-500">No reactions yet.</div>
-                        ) : (
-                            <div className="flex flex-col gap-2">
-                                {reactionsList.map((r, index) => (
-                                    <div key={index} className="flex items-center justify-between border-b pb-1">
-                                        <div className="flex gap-2 items-center text-sm text-gray-800">
-                                            <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-xs text-blue-700">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                            {reactionsList.length === 0 ? (
+                                <div className="text-sm text-gray-500 text-center">No reactions yet.</div>
+                            ) : (
+                                reactionsList.map((r, index) => (
+                                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg border">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs text-blue-700">
                                                 {r.userEmail?.[0]?.toUpperCase() ?? '?'}
                                             </div>
-                                            <span>{r.userEmail ?? r.userId}</span>
+                                            <span className="text-sm">{r.userEmail ?? r.userId}</span>
                                         </div>
-                                        <div className="text-lg">{typeToEmoji[r.reaction] ?? '❓'}</div>
+                                        <div className="text-xl">{typeToEmoji[r.reaction] ?? '❓'}</div>
                                     </div>
-                                ))}
-                            </div>
-                        )}
+                                ))
+                            )}
+                        </div>
 
-                        <button
-                            className="mt-4 w-full bg-blue-600 text-white py-1.5 rounded-lg"
-                            onClick={() => setReactionModalOpen(false)}
-                        >
-                            Close
-                        </button>
+                        <div className="p-4 border-t flex">
+                            <button
+                                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                onClick={() => setReactionModalOpen(false)}
+                            >
+                                Close
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

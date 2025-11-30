@@ -846,6 +846,10 @@ export class ChatsService {
           where: { id: messageId },
           data: { isDeleted: true },
         });
+        // delete reaction
+        await client.messageReaction.deleteMany({
+          where: { messageId },
+        });
 
         //! NULL CHECK: Find the chat - could be null if chat was deleted
         const chat = await client.chat.findFirst({
