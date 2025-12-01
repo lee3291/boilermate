@@ -67,8 +67,14 @@ export class RecommendationSchedulerService {
 
       // Step 3: Generate recommendations for each user
       let totalGenerated = 0;
+      const allLogs: string[] = [];
+      allLogs.push(`RECOMMENDATION GENERATION RUN`);
+      allLogs.push(`Timestamp: ${new Date().toISOString()}`);
+      allLogs.push(`Total Active Users: ${users.length}\n`);
+
       for (const user of users) {
-        const topMatches = await this.calculateTopMatches(user as any, users as any);
+        const { topMatches, logs } = await this.calculateTopMatches(user as any, users as any);
+        allLogs.push(...logs);
 
         if (topMatches.length > 0) {
           await this.prisma.recommendationScore.createMany({
@@ -81,6 +87,19 @@ export class RecommendationSchedulerService {
           });
           totalGenerated += topMatches.length;
         }
+      }
+
+      // Write all logs to file
+      try {
+        const logsDir = path.join(process.cwd(), 'recommendation-logs');
+        if (!fs.existsSync(logsDir)) {
+          fs.mkdirSync(logsDir, { recursive: true });
+        }
+        const logFile = path.join(logsDir, `${new Date().toISOString().split('T')[0]}.txt`);
+        fs.writeFileSync(logFile, allLogs.join('\n'));
+        this.logger.log(`Logs written to ${logFile}`);
+      } catch (error) {
+        this.logger.error(`Failed to write log file: ${error.message}`);
       }
 
       this.logger.log(
@@ -128,12 +147,12 @@ export class RecommendationSchedulerService {
 
   /**
    * Calculate top matches for a user using two-way scoring algorithm
-   * Returns top-20 matches sorted by score
+   * Returns top-20 matches sorted by score and logs
    */
   private async calculateTopMatches(
     user: UserPreferenceData,
     allUsers: UserPreferenceData[],
-  ): Promise<MatchResult[]> {
+  ): Promise<{ topMatches: MatchResult[]; logs: string[] }> {
     // Get users this user has already interacted with (exclude from matching)
     const interactions = await this.prisma.recommendationInteraction.findMany({
       where: { userId: user.id },
@@ -166,7 +185,13 @@ export class RecommendationSchedulerService {
       // Log every candidate score
       logLines.push(`Candidate: ${candidate.email} (ID: ${candidate.id})`);
       logLines.push(`  Score A->B: ${scoreAtoB.score.toFixed(2)}%`);
+      if (scoreAtoB.breakdown.length > 0) {
+        scoreAtoB.breakdown.forEach(line => logLines.push(line));
+      }
       logLines.push(`  Score B->A: ${scoreBtoA.score.toFixed(2)}%`);
+      if (scoreBtoA.breakdown.length > 0) {
+        scoreBtoA.breakdown.forEach(line => logLines.push(line));
+      }
       logLines.push(`  Final Score: ${finalScore.toFixed(2)}%`);
       logLines.push(`  Top Matches: ${scoreAtoB.reasons.topMatches.join(', ') || 'None'}`);
       logLines.push(`  Status: ${finalScore >= 50 ? 'INCLUDED' : 'BELOW THRESHOLD'}`);
@@ -193,19 +218,7 @@ export class RecommendationSchedulerService {
     logLines.push(`Top 20 stored: ${topMatches.length}`);
     logLines.push(`${'='.repeat(80)}\n`);
     
-    // Write to file
-    try {
-      const logsDir = path.join(process.cwd(), 'recommendation-logs');
-      if (!fs.existsSync(logsDir)) {
-        fs.mkdirSync(logsDir, { recursive: true });
-      }
-      const logFile = path.join(logsDir, `${new Date().toISOString().split('T')[0]}.txt`);
-      fs.appendFileSync(logFile, logLines.join('\n'));
-    } catch (error) {
-      this.logger.error(`Failed to write log file: ${error.message}`);
-    }
-    
-    return topMatches;
+    return { topMatches, logs: logLines };
   }
 
   /**
@@ -215,7 +228,7 @@ export class RecommendationSchedulerService {
   private calculateCompatibilityScore(
     userA: UserPreferenceData,
     userB: UserPreferenceData,
-  ): { score: number; reasons: { topMatches: string[]; categories: Record<string, boolean> } } {
+  ): { score: number; reasons: { topMatches: string[]; categories: Record<string, boolean> }; breakdown: string[] } {
     // Get A's wants (roommatePreferences) and B's is (profilePreferences)
     const wantsA = userA.roommatePreferences;
     const isB = new Set(
@@ -244,6 +257,7 @@ export class RecommendationSchedulerService {
     let maxScore = 0;
     const topMatches: string[] = [];
     const categories: Record<string, boolean> = {};
+    const breakdown: string[] = [];
 
     // Calculate weighted score
     for (const want of wantsA) {
@@ -261,6 +275,7 @@ export class RecommendationSchedulerService {
       if (isB.has(preferenceId)) {
         totalScore += weightedImportance;
         categories[category] = true;
+        breakdown.push(`    ✓ ${label} (${category}): +${weightedImportance.toFixed(1)} pts [importance=${importanceLevel}, weight=${weight}]`);
 
         // Add to top matches (limit to 5 most important)
         if (importanceLevel >= 4 && topMatches.length < 5) {
@@ -268,7 +283,11 @@ export class RecommendationSchedulerService {
         }
       } else if (importanceLevel >= 4) {
         // Heavy penalty for high-importance mismatches
-        totalScore -= weightedImportance * 0.5;
+        const penalty = weightedImportance * 0.5;
+        totalScore -= penalty;
+        breakdown.push(`    ✗ ${label} (${category}): -${penalty.toFixed(1)} pts [PENALTY: importance=${importanceLevel}, weight=${weight}]`);
+      } else {
+        breakdown.push(`    - ${label} (${category}): 0 pts [no match, importance=${importanceLevel}]`);
       }
     }
 
@@ -281,6 +300,7 @@ export class RecommendationSchedulerService {
         topMatches,
         categories,
       },
+      breakdown,
     };
   }
 }
