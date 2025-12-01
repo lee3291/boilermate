@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pin, X } from 'lucide-react';
 
-export default function PinnedMessageButton({ chatId, onGetPinnedMessages }: any) {
+export default function PinnedMessageButton({ chatId, onGetPinnedMessages, onUnpinMessage, currentUserId }: any) {
     const [open, setOpen] = useState(false);
     const [pinnedMessages, setPinnedMessages] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -16,6 +16,15 @@ export default function PinnedMessageButton({ chatId, onGetPinnedMessages }: any
             alert("Failed to fetch pinned messages.");
         }
         setLoading(false);
+    };
+
+    const handleUnpin = async (messageId: string) => {
+        try {
+            setOpen(false); // Close the modal immediately
+            await onUnpinMessage(chatId, messageId, currentUserId);
+        } catch (err) {
+            alert("Failed to remove pinned message.");
+        }
     };
 
     return (
@@ -64,9 +73,15 @@ export default function PinnedMessageButton({ chatId, onGetPinnedMessages }: any
                                         <div className="text-xs text-gray-500 mb-1">
                                             Pinned at: {new Date(pm.createdAt).toLocaleString()} by {pm.pinnedByEmail}
                                         </div>
-
-                                        <div className="text-sm font-medium mb-1">
-                                            {pm.messageContent}
+                                        <div className="flex justify-between items-center text-sm font-medium">
+                                            <span>{pm.messageContent}</span>
+                                            <button
+                                                onClick={() => handleUnpin(pm.messageId)}
+                                                className="text-red-600 text-lg font-bold px-2 py-1 rounded hover:bg-red-100 relative group"
+                                                title="Remove pinned message"
+                                            >
+                                                <X size={20} />
+                                            </button>
                                         </div>
                                     </div>
                                 ))
@@ -78,7 +93,7 @@ export default function PinnedMessageButton({ chatId, onGetPinnedMessages }: any
                                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                                 onClick={() => setOpen(false)}
                             >
-                                Close
+                            Close
                             </button>
                         </div>
                     </div>

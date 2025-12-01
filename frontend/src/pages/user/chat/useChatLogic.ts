@@ -17,6 +17,7 @@ import {
   getReactions as apiGetReactions,
   getReactionCount as apiGetReactionCount,
   pinMessage as apiPinMessage,
+  unpinMessage as apiUnpinMessage,
   getPinnedMessages as apiGetPinnedMessages,
 } from '@/services/chatService';
 import {
@@ -730,6 +731,24 @@ export default function useChatLogic(user: User) {
       },
       []
   );
+  // Unpin msg
+  const handleUnpinMessage = useCallback(
+      async (chatId: string, messageId: string, userId: string): Promise<boolean> => {
+        try {
+          const success = await apiUnpinMessage(chatId, messageId, userId);
+          if (success) {
+            alert('Unpinned message successfully!');
+          } else {
+            alert('Failed to unpin message!');
+          }
+          return success;
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to unpin message!');
+          return false;
+        }
+      },
+      []
+  );
 
 
   // Add or update a reaction
@@ -926,6 +945,7 @@ export default function useChatLogic(user: User) {
 
     // Pin/Unpin
     handlePinMessage,
+    handleUnpinMessage,
     handleGetPinnedMessages,
 
     //Emojis

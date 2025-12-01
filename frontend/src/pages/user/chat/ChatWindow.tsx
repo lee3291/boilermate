@@ -37,6 +37,7 @@ export default function ChatWindow(props: {
   onGetReactions: (messageId: string) => Promise<any[]>;
   onGetReactionCount: (messageId: string) => Promise<number>;
   onPinMessage: (chatId: string, messageId: string, userId: string) => Promise<boolean>;
+  onUnpinMessage: (chatId: string, messageId: string, userId: string) => Promise<boolean>;
   onGetPinnedMessages: (chatId: string) => Promise<any[]>;
 }) {
   const {
@@ -70,6 +71,7 @@ export default function ChatWindow(props: {
     onGetReactions,
     onGetReactionCount,
     onPinMessage,
+    onUnpinMessage,
     onGetPinnedMessages,
   } = props;
 
@@ -167,8 +169,10 @@ export default function ChatWindow(props: {
                     onFileChange={onFileChange}
                     isUploading={isUploadingImage}
                     onCreatePoll={handleCreatePoll}
+                    onUnpinMessage={onUnpinMessage}
                     onGetPinnedMessages={onGetPinnedMessages}
                     chatId={chatId}
+                    currentUserId={currentUserId ?? ''}
                 />
             )}
           </div>

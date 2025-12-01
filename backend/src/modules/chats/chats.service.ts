@@ -1125,6 +1125,7 @@ export class ChatsService {
       chatId: string
   ): Promise<Array<{
     id: string;
+    messageId:string;
     chatId: string;
     messageContent?: string;
     pinnedByEmail?: string;
@@ -1134,6 +1135,7 @@ export class ChatsService {
       where: { chatId },
       select: {
         id: true,
+        messageId:true,
         chatId: true,
         createdAt: true,
         pinnedBy: {         // relation to User
@@ -1154,6 +1156,7 @@ export class ChatsService {
 
     return pinned.map(p => ({
       id: p.id,
+      messageId:p.messageId,
       chatId: p.chatId,
       messageContent: p.message?.content ?? 'No content',
       pinnedByEmail: p.pinnedBy?.email ?? 'Unknown',

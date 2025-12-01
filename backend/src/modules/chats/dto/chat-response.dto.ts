@@ -28,6 +28,9 @@ export class PinnedMessageDto {
   id: string;
 
   @Expose()
+  messageId: string;
+
+  @Expose()
   chatId: string;
 
   @Expose()

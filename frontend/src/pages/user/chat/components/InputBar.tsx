@@ -13,8 +13,10 @@ export default function InputBar({
   selectedFile, // new prop for displaying selected file
   isUploading, // new prop for showing upload state
                                      onCreatePoll,
+                                     onUnpinMessage,
                                      onGetPinnedMessages,
                                      chatId,
+                                     currentUserId,
                                  }: {
   value?: string;
     selectedConversation?: Chat | null;
@@ -24,8 +26,10 @@ export default function InputBar({
   selectedFile?: File | null; // currently selected file
   isUploading?: boolean; // whether image is being uploaded
     onCreatePoll?: (poll: { question: string; options: string[] }) => void; //Handle for poll in chat
+    onUnpinMessage: (chatId: string, messageId: string, userId: string) => Promise<boolean>;
     onGetPinnedMessages: (chatId: string) => Promise<any[]>;
-    chatId?: any,
+    chatId?: string,
+    currentUserId?:string,
 }) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -68,8 +72,10 @@ export default function InputBar({
         )}
         <>
             <PinnedMessageButton
+                onUnpinMessage={onUnpinMessage}
                 onGetPinnedMessages={onGetPinnedMessages}
                 chatId={chatId}
+                currentUserId={currentUserId}
             />
         </>
 

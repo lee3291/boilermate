@@ -70,6 +70,7 @@ export default function ChatPage() {
 
             //Pinned msgs
             onPinMessage={logic.handlePinMessage}
+            onUnpinMessage={logic.handleUnpinMessage}
             onGetPinnedMessages={logic.handleGetPinnedMessages}
 
 

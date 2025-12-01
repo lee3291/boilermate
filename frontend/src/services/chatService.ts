@@ -251,6 +251,16 @@ export async function pinMessage(chatId: string, messageId: string, userId: stri
   }
 }
 
+//Unpin msg
+export async function unpinMessage(chatId: string, messageId: string, userId: string): Promise<boolean> {
+  try {
+    const res = await api.delete(`/chats/${chatId}/${messageId}/${userId}/pin`);
+    return res.data.success;
+  } catch (error: any) {
+    throw error.response?.data ?? error;
+  }
+}
+
 // Get all pinned messages for a chat
 export async function getPinnedMessages(chatId: string) {
   try {
