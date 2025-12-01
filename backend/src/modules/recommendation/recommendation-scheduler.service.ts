@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '@core/database/prisma.service';
 import { UserPreferenceData, MatchResult } from './interfaces';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
  * RecommendationSchedulerService
@@ -144,6 +146,11 @@ export class RecommendationSchedulerService {
 
     // Calculate scores for all candidates
     const matches: MatchResult[] = [];
+    const logLines: string[] = [];
+    logLines.push(`\n${'='.repeat(80)}`);
+    logLines.push(`SCORING REPORT FOR USER: ${user.email} (ID: ${user.id})`);
+    logLines.push(`Timestamp: ${new Date().toISOString()}`);
+    logLines.push(`${'='.repeat(80)}\n`);
 
     for (const candidate of allUsers) {
       // Skip if excluded
@@ -156,6 +163,15 @@ export class RecommendationSchedulerService {
       const scoreBtoA = this.calculateCompatibilityScore(candidate, user);
       const finalScore = (scoreAtoB.score + scoreBtoA.score) / 2;
 
+      // Log every candidate score
+      logLines.push(`Candidate: ${candidate.email} (ID: ${candidate.id})`);
+      logLines.push(`  Score A->B: ${scoreAtoB.score.toFixed(2)}%`);
+      logLines.push(`  Score B->A: ${scoreBtoA.score.toFixed(2)}%`);
+      logLines.push(`  Final Score: ${finalScore.toFixed(2)}%`);
+      logLines.push(`  Top Matches: ${scoreAtoB.reasons.topMatches.join(', ') || 'None'}`);
+      logLines.push(`  Status: ${finalScore >= 50 ? 'INCLUDED' : 'BELOW THRESHOLD'}`);
+      logLines.push('');
+
       // Only store if score is above threshold (e.g., 50%)
       if (finalScore >= 50) {
         matches.push({
@@ -167,7 +183,29 @@ export class RecommendationSchedulerService {
     }
 
     // Sort by score descending and take top 20
-    return matches.sort((a, b) => b.score - a.score).slice(0, 20);
+    const topMatches = matches.sort((a, b) => b.score - a.score).slice(0, 20);
+    
+    // Log summary
+    logLines.push(`${'='.repeat(80)}`);
+    logLines.push(`SUMMARY`);
+    logLines.push(`Total candidates evaluated: ${allUsers.length - excludedIds.size}`);
+    logLines.push(`Matches above 50%: ${matches.length}`);
+    logLines.push(`Top 20 stored: ${topMatches.length}`);
+    logLines.push(`${'='.repeat(80)}\n`);
+    
+    // Write to file
+    try {
+      const logsDir = path.join(process.cwd(), 'recommendation-logs');
+      if (!fs.existsSync(logsDir)) {
+        fs.mkdirSync(logsDir, { recursive: true });
+      }
+      const logFile = path.join(logsDir, `${new Date().toISOString().split('T')[0]}.txt`);
+      fs.appendFileSync(logFile, logLines.join('\n'));
+    } catch (error) {
+      this.logger.error(`Failed to write log file: ${error.message}`);
+    }
+    
+    return topMatches;
   }
 
   /**
