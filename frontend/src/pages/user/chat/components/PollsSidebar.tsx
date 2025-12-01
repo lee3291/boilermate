@@ -17,7 +17,7 @@ export interface Poll {
 interface PollsSidebarProps {
     polls: Poll[];
     onClose: () => void;
-    onAddOption: (pollId: string, optionText: string) => Promise<PollOption>;
+    onAddOption: (pollId: string, optionText: string) => Promise<any>;
     onSubmitVotes: (pollId: string, opts: { id: string; selected: boolean }[]) => Promise<any>;
 }
 

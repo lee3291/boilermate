@@ -179,7 +179,7 @@ export async function getAllPolls(chatId: string, userId: string): Promise<any[]
 }
 
 // Add a new option to an existing poll
-export async function addPollOption(pollId: string, text: string): Promise<PollOption> {
+export async function addPollOption(pollId: string, text: string): Promise<any> {
   try {
     const res = await api.post(`/chats/poll/${encodeURIComponent(pollId)}/add-option`, { text });
     console.log('add poll option', res);

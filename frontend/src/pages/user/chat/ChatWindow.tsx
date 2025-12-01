@@ -30,7 +30,7 @@ export default function ChatWindow(props: {
   blockedBetween?: boolean;
   onCreatePoll?: (chatId: string, question: string, options: string[]) => Promise<boolean>;
   onGetPolls?: (chatId: string, userId: string) => Promise<{ id: string; question: string; options: { id: string; text: string; votes: number; votedByUser: boolean; }[] }[]>;
-  onAddOption: (pollId: string, optionText: string) => Promise<any>;
+  onAddOption?: (pollId: string, optionText: string) => Promise<any>;
   onSubmitVotes: (pollId: string, opts: { id: string; selected: boolean }[]) => Promise<any>;
   onAddReaction: (messageId: string, userId:string, reaction: string) => Promise<any>;
   onRemoveReaction: (messageId: string) => Promise<any>;
