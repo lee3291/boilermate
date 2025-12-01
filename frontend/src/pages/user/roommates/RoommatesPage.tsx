@@ -11,6 +11,7 @@ import Navbar from '../components/Navbar';
 import RoommatesSidebar from './components/RoommatesSidebar';
 import FilterBar from './components/FilterBar';
 import ProfileCard from './components/ProfileCard';
+import RecommendationCard from './components/RecommendationCard';
 import CompareCart from './components/CompareCart';
 
 const PAGE_SIZE = 9; // 3x3 grid
@@ -33,6 +34,7 @@ export default function RoommatesPage() {
     favoritesTotal,
     likedTotal,
     dislikedTotal,
+    recommendedTotal,
     countsFetched,
     viewMode,
     allPreferences,
@@ -41,6 +43,7 @@ export default function RoommatesPage() {
     importanceValue,
     expandedCategories,
     compareUsers,
+    recommendations,
     setPage,
     handleSetViewMode,
     handleApplyFilters,
@@ -55,6 +58,8 @@ export default function RoommatesPage() {
     handleRemoveFromCompare,
     handleClearCompare,
     isUserInCompare,
+    handleAcceptRecommendation,
+    handleDeclineRecommendation,
   } = useRoommatesLogic(userId);
 
   const handleViewProfile = (profileId: string) => {
@@ -78,7 +83,9 @@ export default function RoommatesPage() {
           Roommates
         </h1>
         <p className='text-gray-600 text-sm mt-1'>
-          Search for roommates by their lifestyle preferences
+          {viewMode === 'recommended'
+            ? 'Personalized roommate recommendations based on your preferences'
+            : 'Search for roommates by their lifestyle preferences'}
         </p>
       </div>
 
@@ -103,6 +110,7 @@ export default function RoommatesPage() {
           favoritesTotal={favoritesTotal}
           likedTotal={likedTotal}
           dislikedTotal={dislikedTotal}
+          recommendedTotal={recommendedTotal}
           countsFetched={countsFetched}
           page={page}
           pageSize={PAGE_SIZE}
@@ -124,13 +132,35 @@ export default function RoommatesPage() {
               </div>
             )}
             
-            {!loading && profiles.length === 0 && (
+            {/* Recommended View */}
+            {viewMode === 'recommended' && !loading && recommendations.length === 0 && (
+              <div className='w-full text-center py-10 bg-purple-50 p-6 rounded-lg border border-purple-200'>
+                <p className='text-gray-700 font-medium mb-2'>No recommendations yet</p>
+                <p className='text-sm text-gray-600'>
+                  Recommendations are generated daily at 1:00 AM. Check back tomorrow!
+                </p>
+              </div>
+            )}
+
+            {viewMode === 'recommended' && recommendations.map((rec) => (
+              <RecommendationCard
+                key={rec.id}
+                recommendation={rec}
+                onAccept={handleAcceptRecommendation}
+                onDecline={handleDeclineRecommendation}
+                onViewProfile={handleViewProfile}
+                isOwnProfile={rec.candidateId === userId}
+              />
+            ))}
+            
+            {/* Other Views */}
+            {viewMode !== 'recommended' && !loading && profiles.length === 0 && (
               <div className='w-full text-center py-10 font-roboto-light text-gray-600 bg-yellow-50 p-6 rounded-lg border border-yellow-200'>
                 No roommates found. {selectedPreferences.length > 0 && 'Try adjusting your filters.'}
               </div>
             )}
 
-            {profiles.map((profile) => (
+            {viewMode !== 'recommended' && profiles.map((profile) => (
               <ProfileCard
                 key={profile.id}
                 profile={profile}

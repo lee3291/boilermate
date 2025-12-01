@@ -18,7 +18,6 @@ import { ChatsModule } from '../chats/chats.module';
   imports: [
     PrismaModule,
     ChatsModule, // For sending invitations
-    ScheduleModule.forRoot(), // For cron jobs
   ],
   controllers: [RecommendationController],
   providers: [RecommendationService, RecommendationSchedulerService],
