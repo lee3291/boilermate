@@ -293,14 +293,14 @@ export default function Message({ m, isMine, currentUserId, senderEmail, onEdit,
                                     }}
                                     className="px-2 py-0.5 bg-gray-100 rounded-full border text-xs hover:bg-gray-200"
                                 >
-                                    {reactionCount} reactions
+                                    {reactionCount} {reactionCount === 1 ? 'reaction' : 'reactions'}
                                 </button>
                             </div>
                         )}
 
 
                         {reactionPickerOpen && (
-                            <div className="absolute top-full mt-1 left-1/2 -translate-x-1/2 bg-white border rounded-full shadow px-2 py-1 flex gap-1 z-20">
+                            <div className="absolute top-full mt-1 left-1/2 -translate-x-[57%] bg-white border rounded-full shadow px-2 py-1 flex gap-1 z-20">
                                 {['👍', '❤️', '😂', '😮', '😢', '😡'].map((e) => (
                                     <button
                                         key={e}
