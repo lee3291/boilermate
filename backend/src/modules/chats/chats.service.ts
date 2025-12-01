@@ -833,6 +833,8 @@ export class ChatsService {
       if (!message.senderId) {
         throw new InternalServerErrorException('Message has no sender');
       }
+
+
       
       if (forEveryone === 'true') { // Delete for everyone
         // check authorization - only sender can delete for everyone
@@ -851,6 +853,11 @@ export class ChatsService {
           where: { messageId },
         });
 
+        //delete if it is pin msg
+        await client.pinnedMessage.deleteMany({
+          where: { messageId },
+        });
+
         //! NULL CHECK: Find the chat - could be null if chat was deleted
         const chat = await client.chat.findFirst({
           where: {
@@ -866,6 +873,8 @@ export class ChatsService {
         } else {
           Logger.warn(`Chat not found for message ${messageId} when trying to emit delete event`);
         }
+
+
       } else { // Delete for you (forEveryone === 'false')
 
         //TODO: may need to update functionality to add soft delete for image => already handled
@@ -1116,31 +1125,41 @@ export class ChatsService {
       chatId: string
   ): Promise<Array<{
     id: string;
-    messageId: string;
     chatId: string;
-    pinnedById?: string;
+    messageContent?: string;
+    pinnedByEmail?: string;
     createdAt: Date;
   }>> {
     const pinned = await this.prisma.pinnedMessage.findMany({
       where: { chatId },
       select: {
         id: true,
-        messageId: true,
         chatId: true,
-        pinnedById: true,
-        createdAt: true
+        createdAt: true,
+        pinnedBy: {         // relation to User
+          select: {
+            email: true,
+          },
+        },
+        message: {          // relation to Message
+          select: {
+            content: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: "asc" // oldest → newest
-      }
+        createdAt: 'desc', // newest → oldest
+      },
     });
 
     return pinned.map(p => ({
       id: p.id,
-      messageId: p.messageId,
       chatId: p.chatId,
-      pinnedById: p.pinnedById ?? undefined,
-      createdAt: p.createdAt
+      messageContent: p.message?.content ?? 'No content',
+      pinnedByEmail: p.pinnedBy?.email ?? 'Unknown',
+      createdAt: p.createdAt,
     }));
   }
+
+
 }

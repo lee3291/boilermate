@@ -16,7 +16,8 @@ import {
   removeReaction as apiRemoveReaction,
   getReactions as apiGetReactions,
   getReactionCount as apiGetReactionCount,
-    pinMessage as apiPinMessage,
+  pinMessage as apiPinMessage,
+  getPinnedMessages as apiGetPinnedMessages,
 } from '@/services/chatService';
 import {
   getPresignedUrl as apiGetPresignedUrl,
@@ -786,6 +787,18 @@ export default function useChatLogic(user: User) {
       []
   );
 
+  // Get all reactions for a message
+  const handleGetPinnedMessages = useCallback(
+      async (chatId: string) => {
+        try {
+          return await apiGetPinnedMessages(chatId);
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to fetch pinned messages');
+          return [];
+        }
+      },
+      []
+  );
 
 
   // Add member to group (admin only)
@@ -913,6 +926,7 @@ export default function useChatLogic(user: User) {
 
     // Pin/Unpin
     handlePinMessage,
+    handleGetPinnedMessages,
 
     //Emojis
     handleAddReaction,

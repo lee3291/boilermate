@@ -251,8 +251,19 @@ export async function pinMessage(chatId: string, messageId: string, userId: stri
   }
 }
 
+// Get all pinned messages for a chat
+export async function getPinnedMessages(chatId: string) {
+  try {
+    const res = await api.get(`/chats/${chatId}/pinned-messages`);
+    return res.data;
+  } catch (error: any) {
+    throw error.response?.data ?? error;
+  }
+}
+
 export default { getChats, sendMessage, getHistory, editMessage,
   deleteMessage, createNormalChat, searchUsersForNormalChatCreation,
   getBlockedByUserId, getUsersWhoBlockedMeIds, getUserIdsCanBlock,
   blockUser, unblockUser, isBlockedBetween, addReaction,
-  removeReaction, getReactions, getReactionCount, pinMessage};
+  removeReaction, getReactions, getReactionCount, pinMessage,
+  getPinnedMessages};

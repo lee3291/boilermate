@@ -28,13 +28,13 @@ export class PinnedMessageDto {
   id: string;
 
   @Expose()
-  messageId: string;
-
-  @Expose()
   chatId: string;
 
   @Expose()
-  pinnedById?: string;
+  messageContent?: string;
+
+  @Expose()
+  pinnedByEmail?: string;
 
   @Expose()
   createdAt: Date;

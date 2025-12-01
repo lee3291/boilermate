@@ -70,6 +70,8 @@ export default function ChatPage() {
 
             //Pinned msgs
             onPinMessage={logic.handlePinMessage}
+            onGetPinnedMessages={logic.handleGetPinnedMessages}
+
 
             // Group chat props
             blockedBetween={logic.blockedBetween}
