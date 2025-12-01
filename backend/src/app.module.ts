@@ -20,6 +20,7 @@ import { AnnouncementsModule } from './modules/announcements/announcements.modul
 import { VerificationModule } from './modules/verification/verification.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { RoommatesModule } from './modules/roommates/roommates.module';
+import { RecommendationModule } from './modules/recommendation/recommendation.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { RoommatesModule } from './modules/roommates/roommates.module';
     AnnouncementsModule,
     TasksModule,
     RoommatesModule,
+    RecommendationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
