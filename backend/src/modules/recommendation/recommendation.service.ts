@@ -48,11 +48,37 @@ export class RecommendationService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    // Get recommendations (exclude hidden ones)
+    // Get users with existing chat relationships (to exclude from UI)
+    const existingChats = await this.prisma.chatParticipant.findMany({
+      where: {
+        userId,
+      },
+      select: {
+        chatId: true,
+      },
+    });
+
+    const chatIds = existingChats.map((cp) => cp.chatId);
+    const chatParticipants = await this.prisma.chatParticipant.findMany({
+      where: {
+        chatId: { in: chatIds },
+        userId: { not: userId },
+      },
+      select: {
+        userId: true,
+      },
+    });
+
+    const chatUserIds = new Set(chatParticipants.map((cp) => cp.userId));
+
+    // Get recommendations (exclude hidden ones AND users with existing chats)
     const recommendations = await this.prisma.recommendationScore.findMany({
       where: {
         userId,
         hidden: false,
+        candidateId: {
+          notIn: Array.from(chatUserIds),
+        },
       },
       include: {
         candidate: {

@@ -159,32 +159,13 @@ export class RecommendationSchedulerService {
       select: { candidateId: true },
     });
 
-    // Get users with existing chat relationships (bidirectional)
-    // Exclude anyone who is already a participant in a chat with this user
-    const existingChats = await this.prisma.chatParticipant.findMany({
-      where: {
-        userId: user.id,
-      },
-      select: {
-        chatId: true,
-      },
-    });
-
-    const chatIds = existingChats.map((cp) => cp.chatId);
-    const chatParticipants = await this.prisma.chatParticipant.findMany({
-      where: {
-        chatId: { in: chatIds },
-        userId: { not: user.id },
-      },
-      select: {
-        userId: true,
-      },
-    });
-
+    // Note: We now calculate scores for ALL users (including existing chat partners)
+    // to allow viewing compatibility with existing contacts.
+    // The recommendation service will hide users with active chats from the UI,
+    // but scores are still calculated and stored for reference.
     const excludedIds = new Set([
       user.id, // Exclude self
-      ...interactions.map((i) => i.candidateId),
-      ...chatParticipants.map((cp) => cp.userId), // Exclude anyone in existing chats
+      ...interactions.map((i) => i.candidateId), // Exclude previous accept/decline
     ]);
 
     // Calculate scores for all candidates
@@ -193,6 +174,14 @@ export class RecommendationSchedulerService {
     logLines.push(`\n${'='.repeat(80)}`);
     logLines.push(`SCORING REPORT FOR USER: ${user.email} (ID: ${user.id})`);
     logLines.push(`Timestamp: ${new Date().toISOString()}`);
+    logLines.push(`User's Roommate Preferences (what they want):`);
+    user.roommatePreferences.forEach(pref => {
+      logLines.push(`  - ${pref.preference.label} (${pref.preference.category}): importance=${pref.importance}`);
+    });
+    logLines.push(`User's Profile Preferences (who they are):`);
+    user.profilePreferences.forEach(pref => {
+      logLines.push(`  - ${pref.preference.label} (${pref.preference.category})`);
+    });
     logLines.push(`${'='.repeat(80)}\n`);
 
     for (const candidate of allUsers) {
@@ -279,7 +268,7 @@ export class RecommendationSchedulerService {
 
     let totalScore = 0;
     let maxScore = 0;
-    const topMatches: string[] = [];
+    const matchesWithImportance: Array<{ label: string; importance: number }> = [];
     const categories: Record<string, boolean> = {};
     const breakdown: string[] = [];
 
@@ -301,10 +290,8 @@ export class RecommendationSchedulerService {
         categories[category] = true;
         breakdown.push(`    ✓ ${label} (${category}): +${weightedImportance.toFixed(1)} pts [importance=${importanceLevel}, weight=${weight}]`);
 
-        // Add to top matches (limit to 5 most important)
-        if (importanceLevel >= 4 && topMatches.length < 5) {
-          topMatches.push(label);
-        }
+        // Collect all matches with their importance for sorting later
+        matchesWithImportance.push({ label, importance: importanceLevel });
       } else {
         // Apply penalty for ALL mismatches, scaled by importance level
         // Penalty factor: (importance / 5) gives 0% at importance=0, 100% at importance=5
@@ -322,6 +309,13 @@ export class RecommendationSchedulerService {
 
     // Calculate percentage score
     const finalScore = maxScore > 0 ? Math.max(0, (totalScore / maxScore) * 100) : 0;
+
+    // Sort matches by importance (descending) and take top 5
+    // This shows the most important matches regardless of their absolute importance level
+    const topMatches = matchesWithImportance
+      .sort((a, b) => b.importance - a.importance)
+      .slice(0, 5)
+      .map(m => m.label);
 
     return {
       score: Math.round(finalScore * 100) / 100, // Round to 2 decimals
