@@ -119,7 +119,7 @@ export default function RoommatesPage() {
 
         {/* Profile Cards Grid */}
         <div className='flex-1 pb-10'>
-          <div className='flex flex-wrap justify-start gap-8'>
+          <div className='grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8'>
             {loading && (
               <div className='w-full text-center py-10 text-gray-600'>
                 Loading roommates...

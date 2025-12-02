@@ -28,9 +28,9 @@ export default function ProfileCard({
   const currentVote = profile.myVoteType || null;
 
   return (
-    <div className='relative'>
-      <div className="absolute h-100 w-140 z-0 bg-black/20 blur-[5px] rounded-lg" />
-      <div className="relative h-100 w-140 z-10 border-black border-[1.5px] bg-white rounded-lg">
+    <div className='relative w-full'>
+      <div className="absolute h-90 w-full z-0 bg-black/20 blur-[5px] rounded-lg" />
+      <div className="relative h-90 w-full z-10 border-black border-[1.5px] bg-white rounded-lg">
         {/* Compare checkbox - top right */}
         {!isOwnProfile && onToggleCompare && (
           <button
