@@ -94,6 +94,13 @@ model User {
   
   roommateReviewsWritten   RoommateReview[]  @relation("ReviewAuthor")
   roommateReviewsReceived  RoommateReview[]  @relation("ReviewSubject")
+
+  // Recommendation relations
+  recommendationsReceived  RecommendationScore[] @relation("RecommendationsReceived")
+  recommendationsGiven     RecommendationScore[] @relation("RecommendationsGiven")
+  
+  interactionsGiven        RecommendationInteraction[] @relation("InteractionsGiven")
+  interactionsReceived     RecommendationInteraction[] @relation("InteractionsReceived")
 }
 
 model FavoriteMatch {

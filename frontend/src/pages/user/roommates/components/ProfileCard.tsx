@@ -28,9 +28,9 @@ export default function ProfileCard({
   const currentVote = profile.myVoteType || null;
 
   return (
-    <div className='relative'>
-      <div className="absolute h-100 w-140 z-0 bg-black/20 blur-[5px] rounded-lg" />
-      <div className="relative h-100 w-140 z-10 border-black border-[1.5px] bg-white rounded-lg">
+    <div className='relative w-full min-h-[280px]'>
+      <div className="absolute inset-0 z-0 bg-black/20 blur-[5px] rounded-lg" />
+      <div className="relative w-full min-h-[280px] z-10 border-black border-[1.5px] bg-white rounded-lg flex flex-col">
         {/* Compare checkbox - top right */}
         {!isOwnProfile && onToggleCompare && (
           <button
@@ -74,7 +74,7 @@ export default function ProfileCard({
           </button>
         )}
         
-        <div className="py-5 px-5">
+        <div className="py-4 px-5 flex-1 flex flex-col">
           <h1 className="font-roboto-regular text-3xl tracking-[-0.4pt]">
             {displayName}
           </h1>
@@ -82,13 +82,13 @@ export default function ProfileCard({
           <p className="text-xs text-gray-400 mt-1">{profile.email}</p>
 
           {/* User info */}
-          <div className="pt-2 flex flex-wrap gap-2 text-sm text-gray-600">
+          <div className="pt-1.5 flex flex-wrap gap-2 text-sm text-gray-600">
             {profile.age && <span>Age: {profile.age}</span>}
             {profile.major && <span>• {profile.major}</span>}
             {profile.year && <span>• {profile.year}</span>}
           </div>
 
-          <div className="pt-3 flex gap-4 text-sm text-gray-600">
+          <div className="pt-2 flex gap-4 text-sm text-gray-600">
             <div>
               <span className="font-roboto-bold">{profile.lifestylePreferencesCount}</span>
               {' '}lifestyle
@@ -101,7 +101,7 @@ export default function ProfileCard({
 
           {/* Vote Stats */}
           {(profile.likesReceived !== undefined || profile.dislikesReceived !== undefined) && (
-            <div className="pt-3 flex gap-4 text-sm">
+            <div className="pt-2 flex gap-4 text-sm">
               <div className="flex items-center gap-1">
                 <span className="text-lg">👍</span>
                 <span className="font-roboto-bold text-green-600">{profile.likesReceived || 0}</span>
@@ -114,15 +114,15 @@ export default function ProfileCard({
           )}
 
           {profile.bio && (
-            <p className="pt-3 font-roboto-light text-sm text-wrap line-clamp-3">
+            <p className="pt-2 font-roboto-light text-sm text-wrap line-clamp-3">
               {profile.bio}
             </p>
           )}
 
-          <div className="flex justify-start gap-3">
+          <div className="flex justify-start gap-3 mt-auto pt-4">
             {/* Like/Dislike buttons */}
             {!isOwnProfile && (
-              <div className="mt-10 flex gap-2">
+              <div className="flex gap-2">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -156,7 +156,7 @@ export default function ProfileCard({
             
             <button 
               onClick={() => onViewProfile(profile.id)}
-              className="mt-10 h-12 w-35 bg-black text-white font-roboto-light rounded-4xl cursor-pointer hover:bg-gray-800 transition"
+              className="h-12 w-35 bg-black text-white font-roboto-light rounded-4xl cursor-pointer hover:bg-gray-800 transition"
             >
               {isOwnProfile ? 'Edit Profile' : 'View Profile'}
             </button>

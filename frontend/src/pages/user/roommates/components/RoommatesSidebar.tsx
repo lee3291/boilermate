@@ -1,10 +1,11 @@
 interface RoommatesSidebarProps {
-  viewMode: 'search' | 'favorites' | 'liked' | 'disliked';
-  onSetViewMode: (mode: 'search' | 'favorites' | 'liked' | 'disliked') => void;
+  viewMode: 'search' | 'favorites' | 'liked' | 'disliked' | 'recommended';
+  onSetViewMode: (mode: 'search' | 'favorites' | 'liked' | 'disliked' | 'recommended') => void;
   searchTotal: number;
   favoritesTotal: number;
   likedTotal: number;
   dislikedTotal: number;
+  recommendedTotal: number;
   countsFetched: boolean;
   page: number;
   pageSize: number;
@@ -18,6 +19,7 @@ export default function RoommatesSidebar({
   favoritesTotal,
   likedTotal,
   dislikedTotal,
+  recommendedTotal,
   countsFetched,
   page,
   pageSize,
@@ -26,6 +28,7 @@ export default function RoommatesSidebar({
   // Get the correct total based on current view mode
   const getCurrentTotal = () => {
     switch (viewMode) {
+      case 'recommended': return recommendedTotal;
       case 'favorites': return favoritesTotal;
       case 'liked': return likedTotal;
       case 'disliked': return dislikedTotal;
@@ -54,6 +57,28 @@ export default function RoommatesSidebar({
             <span className='text-base font-semibold'>🔍 Search Roommates</span>
             {viewMode === 'search' && <span className='text-2xl'>✓</span>}
           </div>
+        </button>
+
+        {/* Recommended Mode Button */}
+        <button
+          onClick={() => onSetViewMode('recommended')}
+          className={`w-full p-4 rounded-lg border-2 transition mb-3 ${
+            viewMode === 'recommended'
+              ? 'bg-purple-50 border-purple-300 text-purple-900'
+              : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          <div className='flex items-center justify-between'>
+            <span className='text-base font-semibold'>✨ Recommended</span>
+            {viewMode === 'recommended' && <span className='text-2xl'>✓</span>}
+          </div>
+          <p className='text-sm text-purple-700 mt-2'>
+            {countsFetched ? (
+              `${recommendedTotal} match${recommendedTotal !== 1 ? 'es' : ''}`
+            ) : (
+              <span className='inline-block animate-pulse'>Loading...</span>
+            )}
+          </p>
         </button>
 
         {/* Favorites Mode Button */}
