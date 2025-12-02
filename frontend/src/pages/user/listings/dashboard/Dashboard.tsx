@@ -19,6 +19,13 @@ type RoommateApplication = {
 
 type StatusFilter = "ALL" | RoommateApplicationStatus;
 
+type ListingMeta = {
+    id: string;
+    title: string;
+    ownerUsername: string | null;
+    ownerEmail: string | null;
+};
+
 const API_BASE_URL =
     import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "";
 
@@ -58,6 +65,14 @@ export default function Dashboard() {
     const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
     const [withdrawingId, setWithdrawingId] = useState<string | null>(null);
 
+    // NEW: listing metadata (title, owner username + email) keyed by listingId
+    const [listingMetaById, setListingMetaById] = useState<Record<string, ListingMeta>>(
+        {},
+    );
+    const [listingMetaLoading, setListingMetaLoading] = useState<
+        Record<string, boolean>
+    >({});
+
     const me = useMemo(() => {
         if (!authUser) return null;
         const username = (authUser as any).username ?? (authUser as any).displayName;
@@ -91,7 +106,7 @@ export default function Dashboard() {
             params.set("pageSize", "50");
 
             const path = `/listings/users/${encodeURIComponent(
-                apiApplicantId
+                apiApplicantId,
             )}/roommate-applications?${params.toString()}`;
             const url = apiUrl(path);
 
@@ -126,7 +141,7 @@ export default function Dashboard() {
                 console.error("[ApplicationsDashboard] loadApplications error", err);
                 setError(
                     err?.message ||
-                        "Something went wrong while loading applications. Please try again."
+                        "Something went wrong while loading applications. Please try again.",
                 );
             } finally {
                 if (!cancelled) setIsLoading(false);
@@ -141,17 +156,149 @@ export default function Dashboard() {
         };
     }, [apiApplicantId, statusFilter]);
 
+    // --- NEW: load listing metadata (title + owner + email) for each listingId ---
+
+    const loadListingMeta = async (listingId: string) => {
+        if (!listingId) return;
+        if (listingMetaById[listingId] || listingMetaLoading[listingId]) return;
+
+        setListingMetaLoading((prev) => ({ ...prev, [listingId]: true }));
+
+        try {
+            // 1) Get listing details
+            const listingRes = await fetch(
+                apiUrl(`/listings/${encodeURIComponent(listingId)}`),
+            );
+            const listingRaw = await listingRes.text();
+
+            let title = `Listing ${listingId}`;
+            let ownerUsername: string | null = null;
+            let ownerEmail: string | null = null;
+
+            if (listingRes.ok) {
+                try {
+                    const listing = listingRaw ? JSON.parse(listingRaw) : null;
+                    if (listing) {
+                        if (typeof listing.title === "string" && listing.title.trim()) {
+                            title = listing.title.trim();
+                        }
+                        if (typeof listing.user === "string" && listing.user.trim()) {
+                            ownerUsername = listing.user.trim();
+                        }
+                    }
+                } catch (e) {
+                    console.error(
+                        "[ApplicationsDashboard] failed to parse listing detail",
+                        e,
+                    );
+                }
+            }
+
+            // 2) If we know the owner's username/email prefix, resolve their full email
+            if (ownerUsername) {
+                try {
+                    const searchRes = await fetch(
+                        apiUrl(
+                            `/profile/search-by-id?emailPrefix=${encodeURIComponent(
+                                ownerUsername,
+                            )}`,
+                        ),
+                    );
+                    const searchRaw = await searchRes.text();
+                    if (searchRes.ok) {
+                        const json = searchRaw ? JSON.parse(searchRaw) : null;
+
+                        let users: any[] = [];
+                        if (Array.isArray(json)) users = json;
+                        else if (Array.isArray(json?.users)) users = json.users;
+                        else if (Array.isArray(json?.results)) users = json.results;
+                        else if (json && typeof json === "object") users = [json];
+
+                        if (users.length > 0) {
+                            const targetPrefix = ownerUsername.toLowerCase();
+                            let matched: any | null = null;
+
+                            for (const u of users) {
+                                const emailCandidate =
+                                    typeof u?.email === "string"
+                                        ? u.email
+                                        : typeof u?.emailAddress === "string"
+                                        ? u.emailAddress
+                                        : typeof u?.primaryEmail === "string"
+                                        ? u.primaryEmail
+                                        : null;
+                                if (!emailCandidate) continue;
+
+                                const lp = emailLocalPart(emailCandidate)?.toLowerCase();
+                                if (lp && lp === targetPrefix) {
+                                    matched = u;
+                                    break;
+                                }
+                            }
+
+                            if (!matched) matched = users[0];
+
+                            const emailCandidate =
+                                typeof matched?.email === "string"
+                                    ? matched.email
+                                    : typeof matched?.emailAddress === "string"
+                                    ? matched.emailAddress
+                                    : typeof matched?.primaryEmail === "string"
+                                    ? matched.primaryEmail
+                                    : null;
+
+                            if (emailCandidate && typeof emailCandidate === "string") {
+                                ownerEmail = emailCandidate;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error(
+                        "[ApplicationsDashboard] failed to resolve owner email",
+                        e,
+                    );
+                }
+            }
+
+            setListingMetaById((prev) => ({
+                ...prev,
+                [listingId]: {
+                    id: listingId,
+                    title,
+                    ownerUsername,
+                    ownerEmail,
+                },
+            }));
+        } catch (e) {
+            console.error("[ApplicationsDashboard] loadListingMeta error", e);
+        } finally {
+            setListingMetaLoading((prev) => ({ ...prev, [listingId]: false }));
+        }
+    };
+
+    // Whenever applications change, make sure we have metadata for each listingId
+    useEffect(() => {
+        const ids = new Set(applications.map((a) => a.listingId));
+        for (const id of ids) {
+            if (id && !listingMetaById[id] && !listingMetaLoading[id]) {
+                void loadListingMeta(id);
+            }
+        }
+        // We intentionally omit loadListingMeta from deps (it's stable in this component)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [applications, listingMetaById, listingMetaLoading]);
+
     const handleWithdraw = async (id: string) => {
         const app = applications.find((a) => a.id === id);
         if (!app || app.status !== "PENDING") return;
 
         const confirmed = window.confirm(
-            "Are you sure you want to withdraw this application?"
+            "Are you sure you want to withdraw this application?",
         );
         if (!confirmed) return;
 
         const path = `/listings/roommate-applications/${encodeURIComponent(
-            id
+            id,
         )}/withdraw`;
         const url = apiUrl(path);
 
@@ -188,14 +335,14 @@ export default function Dashboard() {
                               decidedAt: updated.decidedAt ?? a.decidedAt,
                               updatedAt: updated.updatedAt ?? a.updatedAt,
                           }
-                        : a
-                )
+                        : a,
+                ),
             );
         } catch (err: any) {
             console.error("[ApplicationsDashboard] handleWithdraw error", err);
             setError(
                 err?.message ||
-                    "Something went wrong while withdrawing. Please try again."
+                    "Something went wrong while withdrawing. Please try again.",
             );
         } finally {
             setWithdrawingId(null);
@@ -235,24 +382,30 @@ export default function Dashboard() {
 
                 {authUser && (
                     <>
-                        {/* status filter row, styled similarly to other controls */}
+                        {/* status filter row */}
                         <div className="mt-6 flex flex-wrap gap-2">
-                            {(["ALL", "PENDING", "ACCEPTED", "REJECTED", "WITHDRAWN"] as StatusFilter[]).map(
-                                (s) => (
-                                    <button
-                                        key={s}
-                                        type="button"
-                                        onClick={() => setStatusFilter(s)}
-                                        className={`h-9 px-4 rounded-3xl border text-sm font-roboto-light transition ${
-                                            statusFilter === s
-                                                ? "bg-black text-white border-black"
-                                                : "bg-white text-gray-800 border-gray-300 hover:bg-gray-100"
-                                        }`}
-                                    >
-                                        {s === "ALL" ? "All" : s}
-                                    </button>
-                                )
-                            )}
+                            {(
+                                [
+                                    "ALL",
+                                    "PENDING",
+                                    "ACCEPTED",
+                                    "REJECTED",
+                                    "WITHDRAWN",
+                                ] as StatusFilter[]
+                            ).map((s) => (
+                                <button
+                                    key={s}
+                                    type="button"
+                                    onClick={() => setStatusFilter(s)}
+                                    className={`h-9 px-4 rounded-3xl border text-sm font-roboto-light transition ${
+                                        statusFilter === s
+                                            ? "bg-black text-white border-black"
+                                            : "bg-white text-gray-800 border-gray-300 hover:bg-gray-100"
+                                    }`}
+                                >
+                                    {s === "ALL" ? "All" : s}
+                                </button>
+                            ))}
                         </div>
 
                         {isLoading && <div className="mt-8">Loading…</div>}
@@ -285,7 +438,7 @@ export default function Dashboard() {
                                         <thead className="bg-gray-50">
                                             <tr>
                                                 <th className="px-4 py-3 text-sm font-roboto-regular text-gray-700">
-                                                    Listing ID
+                                                    Listing / Owner
                                                 </th>
                                                 <th className="px-4 py-3 text-sm font-roboto-regular text-gray-700">
                                                     Status
@@ -305,66 +458,123 @@ export default function Dashboard() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {applications.map((app) => (
-                                                <tr
-                                                    key={app.id}
-                                                    className="border-t border-gray-100 hover:bg-gray-50"
-                                                >
-                                                    <td className="px-4 py-2 text-sm text-gray-900">
-                                                        <span className="font-mono text-xs">
-                                                            {app.listingId}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-4 py-2 text-sm text-gray-900">
-                                                        {app.status}
-                                                    </td>
-                                                    <td className="px-4 py-2 text-sm text-gray-900">
-                                                        {formatDate(app.createdAt)}
-                                                    </td>
-                                                    <td className="px-4 py-2 text-sm text-gray-900">
-                                                        {formatDate(
-                                                            app.decidedAt || app.updatedAt
-                                                        )}
-                                                    </td>
-                                                    <td className="px-4 py-2 text-sm text-gray-900 max-w-xs">
-                                                        {app.message ? (
-                                                            <span className="line-clamp-2">
-                                                                {app.message}
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-gray-400">
-                                                                —
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-4 py-2 text-sm text-gray-900 text-right">
-                                                        {app.status === "PENDING" ? (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    handleWithdraw(app.id)
-                                                                }
-                                                                disabled={
-                                                                    withdrawingId === app.id
-                                                                }
-                                                                className={`px-4 py-2 rounded-3xl border text-sm font-roboto-light ${
-                                                                    withdrawingId === app.id
-                                                                        ? "border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed"
-                                                                        : "border-red-500 text-red-600 bg-white hover:bg-red-50"
-                                                                }`}
-                                                            >
-                                                                {withdrawingId === app.id
-                                                                    ? "Withdrawing…"
-                                                                    : "Withdraw"}
-                                                            </button>
-                                                        ) : (
-                                                            <span className="text-xs text-gray-400">
-                                                                No actions
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                            {applications.map((app) => {
+                                                const meta =
+                                                    listingMetaById[app.listingId];
+                                                const metaIsLoading =
+                                                    listingMetaLoading[app.listingId];
+
+                                                return (
+                                                    <tr
+                                                        key={app.id}
+                                                        className="border-t border-gray-100 hover:bg-gray-50"
+                                                    >
+                                                        <td className="px-4 py-2 text-sm text-gray-900 align-top">
+                                                            {meta ? (
+                                                                <div className="space-y-1">
+                                                                    <div className="font-roboto-medium text-gray-900">
+                                                                        {meta.title}
+                                                                    </div>
+                                                                    <div className="text-xs text-gray-600 font-roboto-light">
+                                                                        {meta.ownerUsername
+                                                                            ? `Owner: ${meta.ownerUsername}`
+                                                                            : "Owner: —"}
+                                                                    </div>
+                                                                    <div className="text-xs text-gray-600 font-roboto-light">
+                                                                        {meta.ownerEmail ? (
+                                                                            <a
+                                                                                href={`mailto:${meta.ownerEmail}`}
+                                                                                className="underline underline-offset-2"
+                                                                            >
+                                                                                {
+                                                                                    meta.ownerEmail
+                                                                                }
+                                                                            </a>
+                                                                        ) : (
+                                                                            "Email: —"
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="text-xs">
+                                                                        <Link
+                                                                            to={`/listings/${meta.id}`}
+                                                                            state={{
+                                                                                id: meta.id,
+                                                                                // we only know title; other fields can be fetched on details page if needed
+                                                                                title: meta.title,
+                                                                            }}
+                                                                            className="text-gray-500 hover:underline underline-offset-2 font-roboto-light"
+                                                                        >
+                                                                            View listing
+                                                                        </Link>
+                                                                    </div>
+                                                                </div>
+                                                            ) : metaIsLoading ? (
+                                                                <span className="text-xs text-gray-500">
+                                                                    Loading listing…
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-xs text-gray-400">
+                                                                    Listing {app.listingId}
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-2 text-sm text-gray-900 align-top">
+                                                            {app.status}
+                                                        </td>
+                                                        <td className="px-4 py-2 text-sm text-gray-900 align-top">
+                                                            {formatDate(app.createdAt)}
+                                                        </td>
+                                                        <td className="px-4 py-2 text-sm text-gray-900 align-top">
+                                                            {formatDate(
+                                                                app.decidedAt ||
+                                                                    app.updatedAt,
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-2 text-sm text-gray-900 max-w-xs align-top">
+                                                            {app.message ? (
+                                                                <span className="line-clamp-2">
+                                                                    {app.message}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-gray-400">
+                                                                    —
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-2 text-sm text-gray-900 text-right align-top">
+                                                            {app.status === "PENDING" ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        handleWithdraw(
+                                                                            app.id,
+                                                                        )
+                                                                    }
+                                                                    disabled={
+                                                                        withdrawingId ===
+                                                                        app.id
+                                                                    }
+                                                                    className={`px-4 py-2 rounded-3xl border text-sm font-roboto-light ${
+                                                                        withdrawingId ===
+                                                                        app.id
+                                                                            ? "border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed"
+                                                                            : "border-red-500 text-red-600 bg-white hover:bg-red-50"
+                                                                    }`}
+                                                                >
+                                                                    {withdrawingId ===
+                                                                    app.id
+                                                                        ? "Withdrawing…"
+                                                                        : "Withdraw"}
+                                                                </button>
+                                                            ) : (
+                                                                <span className="text-xs text-gray-400">
+                                                                    No actions
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>

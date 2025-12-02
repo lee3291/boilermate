@@ -229,12 +229,15 @@ export default function ListingsCard({
         updateStatus('ARCHIVED');
     }, [isExpired, listingStatus]);
 
-
     const [flagged, setFlagged] = useState(false);
     const [flagSaving, setFlagSaving] = useState(false);
     const [flagCount, setFlagCount] = useState<number | null>(null);
     const [applySaving, setApplySaving] = useState(false);
 
+    // NEW: track whether this viewer has already applied to this listing
+    const [hasApplied, setHasApplied] = useState<boolean | null>(null);
+
+    // Load report state
     useEffect(() => {
         if (!viewerUsername || !id) {
             setFlagged(false);
@@ -275,6 +278,51 @@ export default function ListingsCard({
         };
     }, [viewerUsername, id]);
 
+    // NEW: check if the viewer has already applied to this listing
+    useEffect(() => {
+        if (!viewerUsername || !id || isOwner) {
+            setHasApplied(false);
+            return;
+        }
+
+        let cancelled = false;
+
+        (async () => {
+            try {
+                const params = new URLSearchParams();
+                params.set("page", "1");
+                params.set("pageSize", "100");
+
+                const res = await fetch(
+                    `${API_BASE}/listings/users/${encodeURIComponent(
+                        viewerUsername,
+                    )}/roommate-applications?${params.toString()}`,
+                );
+                if (!res.ok) {
+                    if (!cancelled) setHasApplied(false);
+                    return;
+                }
+                const json = await res.json();
+                if (cancelled) return;
+
+                const apps: any[] = Array.isArray(json.applications)
+                    ? json.applications
+                    : [];
+                const already = apps.some(
+                    (a) => String(a.listingId) === String(id),
+                );
+                setHasApplied(already);
+            } catch (e) {
+                console.error("[ListingsCard] failed to load applications", e);
+                if (!cancelled) setHasApplied(false);
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [viewerUsername, id, isOwner]);
+
     const onToggleFlag = async () => {
         if (!viewerUsername) {
             alert("Please sign in to report listings.");
@@ -284,14 +332,12 @@ export default function ListingsCard({
 
         const next = !flagged;
 
-
         if (next) {
             const confirmed = window.confirm("Are you sure you want to report this listing as outdated?");
             if (!confirmed) {
                 return;
             }
         }
-
 
         setFlagged(next);
         setFlagSaving(true);
@@ -332,6 +378,10 @@ export default function ListingsCard({
             return;
         }
         if (applySaving) return;
+        if (hasApplied) {
+            alert("You have already applied to this listing. Your existing application is still active.");
+            return;
+        }
 
         setApplySaving(true);
         try {
@@ -365,8 +415,10 @@ export default function ListingsCard({
             } catch { }
 
             if (created) {
+                setHasApplied(true);
                 alert("Application submitted to join this listing.");
             } else {
+                setHasApplied(true);
                 alert("You have already applied to this listing. Your existing application is still active.");
             }
         } catch (e: any) {
@@ -425,6 +477,8 @@ export default function ListingsCard({
 
     const style = widthStyle ? { width: widthStyle } : undefined;
 
+    const applyDisabled = applySaving || !!hasApplied;
+
     return (
         <div>
             <div className={`absolute h-100 ${widthClass} z-0 bg-black/20 blur-[5px] rounded-lg`} style={style} />
@@ -463,12 +517,20 @@ export default function ListingsCard({
                         ) : (
                             <>
                                 <button
-                                    className="mt-10 h-12 w-35 bg-black text-white font-roboto-light rounded-4xl cursor-pointer"
+                                    className={`mt-10 h-12 w-35 font-roboto-light rounded-4xl cursor-pointer ${
+                                        applyDisabled
+                                            ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                                            : "bg-black text-white"
+                                    }`}
                                     type="button"
                                     onClick={onApplyToJoin}
-                                    disabled={applySaving}
+                                    disabled={applyDisabled}
                                 >
-                                    {applySaving ? "Submitting…" : "Apply to join"}
+                                    {applySaving
+                                        ? "Submitting…"
+                                        : hasApplied
+                                        ? "Already applied"
+                                        : "Apply to join"}
                                 </button>
                                 <button className="mt-10 h-12 w-30 bg-white text-black border-black border-1 font-roboto-light rounded-4xl cursor-pointer">
                                     Contact
