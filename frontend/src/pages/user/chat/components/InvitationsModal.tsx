@@ -76,11 +76,11 @@ export default function InvitationsModal({
                                 }
 
                                 const isGroupChat = chat.isGroup ?? false;
+                                //NEED TO FIX
                                 const displayName = isGroupChat
-                                    ? chat.name ?? 'Unnamed Group'
-                                    : chat.creatorId ??
-                                    'Unknown User';
-
+                                    ? (chat?.name ?? 'Unnamed Group')
+                                    : (chat?.participants?.find(p => p.id !== currentUserId)?.email ?? 'Unknown User');
+                                //NEED TO FIX
                                 const avatarContent = isGroupChat
                                     ? chat.name?.[0]?.toUpperCase() ?? 'G'
                                     : chat.creatorId?.[0]?.toUpperCase() ??

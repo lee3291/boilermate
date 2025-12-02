@@ -38,3 +38,4 @@ export class LeaveGroupChatDto {
 export class DeleteGroupChatDto {
   creatorId: string; // For authorization check
 }
+

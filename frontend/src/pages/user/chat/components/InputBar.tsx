@@ -1,20 +1,35 @@
 import { useRef } from 'react';
 import ImageUploadButton from './ImageUploadButton';
+import CreatePollButton from './CreatePollButton';
+import PinnedMessageButton from './PinnedMessageButton';
+import type { Chat, MessageWithStatus } from '@/types/chats/chat';
 
 export default function InputBar({
   value,
+                                     selectedConversation,
   onChange,
   onSend,
   onFileChange, // new prop for handling file selection
   selectedFile, // new prop for displaying selected file
   isUploading, // new prop for showing upload state
-}: {
+                                     onCreatePoll,
+                                     onUnpinMessage,
+                                     onGetPinnedMessages,
+                                     chatId,
+                                     currentUserId,
+                                 }: {
   value?: string;
+    selectedConversation?: Chat | null;
   onChange?: (v: string) => void;
   onSend?: (opts?: { recipientId?: string }) => Promise<any> | void;
   onFileChange?: (file: File | null) => void; // handler for file selection
   selectedFile?: File | null; // currently selected file
   isUploading?: boolean; // whether image is being uploaded
+    onCreatePoll?: (poll: { question: string; options: string[] }) => void; //Handle for poll in chat
+    onUnpinMessage: (chatId: string, messageId: string, userId: string) => Promise<boolean>;
+    onGetPinnedMessages: (chatId: string) => Promise<any[]>;
+    chatId?: string,
+    currentUserId?:string,
 }) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -23,6 +38,13 @@ export default function InputBar({
     const hasContent = (value ?? '').trim().length > 0 || selectedFile !== null;
     if (!hasContent) return; // prevent sending empty message
     onSend?.();
+  }
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+      // Enter
+      if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          handleSend();
+      }
   }
 
   // Auto-resize textarea based on content
@@ -34,7 +56,7 @@ export default function InputBar({
     textarea.style.height = `${textarea.scrollHeight}px`;
     onChange?.(textarea.value);
   };
-
+  const isGroupChat = selectedConversation?.isGroup ?? false;
   return (
     <div className="px-3 py-2 border-t bg-white flex gap-3 items-end max-h-60">
       {/* Image upload button - placed before textarea */}
@@ -43,12 +65,26 @@ export default function InputBar({
         disabled={isUploading} // disable during upload
         selectedFileName={selectedFile?.name} // show selected file name
       />
+        {isGroupChat && (
+            <>
+                <CreatePollButton onCreatePoll={onCreatePoll} />
+            </>
+        )}
+        <>
+            <PinnedMessageButton
+                onUnpinMessage={onUnpinMessage}
+                onGetPinnedMessages={onGetPinnedMessages}
+                chatId={chatId}
+                currentUserId={currentUserId}
+            />
+        </>
 
       {/* Message textarea - disabled when file is selected */}
       <textarea
         ref={textareaRef}
         value={value}
         onChange={handleInput}
+        onKeyDown={handleKeyDown}
         placeholder={selectedFile ? "Image selected" : "Message"} // change placeholder when file selected
         rows={1}
         disabled={selectedFile !== null || isUploading} // disable text input when file is selected or uploading
