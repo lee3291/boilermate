@@ -233,7 +233,7 @@ export default function ListingsCard({
     const [flagged, setFlagged] = useState(false);
     const [flagSaving, setFlagSaving] = useState(false);
     const [flagCount, setFlagCount] = useState<number | null>(null);
-
+    const [applySaving, setApplySaving] = useState(false);
 
     useEffect(() => {
         if (!viewerUsername || !id) {
@@ -322,6 +322,61 @@ export default function ListingsCard({
         }
     };
 
+    const onApplyToJoin = async () => {
+        if (!viewerUsername) {
+            alert("Please sign in to apply to join listings.");
+            return;
+        }
+        if (isOwner) {
+            alert("You cannot apply to join your own listing.");
+            return;
+        }
+        if (applySaving) return;
+
+        setApplySaving(true);
+        try {
+            const res = await fetch(`${API_BASE}/listings/${id}/roommate-applications`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ applicantId: viewerUsername }),
+            });
+            const raw = await res.text();
+
+            if (!res.ok) {
+                let msg = `Failed to apply to join (${res.status})`;
+                try {
+                    const data = raw ? JSON.parse(raw) : null;
+                    if (data?.message) {
+                        msg =
+                            typeof data.message === "string"
+                                ? data.message
+                                : JSON.stringify(data.message);
+                    }
+                } catch { }
+                throw new Error(msg);
+            }
+
+            let created = true;
+            try {
+                const data = raw ? JSON.parse(raw) : null;
+                if (data && typeof data.created === "boolean") {
+                    created = data.created;
+                }
+            } catch { }
+
+            if (created) {
+                alert("Application submitted to join this listing.");
+            } else {
+                alert("You have already applied to this listing. Your existing application is still active.");
+            }
+        } catch (e: any) {
+            console.error(e);
+            alert(e?.message || "Could not submit your application. Please try again.");
+        } finally {
+            setApplySaving(false);
+        }
+    };
+
     const statusControl = isOwner ? (
         <div className="mt-10 flex items-center gap-3">
             <label className="text-sm text-gray-600">Status:</label>
@@ -407,8 +462,13 @@ export default function ListingsCard({
                             </>
                         ) : (
                             <>
-                                <button className="mt-10 h-12 w-35 bg-black text-white font-roboto-light rounded-4xl cursor-pointer">
-                                    Apply to join
+                                <button
+                                    className="mt-10 h-12 w-35 bg-black text-white font-roboto-light rounded-4xl cursor-pointer"
+                                    type="button"
+                                    onClick={onApplyToJoin}
+                                    disabled={applySaving}
+                                >
+                                    {applySaving ? "Submitting…" : "Apply to join"}
                                 </button>
                                 <button className="mt-10 h-12 w-30 bg-white text-black border-black border-1 font-roboto-light rounded-4xl cursor-pointer">
                                     Contact

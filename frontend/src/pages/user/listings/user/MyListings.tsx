@@ -29,7 +29,6 @@ function emailLocalPart(e?: string | null) {
     return at > 0 ? e.slice(0, at) : null;
 }
 
-
 const API_BASE_URL =
     import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "";
 
@@ -80,7 +79,6 @@ async function deleteListing(listingId: string) {
         return null;
     }
 }
-
 
 export default function MyListings() {
     const { user: authUser } = useAuth();
@@ -236,15 +234,26 @@ export default function MyListings() {
                         Personal Listings
                     </h1>
 
-                    {me && mine.length > 0 && (
-                        <button
-                            type="button"
-                            onClick={toggleViewMode}
-                            className="h-11 px-6 border border-black rounded-3xl bg-white hover:bg-gray-100 transition font-roboto-light text-[16px]"
-                        >
-                            {viewMode === "cards" ? "Select" : "Done"}
-                        </button>
-                    )}
+                    <div className="flex items-center gap-3">
+                        {me && mine.length > 0 && (
+                            <Link
+                                to="/rommateapplications"
+                                className="h-11 px-6 border border-black rounded-3xl bg-black text-white hover:bg-gray-900 transition font-roboto-light text-[16px] flex items-center justify-center"
+                            >
+                                Roommate applications
+                            </Link>
+                        )}
+
+                        {me && mine.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={toggleViewMode}
+                                className="h-11 px-6 border border-black rounded-3xl bg-white hover:bg-gray-100 transition font-roboto-light text-[16px]"
+                            >
+                                {viewMode === "cards" ? "Select" : "Done"}
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {hasOutdatedListings && (
