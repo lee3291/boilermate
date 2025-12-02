@@ -1,5 +1,5 @@
 import React, { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import InputField from '../../components/InputField';
 import { signIn } from '../../services/auth.service';
 import { useAuth } from '../../contexts/AuthContext';
@@ -12,12 +12,20 @@ const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
 const SignInPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+
+  // After a user logs in, we want to redirect them to the page they were
+  // originally trying to access. The `ProtectedRoute` component passes this
+  // path in the 'redirect' query parameter. We read it here and default to
+  // '/profile' if it's not present.
+  const searchParams = new URLSearchParams(location.search);
+  const redirectPath = searchParams.get('redirect') || '/profile';
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -43,7 +51,7 @@ const SignInPage = () => {
         });
       } else if (data.access_token) {
         login(data.access_token);
-        navigate('/profile');
+        navigate(redirectPath, { replace: true }); // Redirect to original destination
       }
     } catch (err) {
       if (isAxiosError(err) && err.response) {
@@ -89,14 +97,14 @@ const SignInPage = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            
-            <div className="flex justify-center">
+
+            <div className='flex justify-center'>
               <ReCAPTCHA
-                  sitekey={RECAPTCHA_SITE_KEY}
-                  onChange={(token: string | null) => setCaptchaToken(token)}
+                sitekey={RECAPTCHA_SITE_KEY}
+                onChange={(token: string | null) => setCaptchaToken(token)}
               />
             </div>
-            
+
             <button
               type='submit'
               disabled={isLoading}
@@ -112,4 +120,3 @@ const SignInPage = () => {
 };
 
 export default SignInPage;
-

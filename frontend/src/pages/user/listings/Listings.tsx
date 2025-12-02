@@ -42,7 +42,7 @@ export default function Listings() {
     useEffect(() => {
         let cancelled = false;
 
-        // derive a stable username to use with saved listings (same fallback order used elsewhere)
+
         const listingUser = (() => {
             if (!authUser) return null;
             const maybeUsername = (authUser as any).username ?? (authUser as any).displayName;

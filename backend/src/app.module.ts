@@ -17,9 +17,9 @@ import { ReCaptchaModule } from '@modules/reCaptcha/reCaptcha.module';
 import { PreferencesModule } from '@modules/preferences/preferences.module';
 import { ProfileModule } from '@modules/profile/profile.module';
 import { AnnouncementsModule } from './modules/announcements/announcements.module';
-// Ethan
-// import { ProfileModule } from './modules/profile/profile.module';
 import { VerificationModule } from './modules/verification/verification.module';
+import { TasksModule } from './modules/tasks/tasks.module';
+import { RoommatesModule } from './modules/roommates/roommates.module';
 
 @Module({
   imports: [
@@ -43,6 +43,8 @@ import { VerificationModule } from './modules/verification/verification.module';
     ProfileModule,
     VerificationModule,
     AnnouncementsModule,
+    TasksModule,
+    RoommatesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

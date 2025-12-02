@@ -23,12 +23,18 @@ model Listing {
 
   moveInStart DateTime?     @db.Date
   moveInEnd   DateTime?     @db.Date
+
+  moveInDateOutdatedAlert Boolean @default(false)
+  reportedOutdatedAlert   Boolean @default(false)
+
   viewCount   Int           @default(0)
   views       ListingView[]
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
   saves       Saved[]
+
+  reports     ListingReport[]
 
   userId      String?
   user_reference     User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -53,6 +59,18 @@ model Saved {
 }
 
 model ListingView {
+  username   String
+  listingId  String
+  createdAt  DateTime      @default(now())
+
+  listing    Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@id([username, listingId])
+  @@index([username])
+  @@index([listingId])
+}
+
+model ListingReport {
   username   String
   listingId  String
   createdAt  DateTime      @default(now())

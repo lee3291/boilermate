@@ -172,3 +172,50 @@ export interface VoteStatsResponse {
   dislikesReceived: number;
   totalVotes: number;
 }
+
+//* Compare Profiles Request
+export interface CompareProfilesRequest {
+  userIds: string[]; // Array of user IDs to compare
+  viewerId?: string; // Optional viewer ID for favorite/vote status
+}
+
+//* Grouped Preference Detail (without redundant category field)
+export interface GroupedPreferenceDetail {
+  id: string;
+  label: string;
+  value: string;
+  importance: number;
+  visibility: string;
+}
+
+//* Compare Profile (with preferences grouped by category)
+export interface CompareProfile {
+  id: string;
+  email: string;
+  legalName?: string;
+  phoneNumber?: string;
+  avatarURL?: string;
+  searchStatus?: string;
+  isVerified?: boolean;
+  age?: number;
+  major?: string;
+  year?: string;
+  bio?: string;
+  
+  // Preferences grouped by category: { "Sleep Schedule": [...], "Cleanliness": [...] }
+  lifestyleByCategory: Record<string, GroupedPreferenceDetail[]>;
+  roommatePreferencesByCategory: Record<string, GroupedPreferenceDetail[]>;
+  
+  isFavoritedByMe?: boolean;
+  myVoteType?: 'LIKE' | 'DISLIKE' | null;
+  likesReceived?: number;
+  dislikesReceived?: number;
+}
+
+//* Compare Profiles Response (with grouped data and category lists)
+export interface CompareProfilesResponse {
+  profiles: CompareProfile[];
+  count: number;
+  lifestyleCategories: string[]; // Ordered list of all lifestyle categories
+  roommateCategories: string[]; // Ordered list of all roommate categories
+}

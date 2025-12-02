@@ -2,9 +2,11 @@ import {
     Injectable,
     BadRequestException,
     NotFoundException,
+    Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../core/database/prisma.service';
 import { Prisma } from '@prisma/client';
+import { MailService } from '../mail/mail.service';
 
 type LegacyCreateListingDto = {
     title: string;
@@ -18,6 +20,8 @@ type LegacyCreateListingDto = {
     status?: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
     moveInStart?: Date | string | null;
     moveInEnd?: Date | string | null;
+    moveInDateOutdatedAlert?: boolean;
+    reportedOutdatedAlert?: boolean;
 };
 
 type CreateListingDetails = {
@@ -31,6 +35,8 @@ type CreateListingDetails = {
     status?: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
     moveInStart?: Date | string | null;
     moveInEnd?: Date | string | null;
+    moveInDateOutdatedAlert?: boolean;
+    reportedOutdatedAlert?: boolean;
 };
 
 type ListingResponse = {
@@ -47,6 +53,8 @@ type ListingResponse = {
     viewCount: number;
     moveInStart: string | null;
     moveInEnd: string | null;
+    moveInDateOutdatedAlert: boolean;
+    reportedOutdatedAlert: boolean;
     createdAt: string;
     updatedAt: string;
 };
@@ -56,7 +64,12 @@ const P2025 = 'P2025';
 
 @Injectable()
 export class ListingsService {
-    constructor(private readonly prisma: PrismaService) {}
+    private readonly logger = new Logger(ListingsService.name);
+
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly mailService: MailService,
+    ) {}
 
     private toYMD(d: Date | null): string | null {
         return d ? d.toISOString().slice(0, 10) : null;
@@ -77,6 +90,8 @@ export class ListingsService {
             viewCount: l.viewCount ?? 0,
             moveInStart: this.toYMD(l.moveInStart ?? null),
             moveInEnd: this.toYMD(l.moveInEnd ?? null),
+            moveInDateOutdatedAlert: !!l.moveInDateOutdatedAlert,
+            reportedOutdatedAlert: !!l.reportedOutdatedAlert,
             createdAt:
                 l.createdAt?.toISOString?.() ?? new Date(l.createdAt).toISOString(),
             updatedAt:
@@ -123,18 +138,28 @@ export class ListingsService {
             moveInStart: parseMaybeDate((input as any).moveInStart) ?? null,
             moveInEnd: parseMaybeDate((input as any).moveInEnd) ?? null,
             viewCount: 0,
+            moveInDateOutdatedAlert:
+                typeof (input as any).moveInDateOutdatedAlert === 'boolean'
+                    ? (input as any).moveInDateOutdatedAlert
+                    : false,
+            reportedOutdatedAlert:
+                typeof (input as any).reportedOutdatedAlert === 'boolean'
+                    ? (input as any).reportedOutdatedAlert
+                    : false,
         };
     }
 
+
+
     async findActive() {
-        // Fallback: join User by Purdue username (before @) if user_reference is null
+
         const listings = await this.prisma.listing.findMany({
             where: {
                 status: 'ACTIVE',
             },
             orderBy: { createdAt: 'desc' },
         });
-        // Get all active user emails and extract username
+
         const activeUsers = await this.prisma.user.findMany({
             where: { status: 'ACTIVE' },
             select: { email: true },
@@ -142,7 +167,7 @@ export class ListingsService {
         const activeUsernames = new Set(
             activeUsers.map((u) => u.email.split('@')[0]),
         );
-        // Only return listings whose user (username) is active
+
         return listings
             .filter((l) => activeUsernames.has(l.user))
             .map((l) => this.toListingResponse(l));
@@ -153,8 +178,62 @@ export class ListingsService {
     ): Promise<{ listing: ListingResponse }> {
         const data = this.normalizeCreateInput(input);
         const created = await this.prisma.listing.create({ data });
+
+
+        try {
+
+            const author = await this.prisma.user.findFirst({
+                where: { email: { startsWith: data.user + '@' } },
+                select: { id: true, legalName: true },
+            });
+
+            if (author) {
+                const follows = await this.prisma.follow.findMany({
+                    where: { followingId: author.id },
+                    include: {
+                        follower: {
+                            select: { email: true },
+                        },
+                    },
+                });
+
+                if (follows.length > 0) {
+                    const followerEmails = follows.map((follow) => follow.follower.email);
+                    const authorName = author.legalName || data.user;
+                    const listingUrl = `${
+                        process.env.FRONTEND_URL ?? 'http://localhost:5173'
+                    }/listings/${created.id}`;
+                    const subject = `New Listing from ${authorName}!`;
+
+                    followerEmails.forEach((email) => {
+                        this.mailService.sendTemplatedEmail(
+                            email,
+                            subject,
+                            'new-listing-notification',
+                            {
+                                authorName,
+                                listingTitle: created.title,
+                                listingUrl,
+                            },
+                        );
+                    });
+
+                    this.logger.log(
+                        `Queued new listing notification for ${followerEmails.length} followers of user ${data.user}.`,
+                    );
+                }
+            }
+        } catch (error: any) {
+            this.logger.warn(
+                `Failed to queue new listing notification for listing ${created.id}: ${error.message}`,
+            );
+        }
+
+
         return { listing: this.toListingResponse(created) };
     }
+
+
 
     async saveListing(args: { listingId: string; username: string }) {
         const exists = await this.prisma.listing.findUnique({
@@ -247,6 +326,162 @@ export class ListingsService {
         };
     }
 
+
+
+    async reportListing(args: { listingId: string; username: string }) {
+        const exists = await this.prisma.listing.findUnique({
+            where: { id: args.listingId },
+            select: { id: true },
+        });
+        if (!exists) {
+            throw new BadRequestException(`Listing ${args.listingId} does not exist`);
+        }
+
+        try {
+            const row = await this.prisma.listingReport.create({
+                data: { listingId: args.listingId, username: args.username },
+            });
+
+            const count = await this.prisma.listingReport.count({
+                where: { listingId: args.listingId },
+            });
+
+
+            await this.prisma.listing.update({
+                where: { id: args.listingId },
+                data: { reportedOutdatedAlert: count >= 2 },
+            });
+
+            return {
+                listingId: row.listingId,
+                username: row.username,
+                isReported: true as const,
+                reportCount: count,
+                createdAt: row.createdAt.toISOString(),
+            };
+        } catch (err: any) {
+            if (err?.code === P2002) {
+                const existing = await this.prisma.listingReport.findUnique({
+                    where: {
+                        username_listingId: {
+                            username: args.username,
+                            listingId: args.listingId,
+                        },
+                    },
+                });
+
+                const count = await this.prisma.listingReport.count({
+                    where: { listingId: args.listingId },
+                });
+
+                await this.prisma.listing.update({
+                    where: { id: args.listingId },
+                    data: { reportedOutdatedAlert: count >= 2 },
+                });
+
+                return {
+                    listingId: args.listingId,
+                    username: args.username,
+                    isReported: true as const,
+                    reportCount: count,
+                    createdAt:
+                        existing?.createdAt?.toISOString() ?? new Date().toISOString(),
+                };
+            }
+            throw err;
+        }
+    }
+
+    async unreportListing(args: { listingId: string; username: string }) {
+        try {
+            await this.prisma.listingReport.delete({
+                where: {
+                    username_listingId: {
+                        username: args.username,
+                        listingId: args.listingId,
+                    },
+                },
+            });
+        } catch (err: any) {
+            if (err?.code !== P2025) throw err;
+        }
+
+        const count = await this.prisma.listingReport.count({
+            where: { listingId: args.listingId },
+        });
+
+        await this.prisma.listing.update({
+            where: { id: args.listingId },
+            data: { reportedOutdatedAlert: count >= 2 },
+        });
+
+        return {
+            listingId: args.listingId,
+            username: args.username,
+            isReported: false as const,
+            reportCount: count,
+        };
+    }
+
+    async isReported(args: { listingId: string; username: string }) {
+        const row = await this.prisma.listingReport.findUnique({
+            where: {
+                username_listingId: {
+                    username: args.username,
+                    listingId: args.listingId,
+                },
+            },
+        });
+
+        const count = await this.prisma.listingReport.count({
+            where: { listingId: args.listingId },
+        });
+
+        return {
+            listingId: args.listingId,
+            username: args.username,
+            isReported: !!row,
+            reportCount: count,
+        };
+    }
+
+    async countReports(listingId: string) {
+        const count = await this.prisma.listingReport.count({ where: { listingId } });
+        return { listingId, count };
+    }
+
+    async listReportedBy(args: {
+        listingId: string;
+        page: number;
+        pageSize: number;
+    }) {
+        const { listingId, page, pageSize } = args;
+
+        const [total, rows] = await this.prisma.$transaction([
+            this.prisma.listingReport.count({ where: { listingId } }),
+            this.prisma.listingReport.findMany({
+                where: { listingId },
+                select: { username: true, createdAt: true },
+                orderBy: { createdAt: 'desc' },
+                skip: (page - 1) * pageSize,
+                take: pageSize,
+            }),
+        ]);
+
+        return {
+            listingId,
+            reports: rows.map((r) => ({
+                username: r.username,
+                createdAt: r.createdAt.toISOString(),
+            })),
+            page,
+            pageSize,
+            total,
+        };
+    }
+
+
+
     async listingsSavedByUser(args: {
         username: string;
         page: number;
@@ -264,7 +499,7 @@ export class ListingsService {
             }),
         ]);
 
-        // Get all active user emails and extract usernames
+
         const activeUsers = await this.prisma.user.findMany({
             where: { status: 'ACTIVE' },
             select: { email: true },
@@ -349,6 +584,8 @@ export class ListingsService {
         return { listingId, count };
     }
 
+
+
     async findOne(listingID: string) {
         const listing = await this.prisma.listing.findUnique({
             where: { id: listingID },
@@ -382,6 +619,10 @@ export class ListingsService {
                     : typeof dto.moveInEnd === 'string'
                     ? new Date(dto.moveInEnd)
                     : (dto.moveInEnd as Date);
+        if ('moveInDateOutdatedAlert' in dto)
+            patch.moveInDateOutdatedAlert = dto.moveInDateOutdatedAlert;
+        if ('reportedOutdatedAlert' in dto)
+            patch.reportedOutdatedAlert = dto.reportedOutdatedAlert;
 
         const updated = await this.prisma.listing.update({
             where: { id: listingID },
@@ -414,19 +655,18 @@ export class ListingsService {
             orderBy: { createdAt: 'desc' },
         });
 
-        // Only select columns that you KNOW exist in the current DB
+
         const user = await this.prisma.user.findFirst({
             where: { email: { startsWith: username + '@' }, status: 'ACTIVE' },
-            select: { id: true }, // or email/status/etc, but NOT legalName
+            select: { id: true },
         });
 
         if (!user) return [];
         return rows.map((l) => this.toListingResponse(l));
     }
 
-
     async findAll() {
-        // Fallback: join User by Purdue username (before @) if user_reference is null
+
         const listings = await this.prisma.listing.findMany({
             where: {
                 status: 'ACTIVE',
@@ -448,3 +688,4 @@ export class ListingsService {
         return listings.filter((l) => activeUsernames.has(l.user));
     }
 }
+

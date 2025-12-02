@@ -81,6 +81,19 @@ model User {
 
   //Relations for vote in polls
   pollVotes      UserPollVote[]
+    // Followers and Followings
+    followers Follow[] @relation("FollowingUser")
+    followings Follow[] @relation("FollowerUser")
+
+  // Roommate relations
+  roommateRequestsSent     RoommateRequest[] @relation("RoommateRequester")
+  roommateRequestsReceived RoommateRequest[] @relation("RoommateRequested")
+  
+  roommatesAsUser1         Roommate[]        @relation("RoommateUser1")
+  roommatesAsUser2         Roommate[]        @relation("RoommateUser2")
+  
+  roommateReviewsWritten   RoommateReview[]  @relation("ReviewAuthor")
+  roommateReviewsReceived  RoommateReview[]  @relation("ReviewSubject")
 }
 
 model FavoriteMatch {
@@ -96,6 +109,17 @@ model FavoriteMatch {
   // Ensures a user cannot favorite the same person more than once
   @@unique([userId, favoritedUserId])
 }
+  model Follow {
+    id           String   @id @default(uuid())
+    followerId   String
+    followingId  String
+    createdAt    DateTime @default(now())
+
+    follower     User @relation("FollowerUser", fields: [followerId], references: [id])
+    following    User @relation("FollowingUser", fields: [followingId], references: [id])
+
+    @@unique([followerId, followingId])
+  }
 
 model UserVote {
   id                  String   @id @default(uuid())
