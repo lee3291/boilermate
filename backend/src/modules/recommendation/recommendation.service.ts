@@ -62,6 +62,18 @@ export class RecommendationService {
             legalName: true,
             avatarURL: true,
             bio: true,
+            _count: {
+              select: {
+                profilePreferences: true,
+                roommatePreferences: true,
+                votesReceived: true,
+              },
+            },
+            votesReceived: {
+              select: {
+                voteType: true,
+              },
+            },
           },
         },
       },
@@ -72,25 +84,35 @@ export class RecommendationService {
     });
 
     const mappedRecommendations: RecommendationDetails[] = recommendations.map(
-      (rec) => ({
-        id: rec.id,
-        userId: rec.userId,
-        candidateId: rec.candidateId,
-        score: rec.score,
-        reasons: rec.reasons as any,
-        hidden: rec.hidden,
-        createdAt: rec.createdAt,
-        updatedAt: rec.updatedAt,
-        candidate: rec.candidate
-          ? {
-              id: rec.candidate.id,
-              email: rec.candidate.email,
-              legalName: rec.candidate.legalName || undefined,
-              avatarURL: rec.candidate.avatarURL || undefined,
-              bio: rec.candidate.bio || undefined,
-            }
-          : undefined,
-      }),
+      (rec) => {
+        // Calculate likes and dislikes from votesReceived
+        const likesReceived = rec.candidate?.votesReceived?.filter(v => v.voteType === 'LIKE').length || 0;
+        const dislikesReceived = rec.candidate?.votesReceived?.filter(v => v.voteType === 'DISLIKE').length || 0;
+
+        return {
+          id: rec.id,
+          userId: rec.userId,
+          candidateId: rec.candidateId,
+          score: rec.score,
+          reasons: rec.reasons as any,
+          hidden: rec.hidden,
+          createdAt: rec.createdAt,
+          updatedAt: rec.updatedAt,
+          candidate: rec.candidate
+            ? {
+                id: rec.candidate.id,
+                email: rec.candidate.email,
+                legalName: rec.candidate.legalName || undefined,
+                avatarURL: rec.candidate.avatarURL || undefined,
+                bio: rec.candidate.bio || undefined,
+                lifestylePreferencesCount: rec.candidate._count?.profilePreferences || 0,
+                roommatePreferencesCount: rec.candidate._count?.roommatePreferences || 0,
+                likesReceived,
+                dislikesReceived,
+              }
+            : undefined,
+        };
+      },
     );
 
     return {

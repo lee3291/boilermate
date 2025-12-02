@@ -13,6 +13,10 @@ export interface RecommendationUserDetails {
   legalName?: string;
   avatarURL?: string;
   bio?: string;
+  lifestylePreferencesCount?: number;
+  roommatePreferencesCount?: number;
+  likesReceived?: number;
+  dislikesReceived?: number;
 }
 
 /**

@@ -12,6 +12,10 @@ export class RecommendationUserDto {
   legalName?: string;
   avatarURL?: string;
   bio?: string;
+  lifestylePreferencesCount?: number;
+  roommatePreferencesCount?: number;
+  likesReceived?: number;
+  dislikesReceived?: number;
 
   static fromUser(user: any): RecommendationUserDto {
     return {
@@ -20,6 +24,10 @@ export class RecommendationUserDto {
       legalName: user.legalName,
       avatarURL: user.avatarURL,
       bio: user.bio,
+      lifestylePreferencesCount: user.lifestylePreferencesCount || user._count?.profilePreferences || 0,
+      roommatePreferencesCount: user.roommatePreferencesCount || user._count?.roommatePreferences || 0,
+      likesReceived: user.likesReceived || user._count?.likesReceived || 0,
+      dislikesReceived: user.dislikesReceived || user._count?.dislikesReceived || 0,
     };
   }
 }
