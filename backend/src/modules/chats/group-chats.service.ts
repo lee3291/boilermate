@@ -13,6 +13,8 @@ import {
   DeleteGroupChatDetails,
   GroupChatDetails,
   InvitationDetails,
+  PollDetails,
+  PollOptionDetails,
 } from './interfaces/group-chat.interface';
 
 @Injectable()
@@ -675,5 +677,153 @@ export class GroupChatsService {
       throw new InternalServerErrorException('Failed to search users');
     }
   }
+  //Related to poll
+  /*
+   * Create new poll in the current chat
+   */
+  async createPoll(chatId: string, question: string, options: string[]): Promise<PollDetails> {
+    const client: any = this.prisma as any;
+
+    try {
+      const chat = await client.chat.findUnique({ where: { id: chatId } });
+      if (!chat) throw new NotFoundException('Chat not found');
+
+      if (!question.trim()) throw new BadRequestException('Question cannot be empty');
+      if (!options.length) throw new BadRequestException('Poll must have at least one option');
+
+      const poll = await client.poll.create({
+        data: {
+          chatId,
+          question,
+          options: { create: options.map(text => ({ text })) }
+        },
+        include: { options: true }
+      });
+
+      return {
+        id: poll.id,
+        question: poll.question,
+        chatId: poll.chatId,
+        options: poll.options.map((opt: any) => ({
+          id: opt.id,
+          text: opt.text,
+          votes: opt.votes
+        }))
+      };
+    } catch (error) {
+      Logger.error('createPoll error', error);
+      throw new InternalServerErrorException('Failed to create poll');
+    }
+  }
+
+
+  /*
+   * Get all poll from current chat (include options)
+   */
+  async getPolls(chatId: string, userId: string): Promise<PollDetails[]> {
+    const client: any = this.prisma as any;
+
+    try {
+      const chat = await client.chat.findUnique({ where: { id: chatId } });
+      if (!chat) throw new NotFoundException('Chat not found');
+
+      const polls = await client.poll.findMany({
+        where: { chatId },
+        include: {
+          options: {
+            include: {
+              votesBy: {
+                where: { userId }
+              }
+            }
+          }
+        },
+        orderBy: { createdAt: 'asc' }
+      });
+
+      return polls.map((poll: any) => ({
+        id: poll.id,
+        chatId: poll.chatId,
+        question: poll.question,
+
+        // Sort
+        options: poll.options
+            .sort((a: any, b: any) => b.votes - a.votes)
+            .map((opt: any) => ({
+              id: opt.id,
+              text: opt.text,
+              votes: opt.votes,
+              votedByUser: opt.votesBy.length > 0
+            }))
+      }));
+    } catch (error) {
+      Logger.error('getPolls error', error);
+      throw new InternalServerErrorException('Failed to fetch polls');
+    }
+  }
+
+
+
+  /**
+   * Add a new option to a poll
+   */
+  async addOption(pollId: string, text: string): Promise<PollOptionDetails> {
+    const client: any = this.prisma as any;
+
+    const poll = await client.poll.findUnique({
+      where: { id: pollId },
+      include: { options: true }
+    });
+
+    if (!poll) throw new NotFoundException('Poll not found');
+    if (!text.trim()) throw new BadRequestException('Option text cannot be empty');
+
+    const exists = poll.options.some((opt: any) => opt.text === text);
+    if (exists) throw new ConflictException('Option already exists');
+
+    const newOpt = await client.pollOption.create({
+      data: { pollId, text }
+    });
+
+    return {
+      id: newOpt.id,
+      text: newOpt.text,
+      votes: newOpt.votes
+    };
+  }
+
+  /*
+   * Update vote from users
+   */
+  async submitVotes(userId: string, pollId: string, options: { id: string, selected: boolean }[]) {
+    const client: any = this.prisma as any;
+
+    for (const opt of options) {
+      const hasVoted = await client.userPollVote.findUnique({
+        where: { userId_pollOptionId: { userId, pollOptionId: opt.id } }
+      });
+      // Vote
+      if (!hasVoted && opt.selected) {
+        await client.userPollVote.create({
+          data: { userId, pollOptionId: opt.id }
+        });
+        await client.pollOption.update({
+          where: { id: opt.id },
+          data: { votes: { increment: 1 } }
+        });
+      }
+      //Unvote
+      if (hasVoted && !opt.selected) {
+        await client.userPollVote.delete({
+          where: { userId_pollOptionId: { userId, pollOptionId: opt.id } }
+        });
+        await client.pollOption.update({
+          where: { id: opt.id },
+          data: { votes: { decrement: 1 } }
+        });
+      }
+    }
+  }
+
 
 }
