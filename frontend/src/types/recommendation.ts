@@ -9,6 +9,10 @@ export interface RecommendationUser {
   legalName: string | null;
   avatarURL: string | null;
   bio: string | null;
+  lifestylePreferencesCount?: number;
+  roommatePreferencesCount?: number;
+  likesReceived?: number;
+  dislikesReceived?: number;
 }
 
 export interface RecommendationReasons {

@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '@core/database/prisma.service';
-import { GroupChatsService } from '../chats/group-chats.service';
+import { ChatsService } from '../chats/chats.service';
 import {
   GetRecommendationsDetails,
   GetRecommendationsResults,
@@ -27,7 +27,7 @@ export class RecommendationService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly groupChatsService: GroupChatsService,
+    private readonly chatsService: ChatsService,
   ) {}
 
   /**
@@ -175,8 +175,9 @@ export class RecommendationService {
     }
 
     try {
-      // Create interaction record and hide recommendation in a transaction
+      // Create interaction record and hide recommendation for BOTH users in a transaction
       await this.prisma.$transaction([
+        // Record A→E accept
         this.prisma.recommendationInteraction.upsert({
           where: {
             userId_candidateId: {
@@ -194,6 +195,7 @@ export class RecommendationService {
             action: 'ACCEPT',
           },
         }),
+        // Hide A→E recommendation
         this.prisma.recommendationScore.update({
           where: {
             userId_candidateId: {
@@ -205,10 +207,20 @@ export class RecommendationService {
             hidden: true,
           },
         }),
+        // Also hide E→A recommendation if it exists (reciprocal hiding)
+        this.prisma.recommendationScore.updateMany({
+          where: {
+            userId: candidateId,
+            candidateId: userId,
+          },
+          data: {
+            hidden: true,
+          },
+        }),
       ]);
 
-      // Create a new 1-1 chat (non-group) with invitation
-      const chatResult = await this.groupChatsService.createGroupChat({
+      // Create a new 1-1 chat (DM) with invitation
+      const chatResult = await this.chatsService.createNormalChat({
         creatorId: userId,
         name: '', // Empty name for 1-1 chat
         groupIcon: undefined,

@@ -59,15 +59,15 @@ export default function RecommendationCard({
   const displayName = candidate.legalName || candidate.email.split('@')[0];
 
   return (
-    <div className='relative w-full'>
-      <div className="absolute h-90 w-full z-0 bg-black/20 blur-[5px] rounded-lg" />
-      <div className="relative h-90 w-full z-10 border-black border-[1.5px] bg-white rounded-lg">
+    <div className='relative w-full min-h-[280px]'>
+      <div className="absolute inset-0 z-0 bg-black/20 blur-[5px] rounded-lg" />
+      <div className="relative w-full min-h-[280px] z-10 border-black border-[1.5px] bg-white rounded-lg flex flex-col">
         {/* Match Score Badge - top right */}
         <div className={`absolute top-4 right-4 z-20 px-3 py-1.5 rounded-full text-xs font-roboto-bold ${matchTier.bgColor} ${matchTier.color}`}>
           {Math.round(score)}% Match
         </div>
         
-        <div className="py-5 px-5">
+        <div className="py-4 px-5 flex-1 flex flex-col">
           <h1 className="font-roboto-regular text-3xl tracking-[-0.4pt]">
             {displayName}
           </h1>
@@ -76,11 +76,11 @@ export default function RecommendationCard({
 
           {/* Match reasons - replaces user info section */}
           {reasons && reasons.topMatches && reasons.topMatches.length > 0 && (
-            <div className="pt-3">
-              <p className="text-xs font-roboto-bold text-gray-700 mb-2">
+            <div className="pt-2">
+              <p className="text-xs font-roboto-bold text-gray-700 mb-1.5">
                 ✨ Why you matched:
               </p>
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {reasons.topMatches.slice(0, 3).map((reason, idx) => (
                   <div key={idx} className="flex items-start gap-1.5">
                     <span className="text-green-600 text-xs mt-0.5">✓</span>
@@ -92,7 +92,7 @@ export default function RecommendationCard({
           )}
 
           {/* Preference counts */}
-          <div className="pt-3 flex gap-4 text-sm text-gray-600">
+          <div className="pt-2 flex gap-4 text-sm text-gray-600">
             <div>
               <span className="font-roboto-bold">{candidate.lifestylePreferencesCount || 0}</span>
               {' '}lifestyle
@@ -105,7 +105,7 @@ export default function RecommendationCard({
 
           {/* Vote Stats */}
           {(candidate.likesReceived !== undefined || candidate.dislikesReceived !== undefined) && (
-            <div className="pt-3 flex gap-4 text-sm">
+            <div className="pt-2 flex gap-4 text-sm">
               <div className="flex items-center gap-1">
                 <span className="text-lg">👍</span>
                 <span className="font-roboto-bold text-green-600">{candidate.likesReceived || 0}</span>
@@ -118,15 +118,15 @@ export default function RecommendationCard({
           )}
 
           {candidate.bio && (
-            <p className="pt-3 font-roboto-light text-sm text-wrap line-clamp-3">
+            <p className="pt-2 font-roboto-light text-sm text-wrap line-clamp-3">
               {candidate.bio}
             </p>
           )}
 
-          <div className="flex justify-start gap-3">
+          <div className="flex justify-start gap-3 mt-auto pt-4">
             {/* Pass/Connect buttons - replaces like/dislike */}
             {!isOwnProfile && (
-              <div className="mt-10 flex gap-2">
+              <div className="flex gap-2">
                 <button
                   onClick={handleDecline}
                   disabled={isProcessing}
@@ -149,7 +149,7 @@ export default function RecommendationCard({
             <button 
               onClick={() => onViewProfile(candidate.id)}
               disabled={isOwnProfile}
-              className="mt-10 h-12 w-35 bg-black text-white font-roboto-light rounded-4xl cursor-pointer hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-12 w-35 bg-black text-white font-roboto-light rounded-4xl cursor-pointer hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isOwnProfile ? 'You' : 'View Profile'}
             </button>

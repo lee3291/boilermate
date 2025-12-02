@@ -158,9 +158,33 @@ export class RecommendationSchedulerService {
       where: { userId: user.id },
       select: { candidateId: true },
     });
+
+    // Get users with existing chat relationships (bidirectional)
+    // Exclude anyone who is already a participant in a chat with this user
+    const existingChats = await this.prisma.chatParticipant.findMany({
+      where: {
+        userId: user.id,
+      },
+      select: {
+        chatId: true,
+      },
+    });
+
+    const chatIds = existingChats.map((cp) => cp.chatId);
+    const chatParticipants = await this.prisma.chatParticipant.findMany({
+      where: {
+        chatId: { in: chatIds },
+        userId: { not: user.id },
+      },
+      select: {
+        userId: true,
+      },
+    });
+
     const excludedIds = new Set([
       user.id, // Exclude self
       ...interactions.map((i) => i.candidateId),
+      ...chatParticipants.map((cp) => cp.userId), // Exclude anyone in existing chats
     ]);
 
     // Calculate scores for all candidates
