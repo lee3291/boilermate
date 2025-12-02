@@ -15,7 +15,7 @@ type RoommateApplicationStatus =
 type RoommateApplication = {
     id: string;
     listingId: string;
-    applicantId: string; // this is the username/email prefix, NOT User.id
+    applicantId: string;
     status: RoommateApplicationStatus;
     message: string | null;
     preferenceSnapshot: any | null;
@@ -115,7 +115,7 @@ export default function ManageRoommateApplications() {
     );
     const [expandedAppIds, setExpandedAppIds] = useState<string[]>([]);
 
-    // Preferences keyed by applicant "name" (email prefix), not by User.id
+
     const [prefsByApplicant, setPrefsByApplicant] = useState<
         Record<string, ApplicantPreferences | undefined>
     >({});
@@ -126,12 +126,12 @@ export default function ManageRoommateApplications() {
         Record<string, string | null>
     >({});
 
-    // Mapping from applicant name (email prefix) -> actual User.id (hash)
+
     const [userIdByApplicant, setUserIdByApplicant] = useState<
         Record<string, string | null>
     >({});
 
-    // Per-listing comparison selection (keyed by listingId, values = applicantIds)
+
     const [compareSelectionByListing, setCompareSelectionByListing] = useState<
         Record<string, string[]>
     >({});
@@ -153,7 +153,6 @@ export default function ManageRoommateApplications() {
         return me.username ?? me.emailLocal ?? me.id ?? null;
     }, [me]);
 
-    // Load all listings owned by the current user (same as MyListings)
     const { data, error, isLoading } = useSWR(
         apiUsername
             ? `/listings/users/${encodeURIComponent(apiUsername)}/listings`
@@ -163,7 +162,6 @@ export default function ManageRoommateApplications() {
 
     const mine = useMemo(() => (Array.isArray(data) ? data : []), [data]);
 
-    // -------- Helpers for preference loading & mapping ------------------------
 
     /**
      * Resolve real User.id from applicantId (which is the name/email prefix).
@@ -175,7 +173,6 @@ export default function ManageRoommateApplications() {
         const key = applicantId?.trim().toLowerCase();
         if (!key) return null;
 
-        // If we already have it cached, use it
         if (Object.prototype.hasOwnProperty.call(userIdByApplicant, key)) {
             return userIdByApplicant[key];
         }
@@ -236,7 +233,6 @@ export default function ManageRoommateApplications() {
             }
 
             if (!matchedUser) {
-                // Fallback: first result
                 matchedUser = users[0];
             }
 
@@ -275,7 +271,6 @@ export default function ManageRoommateApplications() {
     ): ApplicantPreferenceItem[] => {
         if (!raw) return [];
 
-        // Allow either DTO style or raw Prisma style
         const arr =
             Array.isArray(raw?.preferences)
                 ? raw.preferences
@@ -288,7 +283,7 @@ export default function ManageRoommateApplications() {
                 : [];
 
         return arr
-            .map((p: any) => {
+            .map((p: any): ApplicantPreferenceItem => {
                 const prefObj = p.preference ?? {};
                 const id = String(
                     p.preferenceId ??
@@ -299,7 +294,6 @@ export default function ManageRoommateApplications() {
                 const category = String(
                     p.category ?? prefObj.category ?? "Uncategorized",
                 );
-                // Important: use the preference.label as the display label
                 const label = String(
                     prefObj.label ??
                         p.label ??
@@ -328,9 +322,12 @@ export default function ManageRoommateApplications() {
                     importance,
                     visibility,
                     kind,
-                } as ApplicantPreferenceItem;
+                };
             })
-            .filter((x) => !!x.id);
+            .filter(
+                (x: ApplicantPreferenceItem): boolean =>
+                    !!x && typeof x.id === "string" && x.id.length > 0,
+            );
     };
 
     /**
@@ -343,7 +340,6 @@ export default function ManageRoommateApplications() {
         const key = applicantId?.trim().toLowerCase();
         if (!key) return;
 
-        // Avoid re-fetch if already loaded or currently loading
         if (prefsByApplicant[key] && !prefsLoadingByApplicant[key]) return;
         if (prefsLoadingByApplicant[key]) return;
 
@@ -351,7 +347,6 @@ export default function ManageRoommateApplications() {
         setPrefsErrorByApplicant((prev) => ({ ...prev, [key]: null }));
 
         try {
-            // 1) Find User.id from applicant name/email prefix
             const userId = await resolveUserIdForApplicant(applicantId);
             if (!userId) {
                 setPrefsErrorByApplicant((prev) => ({
@@ -363,7 +358,6 @@ export default function ManageRoommateApplications() {
                 return;
             }
 
-            // 2) Fetch personal ("I am...") and roommate ("I want...") preferences
             const profileUrl = apiUrl(
                 `/preferences/profile/${encodeURIComponent(userId)}`,
             );
@@ -415,7 +409,6 @@ export default function ManageRoommateApplications() {
         }
     };
 
-    // -------------------------------------------------------------------------
 
     useEffect(() => {
         if (!apiUsername) {
@@ -568,14 +561,12 @@ export default function ManageRoommateApplications() {
                                 : JSON.stringify(data.message);
                     }
                 } catch {
-                    // ignore
                 }
                 throw new Error(msg);
             }
 
             const updated: RoommateApplication = raw ? JSON.parse(raw) : null;
 
-            // Update local state
             setApplicationsByListing((prev) =>
                 prev.map((listing) => ({
                     ...listing,
@@ -652,7 +643,6 @@ export default function ManageRoommateApplications() {
     };
 
     const renderGroupedPreferences = (items: ApplicantPreferenceItem[]) => {
-        // Only show PUBLIC preferences to the listing owner
         const visible = items.filter((p) => p.visibility === "PUBLIC");
         if (!visible.length) {
             return (
@@ -816,9 +806,7 @@ export default function ManageRoommateApplications() {
             if (exists) {
                 next = current.filter((id) => id !== key);
             } else {
-                // Limit a bit to keep comparison readable
                 next = [...current, key].slice(0, 5);
-                // Preload preferences when adding to comparison
                 if (!prefsByApplicant[key] && !prefsLoadingByApplicant[key]) {
                     void loadApplicantPreferencesForApplicant(applicantId);
                 }

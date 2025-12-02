@@ -65,7 +65,7 @@ export default function Dashboard() {
     const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
     const [withdrawingId, setWithdrawingId] = useState<string | null>(null);
 
-    // NEW: listing metadata (title, owner username + email) keyed by listingId
+    // listing meta (title, owner username/email) keyed by listingId
     const [listingMetaById, setListingMetaById] = useState<Record<string, ListingMeta>>(
         {},
     );
@@ -93,10 +93,11 @@ export default function Dashboard() {
     useEffect(() => {
         if (!apiApplicantId) return;
 
+        const applicantId: string = apiApplicantId; // non-null snapshot for this effect
         let cancelled = false;
         const controller = new AbortController();
 
-        async function loadApplications() {
+        async function loadApplications(currentApplicantId: string) {
             setIsLoading(true);
             setError(null);
 
@@ -106,7 +107,7 @@ export default function Dashboard() {
             params.set("pageSize", "50");
 
             const path = `/listings/users/${encodeURIComponent(
-                apiApplicantId,
+                currentApplicantId,
             )}/roommate-applications?${params.toString()}`;
             const url = apiUrl(path);
 
@@ -148,7 +149,7 @@ export default function Dashboard() {
             }
         }
 
-        loadApplications();
+        loadApplications(applicantId);
 
         return () => {
             cancelled = true;
@@ -156,8 +157,7 @@ export default function Dashboard() {
         };
     }, [apiApplicantId, statusFilter]);
 
-    // --- NEW: load listing metadata (title + owner + email) for each listingId ---
-
+    // load listing meta (title + owner + email) for each listingId
     const loadListingMeta = async (listingId: string) => {
         if (!listingId) return;
         if (listingMetaById[listingId] || listingMetaLoading[listingId]) return;
@@ -194,7 +194,7 @@ export default function Dashboard() {
                 }
             }
 
-            // 2) If we know the owner's username/email prefix, resolve their full email
+            // 2) Resolve owner email from ownerUsername (email prefix)
             if (ownerUsername) {
                 try {
                     const searchRes = await fetch(
@@ -276,15 +276,14 @@ export default function Dashboard() {
         }
     };
 
-    // Whenever applications change, make sure we have metadata for each listingId
+    // ensure we fetch meta for each listingId referenced in applications
     useEffect(() => {
         const ids = new Set(applications.map((a) => a.listingId));
-        for (const id of ids) {
+        ids.forEach((id) => {
             if (id && !listingMetaById[id] && !listingMetaLoading[id]) {
                 void loadListingMeta(id);
             }
-        }
-        // We intentionally omit loadListingMeta from deps (it's stable in this component)
+        });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [applications, listingMetaById, listingMetaLoading]);
 
@@ -330,11 +329,11 @@ export default function Dashboard() {
                 prev.map((a) =>
                     a.id === id && updated
                         ? {
-                              ...a,
-                              status: updated.status,
-                              decidedAt: updated.decidedAt ?? a.decidedAt,
-                              updatedAt: updated.updatedAt ?? a.updatedAt,
-                          }
+                                ...a,
+                                status: updated.status,
+                                decidedAt: updated.decidedAt ?? a.decidedAt,
+                                updatedAt: updated.updatedAt ?? a.updatedAt,
+                            }
                         : a,
                 ),
             );
@@ -491,15 +490,14 @@ export default function Dashboard() {
                                                                                 }
                                                                             </a>
                                                                         ) : (
-                                                                            "Email: —"
-                                                                        )}
+                                                                                "Email: —"
+                                                                            )}
                                                                     </div>
                                                                     <div className="text-xs">
                                                                         <Link
                                                                             to={`/listings/${meta.id}`}
                                                                             state={{
                                                                                 id: meta.id,
-                                                                                // we only know title; other fields can be fetched on details page if needed
                                                                                 title: meta.title,
                                                                             }}
                                                                             className="text-gray-500 hover:underline underline-offset-2 font-roboto-light"
@@ -509,14 +507,14 @@ export default function Dashboard() {
                                                                     </div>
                                                                 </div>
                                                             ) : metaIsLoading ? (
-                                                                <span className="text-xs text-gray-500">
-                                                                    Loading listing…
-                                                                </span>
-                                                            ) : (
-                                                                <span className="text-xs text-gray-400">
-                                                                    Listing {app.listingId}
-                                                                </span>
-                                                            )}
+                                                                    <span className="text-xs text-gray-500">
+                                                                        Loading listing…
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-xs text-gray-400">
+                                                                        Listing {app.listingId}
+                                                                    </span>
+                                                                )}
                                                         </td>
                                                         <td className="px-4 py-2 text-sm text-gray-900 align-top">
                                                             {app.status}
@@ -536,10 +534,10 @@ export default function Dashboard() {
                                                                     {app.message}
                                                                 </span>
                                                             ) : (
-                                                                <span className="text-gray-400">
-                                                                    —
-                                                                </span>
-                                                            )}
+                                                                    <span className="text-gray-400">
+                                                                        —
+                                                                    </span>
+                                                                )}
                                                         </td>
                                                         <td className="px-4 py-2 text-sm text-gray-900 text-right align-top">
                                                             {app.status === "PENDING" ? (
@@ -552,25 +550,25 @@ export default function Dashboard() {
                                                                     }
                                                                     disabled={
                                                                         withdrawingId ===
-                                                                        app.id
+                                                                            app.id
                                                                     }
                                                                     className={`px-4 py-2 rounded-3xl border text-sm font-roboto-light ${
                                                                         withdrawingId ===
-                                                                        app.id
+                                                                            app.id
                                                                             ? "border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed"
                                                                             : "border-red-500 text-red-600 bg-white hover:bg-red-50"
                                                                     }`}
                                                                 >
                                                                     {withdrawingId ===
-                                                                    app.id
+                                                                        app.id
                                                                         ? "Withdrawing…"
                                                                         : "Withdraw"}
                                                                 </button>
                                                             ) : (
-                                                                <span className="text-xs text-gray-400">
-                                                                    No actions
-                                                                </span>
-                                                            )}
+                                                                    <span className="text-xs text-gray-400">
+                                                                        No actions
+                                                                    </span>
+                                                                )}
                                                         </td>
                                                     </tr>
                                                 );
