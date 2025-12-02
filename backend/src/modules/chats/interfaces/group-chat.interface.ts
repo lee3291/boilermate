@@ -16,6 +16,7 @@ export interface GroupChatDetails {
   groupIcon: string | null;
   creatorId: string;
   latestMessageAt: Date;
+  polls?: PollDetails[];
 }
 
 export interface GetInvitationsDetails {
@@ -65,4 +66,20 @@ export interface UserDetails { // technically will have to fetch from user modul
 }
 export interface AddMembersQueryResults {
   users: UserDetails[];
+}
+
+//Related to poll
+
+export interface PollDetails {
+  id: string;
+  question: string;
+  //createdAt: Date;
+  chatId: string;
+  options: PollOptionDetails[];
+}
+
+export interface PollOptionDetails {
+  id: string;
+  text: string;
+  votes: number; // default 0
 }
