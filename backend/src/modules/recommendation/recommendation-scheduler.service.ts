@@ -305,13 +305,18 @@ export class RecommendationSchedulerService {
         if (importanceLevel >= 4 && topMatches.length < 5) {
           topMatches.push(label);
         }
-      } else if (importanceLevel >= 4) {
-        // Heavy penalty for high-importance mismatches
-        const penalty = weightedImportance * 0.5;
-        totalScore -= penalty;
-        breakdown.push(`    ✗ ${label} (${category}): -${penalty.toFixed(1)} pts [PENALTY: importance=${importanceLevel}, weight=${weight}]`);
       } else {
-        breakdown.push(`    - ${label} (${category}): 0 pts [no match, importance=${importanceLevel}]`);
+        // Apply penalty for ALL mismatches, scaled by importance level
+        // Penalty factor: (importance / 5) gives 0% at importance=0, 100% at importance=5
+        const penaltyFactor = importanceLevel / 5;
+        const penalty = weightedImportance * penaltyFactor * 0.5; // 0.5 = max 50% penalty
+        totalScore -= penalty;
+        
+        if (penalty > 0) {
+          breakdown.push(`    ✗ ${label} (${category}): -${penalty.toFixed(1)} pts [PENALTY: importance=${importanceLevel}, weight=${weight}, factor=${(penaltyFactor * 100).toFixed(0)}%]`);
+        } else {
+          breakdown.push(`    - ${label} (${category}): 0 pts [no match, importance=0, no penalty]`);
+        }
       }
     }
 
