@@ -1,0 +1,50 @@
+/*
+Stores precomputed compatibility scores between users
+Updated daily by scheduler job
+Only stores top-N matches per user to limit storage
+*/
+model RecommendationScore {
+  id          String   @id @default(uuid())
+  userId      String   // User receiving the recommendation
+  candidateId String   // User being recommended
+  score       Float    // Compatibility score (0-100)
+  reasons     Json?    // Breakdown of why they matched: {"smoking": true, "sleep_schedule": true, "top_matches": ["Both non-smokers", "Both early birds"]}
+  hidden      Boolean  @default(false) // Hide from UI after user takes action
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User @relation("RecommendationsReceived", fields: [userId], references: [id], onDelete: Cascade)
+  candidate User @relation("RecommendationsGiven", fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, candidateId])
+  @@index([userId, score(sort: Desc)]) // Fast "get top N recommendations" query
+  @@index([userId, hidden]) // Filter hidden recommendations
+}
+
+/*
+Tracks user actions on recommendations (accept/decline only)
+- Exclude accepted/declined users from future recommendations during scoring job
+- Declined interactions are auto-deleted after 30 days (allows re-matching if profiles change)
+- Accepted interactions are kept permanently (prevent re-sending invitations)
+*/
+model RecommendationInteraction {
+  id          String            @id @default(uuid())
+  userId      String            // User who took the action
+  candidateId String            // User who was acted upon
+  action      InteractionAction // ACCEPT | DECLINE
+  createdAt   DateTime          @default(now())
+
+  user      User @relation("InteractionsGiven", fields: [userId], references: [id], onDelete: Cascade)
+  candidate User @relation("InteractionsReceived", fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, candidateId]) // Can only have one action per user pair (accept OR decline, not both)
+  @@index([userId, action]) // Fast lookup: "get all users userA has declined"
+  @@index([candidateId, action]) // Analytics: "who got accepted/declined most"
+  @@index([action, createdAt]) // For cleanup job: find old DECLINE actions to delete
+}
+
+// Defines possible user actions on recommendations
+enum InteractionAction {
+  ACCEPT  // User accepted the match (sends invitation, kept permanently)
+  DECLINE // User declined the match (won't show again for 30 days, then auto-deleted)
+}

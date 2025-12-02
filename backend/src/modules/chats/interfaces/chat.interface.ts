@@ -7,10 +7,25 @@ export interface MessageApprovalDetails {
   userId: string;
   approved: boolean;
 }
+export enum ReactionType {
+  LIKE = 'LIKE',
+  LOVE = 'LOVE',
+  HAHA = 'HAHA',
+  WOW = 'WOW',
+  SAD = 'SAD',
+  ANGRY = 'ANGRY',
+}
+export interface MessageReactionDetails {
+  messageId: string;
+  userId: string;
+  reaction: string;
+}
+
 export interface MessageWithStatusDetails extends MessageDetails {
   approved?: boolean; // check if the msg approve/unapprove
   approvals?: MessageApprovalDetails[];
   isDeletedForYou?: boolean // this is a merge between the message with the message status table to form 1 single object for performance boost
+  reactions?: MessageReactionDetails[]; // store all reactions that user has done
 }
 
 // User details for participants list, technically we fetch the UserDetails or not ????

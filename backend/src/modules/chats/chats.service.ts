@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, ConflictException, InternalServerErrorException, BadRequestException, Logger } from '@nestjs/common';
+import { ReactionType } from '@prisma/client';
 import { 
   ChatDetails, 
   deleteMessageDetails, 
@@ -9,6 +10,7 @@ import {
   getMessagesResults, 
   MessageDetails, 
   MessageWithStatusDetails,
+  MessageReactionDetails,
   sendMessageDetails, 
   sendMessageResults,
   blockUserDetails,
@@ -831,6 +833,8 @@ export class ChatsService {
       if (!message.senderId) {
         throw new InternalServerErrorException('Message has no sender');
       }
+
+
       
       if (forEveryone === 'true') { // Delete for everyone
         // check authorization - only sender can delete for everyone
@@ -843,6 +847,15 @@ export class ChatsService {
         await client.message.update({
           where: { id: messageId },
           data: { isDeleted: true },
+        });
+        // delete reaction
+        await client.messageReaction.deleteMany({
+          where: { messageId },
+        });
+
+        //delete if it is pin msg
+        await client.pinnedMessage.deleteMany({
+          where: { messageId },
         });
 
         //! NULL CHECK: Find the chat - could be null if chat was deleted
@@ -860,6 +873,8 @@ export class ChatsService {
         } else {
           Logger.warn(`Chat not found for message ${messageId} when trying to emit delete event`);
         }
+
+
       } else { // Delete for you (forEveryone === 'false')
 
         //TODO: may need to update functionality to add soft delete for image => already handled
@@ -977,4 +992,177 @@ export class ChatsService {
     });
     return !!block; // true if found, false if not
   }
+
+  // Express emojis
+  // Add or update emoji for a specific message
+  async addReaction(messageId: string, userId: string, reaction: ReactionType) : Promise<MessageReactionDetails> {
+    // Upsert ensures a user can only have one reaction per message
+    const msgReaction = await this.prisma.messageReaction.upsert({
+      where: {
+        messageId_userId: { messageId, userId },
+      },
+      update: { reaction },
+      create: { messageId, userId, reaction },
+    });
+
+    return {
+      messageId: msgReaction.messageId,
+      userId: msgReaction.userId,
+      reaction: msgReaction.reaction,
+    };
+  }
+  //Remove emoji
+  async removeReaction(messageId: string, userId: string): Promise<void> {
+    await this.prisma.messageReaction.deleteMany({
+      where: { messageId, userId },
+    });
+  }
+  // Total count reactions for specific msg
+  async getReactionCount(messageId: string): Promise<number> {
+    const count = await this.prisma.messageReaction.count({
+      where: { messageId },
+    });
+
+    return count;
+  }
+  // Get summary all reactions in a specific msg
+  async getReactions(messageId: string): Promise<Array<{ messageId: string; userId: string; email: string; reaction: ReactionType }>> {
+    const reactions = await this.prisma.messageReaction.findMany({
+      where: { messageId },
+      select: {
+        messageId: true,
+        userId: true,
+        reaction: true,
+        user: {
+          select: { email: true }
+        }
+      }
+    });
+
+    return reactions.map(r => ({
+      messageId: r.messageId,
+      userId: r.userId,
+      email: r.user.email,
+      reaction: r.reaction
+    }));
+  }
+  //Pin msg
+  async pinMessage(chatId: string, messageId: string, userId: string): Promise<boolean> {
+    // Fetch the message to check sender
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+    });
+
+    if (!message || message.senderId !== userId) {
+      // Message not found or user is not the sender
+      return false;
+    }
+
+    // Check if already pinned
+    const existing = await this.prisma.pinnedMessage.findUnique({
+      where: {
+        messageId_chatId: {
+          messageId,
+          chatId,
+        },
+      },
+    });
+
+    if (existing) {
+      return false;
+    }
+
+    // Create pinned message
+    await this.prisma.pinnedMessage.create({
+      data: {
+        messageId,
+        chatId,
+        pinnedById: userId,
+      },
+    });
+
+    return true;
+  }
+
+  //Unpin msg
+  async unpinMessage(chatId: string, messageId: string, userId: string): Promise<boolean> {
+    // Check if the pinned record exists
+    const pinned = await this.prisma.pinnedMessage.findUnique({
+      where: {
+        messageId_chatId: {
+          messageId,
+          chatId,
+        },
+      },
+      include: {
+        message: true,
+      },
+    });
+
+    if (!pinned) {
+      return false;
+    }
+
+    if (pinned.message.senderId !== userId) {
+      return false;
+    }
+
+    // Perform unpin
+    await this.prisma.pinnedMessage.delete({
+      where: {
+        messageId_chatId: {
+          messageId,
+          chatId,
+        },
+      },
+    });
+
+    return true;
+  }
+
+  //Get all pin msgs in specific chat
+  async getPinnedMessages(
+      chatId: string
+  ): Promise<Array<{
+    id: string;
+    messageId:string;
+    chatId: string;
+    messageContent?: string;
+    pinnedByEmail?: string;
+    createdAt: Date;
+  }>> {
+    const pinned = await this.prisma.pinnedMessage.findMany({
+      where: { chatId },
+      select: {
+        id: true,
+        messageId:true,
+        chatId: true,
+        createdAt: true,
+        pinnedBy: {         // relation to User
+          select: {
+            email: true,
+          },
+        },
+        message: {          // relation to Message
+          select: {
+            content: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc', // newest → oldest
+      },
+    });
+
+    return pinned.map(p => ({
+      id: p.id,
+      messageId:p.messageId,
+      chatId: p.chatId,
+      messageContent: p.message?.content ?? 'No content',
+      pinnedByEmail: p.pinnedBy?.email ?? 'Unknown',
+      createdAt: p.createdAt,
+    }));
+  }
+
+
 }

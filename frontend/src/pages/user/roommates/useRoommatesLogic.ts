@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { searchUsers, getFavorites, toggleFavorite, getMyVotes, toggleVote } from '@/services/profileService';
 import { getPreferences } from '@/services/preferencesService';
+import { getRecommendations, acceptRecommendation, declineRecommendation } from '@/services/recommendationService';
 import type { ProfileSummary, SearchUsersResponse, GetFavoritesResponse, GetMyVotesResponse } from '@/types/profile';
 import type { GetPreferencesResponse } from '@/types/preferences/preference';
+import type { Recommendation } from '@/types/recommendation';
 
 const PAGE_SIZE = 9; // 3x3 grid
 const CACHE_TTL = 30000; // 30 seconds cache
@@ -51,7 +53,7 @@ export default function useRoommatesLogic(userId: string) {
   const [searchParams, setSearchParams] = useSearchParams();
   
   // Initialize from URL params or defaults
-  const initialViewMode = (searchParams.get('view') as 'search' | 'favorites' | 'liked' | 'disliked') || 'search';
+  const initialViewMode = (searchParams.get('view') as 'search' | 'favorites' | 'liked' | 'disliked' | 'recommended') || 'search';
   const initialPage = parseInt(searchParams.get('page') || '1', 10);
   
   const [profiles, setProfiles] = useState<ProfileSummary[]>([]);
@@ -69,18 +71,23 @@ export default function useRoommatesLogic(userId: string) {
   const [favoritesTotal, setFavoritesTotal] = useState(() => cache.get<number>(`count_favorites_${userId}`) || 0);
   const [likedTotal, setLikedTotal] = useState(() => cache.get<number>(`count_liked_${userId}`) || 0);
   const [dislikedTotal, setDislikedTotal] = useState(() => cache.get<number>(`count_disliked_${userId}`) || 0);
+  const [recommendedTotal, setRecommendedTotal] = useState(() => cache.get<number>(`count_recommended_${userId}`) || 0);
   const [countsFetched, setCountsFetched] = useState(() => {
     // Check if all counts exist in cache
     const hasCached = !!(
       cache.get(`count_favorites_${userId}`) !== null && 
       cache.get(`count_liked_${userId}`) !== null && 
-      cache.get(`count_disliked_${userId}`) !== null
+      cache.get(`count_disliked_${userId}`) !== null &&
+      cache.get(`count_recommended_${userId}`) !== null
     );
     return hasCached;
   });
   
-  // View mode: 'search', 'favorites', 'liked', or 'disliked'
-  const [viewMode, setViewMode] = useState<'search' | 'favorites' | 'liked' | 'disliked'>(initialViewMode);
+  // View mode: 'search', 'favorites', 'liked', 'disliked', or 'recommended'
+  const [viewMode, setViewMode] = useState<'search' | 'favorites' | 'liked' | 'disliked' | 'recommended'>(initialViewMode);
+  
+  // Recommendations state
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   
   // Preference filtering - pending state (before apply)
   const [allPreferences, setAllPreferences] = useState<GetPreferencesResponse>({ preferences: [] });
@@ -177,6 +184,11 @@ export default function useRoommatesLogic(userId: string) {
         });
         setDislikedTotal(dislikedResponse.total);
         cache.set(`count_disliked_${userId}`, dislikedResponse.total);
+
+        // Fetch recommended count
+        const recommendedResponse = await getRecommendations(userId);
+        setRecommendedTotal(recommendedResponse.total);
+        cache.set(`count_recommended_${userId}`, recommendedResponse.total);
       } catch (err) {
         console.error('Error prefetching counts:', err);
       } finally {
@@ -207,7 +219,15 @@ export default function useRoommatesLogic(userId: string) {
     setError(null);
     
     try {
-      if (viewMode === 'favorites') {
+      if (viewMode === 'recommended') {
+        // Fetch recommendations
+        const response = await getRecommendations(userId);
+        setRecommendations(response.recommendations);
+        setRecommendedTotal(response.total);
+        setTotalPages(1); // Recommendations shown on single page
+        cache.set(`count_recommended_${userId}`, response.total);
+        setProfiles([]); // Clear profiles since we use recommendations
+      } else if (viewMode === 'favorites') {
         // Fetch favorites
         const response: GetFavoritesResponse = await getFavorites({
           userId,
@@ -271,12 +291,13 @@ export default function useRoommatesLogic(userId: string) {
   // Get the correct total based on current view mode
   const getCurrentTotal = useCallback(() => {
     switch (viewMode) {
+      case 'recommended': return recommendedTotal;
       case 'favorites': return favoritesTotal;
       case 'liked': return likedTotal;
       case 'disliked': return dislikedTotal;
       default: return searchTotal;
     }
-  }, [viewMode, searchTotal, favoritesTotal, likedTotal, dislikedTotal]);
+  }, [viewMode, searchTotal, favoritesTotal, likedTotal, dislikedTotal, recommendedTotal]);
 
   const handleApplyFilters = useCallback((filters: {
     preferenceIds: string[];
@@ -437,12 +458,48 @@ export default function useRoommatesLogic(userId: string) {
     });
   }, []);
 
-  const handleSetViewMode = useCallback((mode: 'search' | 'favorites' | 'liked' | 'disliked') => {
+  const handleSetViewMode = useCallback((mode: 'search' | 'favorites' | 'liked' | 'disliked' | 'recommended') => {
     setViewMode(mode);
     setPage(1);
     // Update URL for state persistence and deep linking
     setSearchParams({ view: mode, page: '1' });
   }, [setSearchParams]);
+
+  // Recommendation handlers
+  const handleAcceptRecommendation = useCallback(async (candidateId: string) => {
+    try {
+      await acceptRecommendation({ userId, candidateId });
+      
+      // Remove from recommendations list
+      setRecommendations(prev => prev.filter(r => r.candidateId !== candidateId));
+      setRecommendedTotal(prev => Math.max(0, prev - 1));
+      
+      // Update cache
+      cache.set(`count_recommended_${userId}`, Math.max(0, recommendedTotal - 1));
+      
+      // Show success feedback
+      alert('Connection request sent! Check your messages.');
+    } catch (err: any) {
+      console.error('Error accepting recommendation:', err);
+      alert(err?.response?.data?.message || 'Failed to send connection request');
+    }
+  }, [userId, recommendedTotal]);
+
+  const handleDeclineRecommendation = useCallback(async (candidateId: string) => {
+    try {
+      await declineRecommendation({ userId, candidateId });
+      
+      // Remove from recommendations list
+      setRecommendations(prev => prev.filter(r => r.candidateId !== candidateId));
+      setRecommendedTotal(prev => Math.max(0, prev - 1));
+      
+      // Update cache
+      cache.set(`count_recommended_${userId}`, Math.max(0, recommendedTotal - 1));
+    } catch (err: any) {
+      console.error('Error declining recommendation:', err);
+      alert(err?.response?.data?.message || 'Failed to decline recommendation');
+    }
+  }, [userId, recommendedTotal]);
   
   // Sync page changes to URL (without triggering re-render)
   useEffect(() => {
@@ -502,6 +559,7 @@ export default function useRoommatesLogic(userId: string) {
     favoritesTotal,
     likedTotal,
     dislikedTotal,
+    recommendedTotal,
     countsFetched,
     viewMode,
     allPreferences,
@@ -510,6 +568,7 @@ export default function useRoommatesLogic(userId: string) {
     importanceValue,
     expandedCategories,
     compareUsers,
+    recommendations,
 
     // actions
     setPage,
@@ -526,5 +585,7 @@ export default function useRoommatesLogic(userId: string) {
     handleRemoveFromCompare,
     handleClearCompare,
     isUserInCompare,
+    handleAcceptRecommendation,
+    handleDeclineRecommendation,
   };
 }

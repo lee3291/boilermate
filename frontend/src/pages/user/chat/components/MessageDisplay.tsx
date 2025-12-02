@@ -10,15 +10,27 @@ interface Participant {
 export default function MessageDisplay({ 
   messages, 
   currentUser,
+    chatId,
   participants, 
   onEdit, 
-  onDelete 
+  onDelete,
+                                         onAddReaction,
+                                         onRemoveReaction,
+                                         onGetReactions,
+                                         onGetReactionCount,
+    onPinMessage,
 }: { 
   messages: any[]; 
   currentUser: string;
+  chatId: string;
   participants: Participant[]; 
   onEdit?: (id: string, content: string) => void; 
-  onDelete?: (id: string, forEveryone: boolean) => void 
+  onDelete?: (id: string, forEveryone: boolean) => void ;
+  onAddReaction: (messageId: string, userId:string, reaction: string) => Promise<any>;
+  onRemoveReaction: (messageId: string) => Promise<any>;
+  onGetReactions: (messageId: string) => Promise<any[]>;
+  onGetReactionCount: (messageId: string) => Promise<number>;
+  onPinMessage: (chatId: string, messageId: string, userId: string) => Promise<boolean>;
 }) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -42,9 +54,15 @@ export default function MessageDisplay({
             m={m} 
             isMine={m.senderId === currentUser}
             currentUserId={currentUser}
+            chatId={chatId}
             senderEmail={participants.find(p => p.id === m.senderId)?.email ?? m.senderId}
             onEdit={onEdit} 
             onDelete={onDelete}
+            onAddReaction={onAddReaction}
+            onRemoveReaction={onRemoveReaction}
+            onGetReactionCount={onGetReactionCount}
+            onGetReactions={onGetReactions}
+            onPinMessage={onPinMessage}
           />
         ))}
         <div ref={messagesEndRef} />
