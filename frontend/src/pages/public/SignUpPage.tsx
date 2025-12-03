@@ -5,6 +5,10 @@ import { requestCode, verifyCode, register } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { signIn } from '../../services/auth.service';
 import HomeNavbar from '../home/components/HomeNavbar';
+import ReCAPTCHA from 'react-google-recaptcha';
+import { verifyCaptcha as apiVerifyCaptcha } from '@/services/reCaptcha.service';
+
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
 type Step = 1 | 2 | 3;
 
@@ -18,6 +22,7 @@ const SignUpPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const handleApiError = (error: any) => {
     if (error.response) {
@@ -33,9 +38,20 @@ const SignUpPage = () => {
 
   const handleRequestCode = async (event: FormEvent) => {
     event.preventDefault();
+    if (!captchaToken) {
+      setError('Please complete the reCAPTCHA!');
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
+      const captchaResult = await apiVerifyCaptcha({ token: captchaToken });
+      if (!captchaResult.success) {
+        setError('reCAPTCHA verification failed.');
+        setIsLoading(false);
+        setCaptchaToken(null);
+        return;
+      }
       await requestCode(email);
       setStep(2);
     } catch (err) {
@@ -100,31 +116,37 @@ const SignUpPage = () => {
     switch (step) {
       case 1:
         return (
-          <form onSubmit={handleRequestCode}>
-            <InputField
-              label='Purdue Email'
-              id='email'
-              type='email'
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder='username@purdue.edu'
-              required
-            />
-            <button
-              type='submit'
-              disabled={isLoading}
-              className='font-sourceserif4-18pt-regular border-grayline bg-mainbrown text-maingray mt-4 w-full rounded-lg border py-2 text-lg transition-colors hover:underline disabled:opacity-50'
-            >
-              {isLoading ? 'Sending...' : 'Send Verification Code'}
-            </button>
-          </form>
+            <form onSubmit={handleRequestCode}>
+              <InputField
+                  label='Purdue Email'
+                  id='email'
+                  type='email'
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder='username@purdue.edu'
+                  required
+              />
+              <div className='flex justify-center mt-4'>
+                <ReCAPTCHA
+                    sitekey={RECAPTCHA_SITE_KEY}
+                    onChange={(token: string | null) => setCaptchaToken(token)}
+                />
+              </div>
+              <button
+                  type='submit'
+                  disabled={isLoading}
+                  className='font-sourceserif4-18pt-regular border-grayline bg-mainbrown text-maingray mt-4 w-full rounded-lg border py-2 text-lg transition-colors hover:underline disabled:opacity-50'
+              >
+                {isLoading ? 'Sending...' : 'Send Verification Code'}
+              </button>
+            </form>
         );
       case 2:
         return (
-          <form onSubmit={handleVerifyCode}>
-            <p className='text-maingray mb-4 text-center text-sm'>
-              A verification code was sent to <strong>{email}</strong>.
-            </p>
+            <form onSubmit={handleVerifyCode}>
+              <p className='text-maingray mb-4 text-center text-sm'>
+                A verification code was sent to <strong>{email}</strong>.
+              </p>
             <InputField
               label='Verification Code'
               id='code'
@@ -145,35 +167,35 @@ const SignUpPage = () => {
         );
       case 3:
         return (
-          <form onSubmit={handleRegister}>
-            <InputField
-              label='Password'
-              id='password'
-              type='password'
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <p className='text-maingray mt-2 text-xs'>
-              Password must be longer than 8 characters, and contain at least
-              one number and one special character.
-            </p>
-            <InputField
-              label='Confirm Password'
-              id='confirmPassword'
-              type='password'
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
-            <button
-              type='submit'
-              disabled={isLoading}
-              className='font-sourceserif4-18pt-regular border-grayline bg-mainbrown text-maingray mt-4 w-full rounded-lg border py-2 text-lg transition-colors hover:underline disabled:opacity-50'
-            >
-              {isLoading ? 'Creating Account...' : 'Create Account'}
-            </button>
-          </form>
+            <form onSubmit={handleRegister}>
+              <InputField
+                  label='Password'
+                  id='password'
+                  type='password'
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+              />
+              <p className='text-maingray mt-2 text-xs'>
+                Password must be longer than 8 characters, and contain at least
+                one number and one special character.
+              </p>
+              <InputField
+                  label='Confirm Password'
+                  id='confirmPassword'
+                  type='password'
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+              />
+              <button
+                  type='submit'
+                  disabled={isLoading}
+                  className='font-sourceserif4-18pt-regular border-grayline bg-mainbrown text-maingray mt-4 w-full rounded-lg border py-2 text-lg transition-colors hover:underline disabled:opacity-50'
+              >
+                {isLoading ? 'Creating Account...' : 'Create Account'}
+              </button>
+            </form>
         );
       default:
         return null;
@@ -181,9 +203,9 @@ const SignUpPage = () => {
   };
 
   return (
-    <div className='bg-mainbrown flex min-h-screen flex-col items-center p-4'>
-      <HomeNavbar />
-      <div className='flex w-full grow items-center justify-center'>
+      <div className='bg-mainbrown flex min-h-screen flex-col items-center p-4'>
+        <HomeNavbar/>
+        <div className='flex w-full grow items-center justify-center'>
         <div
           className='border-grayline bg-sharkgray-light w-full max-w-md rounded-lg border p-8'
           style={{ height: 'fit-content' }}
