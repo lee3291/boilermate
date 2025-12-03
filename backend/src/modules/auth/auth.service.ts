@@ -115,6 +115,9 @@ export class AuthService {
       data: {
         email: dto.email,
         passwordHash: hashedPassword,
+        settings: {
+          create: {},
+        },
       },
     });
 

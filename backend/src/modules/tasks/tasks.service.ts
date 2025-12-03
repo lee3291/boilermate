@@ -34,14 +34,21 @@ export class TasksService {
         },
       },
       include: {
-        user_reference: true,
+        user_reference: {
+          include: {
+            settings: true,
+          },
+        },
       },
     });
 
     this.logger.log(`Found ${listingsToRemind.length} listings to remind.`);
 
     for (const listing of listingsToRemind) {
-      if (listing.user_reference) {
+      if (
+        listing.user_reference &&
+        (listing.user_reference.settings?.email_on_listing_27days_old ?? true)
+      ) {
         try {
           await this.mailService.sendReminderToUpdateListingEmail(
             listing.user_reference,
@@ -77,7 +84,11 @@ export class TasksService {
         },
       },
       include: {
-        user_reference: true,
+        user_reference: {
+          include: {
+            settings: true,
+          },
+        },
       },
     });
 
@@ -100,7 +111,10 @@ export class TasksService {
       this.logger.log(`Archived ${idsToArchive.length} outdated listings.`);
 
       for (const listing of listingsToArchive) {
-        if (listing.user_reference) {
+        if (
+          listing.user_reference &&
+          (listing.user_reference.settings?.email_on_listing_outdated ?? true)
+        ) {
           try {
             await this.mailService.sendOutdatedListingEmail(
               listing.user_reference,

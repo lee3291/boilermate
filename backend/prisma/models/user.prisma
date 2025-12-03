@@ -95,6 +95,8 @@ model User {
   roommateReviewsWritten   RoommateReview[]  @relation("ReviewAuthor")
   roommateReviewsReceived  RoommateReview[]  @relation("ReviewSubject")
 
+  // Relation to UserSettings
+  settings      UserSettings?
   // Recommendation relations
   recommendationsReceived  RecommendationScore[] @relation("RecommendationsReceived")
   recommendationsGiven     RecommendationScore[] @relation("RecommendationsGiven")

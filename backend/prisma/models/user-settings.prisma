@@ -1,0 +1,11 @@
+model UserSettings {
+  id                             String    @id @default(cuid())
+  user                           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                         String    @unique
+  email_on_follow_profile_update Boolean   @default(true)
+  email_on_follow_new_listing    Boolean   @default(true)
+  email_on_listing_outdated      Boolean   @default(true)
+  email_on_listing_27days_old    Boolean   @default(true)
+  createdAt                      DateTime  @default(now())
+  updatedAt                      DateTime  @updatedAt
+}

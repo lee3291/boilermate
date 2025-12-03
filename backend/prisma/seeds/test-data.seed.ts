@@ -37,7 +37,14 @@ async function main() {
 
   const createdUsers = [];
   for (const userData of usersToCreate) {
-    const user = await prisma.user.create({ data: userData });
+    const user = await prisma.user.create({
+      data: {
+        ...userData,
+        settings: {
+          create: {},
+        },
+      },
+    });
     createdUsers.push(user);
     console.log(`Created user with id: ${user.id}`);
   }
