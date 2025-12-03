@@ -1,16 +1,27 @@
-import { useState, type FormEvent } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState, type FormEvent } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import OTPInput from "../../components/OTPInput";
 import { ArrowLeft } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import HomeNavbar from "../home/components/HomeNavbar";
+
 export default function VerifyOTPPage() {
     const navigate = useNavigate();
     const location = useLocation();
-    const email = location.state?.email; // user’s email
+    const email = location.state?.email || "";
     const [otp, setOtp] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        //Allow reset password if enter correct OTP
+        if (!otp || otp.length !== 6) {
+            setError("Please enter a 6-digit OTP");
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+
         try {
             const response = await fetch("http://localhost:3000/otp/verify", {
                 method: "POST",
@@ -18,75 +29,90 @@ export default function VerifyOTPPage() {
                 body: JSON.stringify({ email, otp }),
             });
             const data = await response.json();
+
             if (data.valid) {
-                alert("OTP verified successfully!");
                 navigate("/reset-password", { state: { email } });
             } else {
-                alert("Invalid OTP");
+                setError("Invalid OTP. Please try again.");
             }
         } catch (err) {
             console.error(err);
-            alert("Something went wrong");
+            setError("Something went wrong. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleResend = async () => {
+        if (!email) return;
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const response = await fetch("http://localhost:3000/otp/send", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email }),
+            });
+            await response.json();
+            alert("A new OTP has been sent to your email.");
+        } catch (err) {
+            console.error(err);
+            setError("Failed to resend OTP. Please try again.");
+        } finally {
+            setIsLoading(false);
         }
     };
 
     return (
-        <main className="min-h-screen bg-white flex items-center justify-center p-4">
-            <div className="border border-gray-200 rounded-lg p-8 space-y-6">
-                <Link
-                    to="/otp-request"
-                    className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-8 transition-colors"
+        <div className="bg-mainbrown flex min-h-screen flex-col items-center p-4">
+            <HomeNavbar />
+            <div className="flex w-full grow items-center justify-center">
+                <div
+                    className="border-grayline bg-sharkgray-light w-full max-w-md rounded-lg border p-8"
+                    style={{ height: "fit-content" }}
                 >
-                    <ArrowLeft className="h-4 w-4" />
-                    Back
-                </Link>
+                    <Link
+                        to="/otp-request"
+                        className="flex items-center gap-2 text-sm text-maingray hover:text-gray-700 transition-colors mb-4"
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                        Back
+                    </Link>
 
-                <div className="space-y-6">
-                    <div className="space-y-4 text-center">
-                        <h1 className="text-2xl font-semibold text-gray-900">Verify</h1>
-                        <p className="text-base text-gray-600 leading-relaxed">
-                            Your code was sent to <span className="font-medium">{email}</span>.
-                        </p>
-                    </div>
+                    <h1 className="font-sourceserif4-18pt-regular text-maingray mb-4 text-center text-3xl">
+                        Verify OTP
+                    </h1>
+
+                    {error && <p className="mb-4 text-center text-red-500">{error}</p>}
+
+                    <p className="text-center text-maingray mb-6 text-sm">
+                        Enter the 6-digit code sent to <span className="font-medium">{email}</span>
+                    </p>
+
                     <OTPInput length={6} onComplete={setOtp} />
-                    <form onSubmit={handleSubmit} className="space-y-6">
+
+                    <button
+                        onClick={handleSubmit as any}
+                        disabled={isLoading}
+                        className="font-sourceserif4-18pt-regular border-grayline bg-mainbrown text-maingray mt-6 w-full rounded-lg border py-2 text-lg transition-colors hover:underline disabled:opacity-50"
+                    >
+                        {isLoading ? "Verifying..." : "Verify OTP"}
+                    </button>
+
+                    <p className="text-center text-sm text-maingray mt-4">
+                        Didn’t receive the code?{" "}
                         <button
-                            type="submit"
-                            className="w-full h-11 text-base font-medium bg-blue-500 text-white rounded-lg
-             hover:bg-blue-600 transition-colors duration-200"
+                            type="button"
+                            onClick={handleResend}
+                            disabled={isLoading}
+                            className="text-blue-500 hover:text-blue-700 font-medium underline"
                         >
-                            Enter
+                            Resend
                         </button>
-
-                        <p className="text-center text-sm text-gray-600">
-                            Didn’t receive code?{" "}
-                            <button
-                                type="button"
-                                onClick={async () => {
-                                    try {
-                                        console.log(email);
-                                        const response = await fetch("http://localhost:3000/otp/send", {
-                                            method: "POST",
-                                            headers: {"Content-Type": "application/json"},
-                                            body: JSON.stringify({email}),
-                                        });
-
-                                        const data = await response.json();
-                                        console.log("Resend response:", data);
-                                    } catch (error) {
-                                        console.error("OTP resend failed.");
-                                        console.error(error);
-                                    }
-                                    alert("A new OTP has been sent to your email.");
-                                }}
-                                className="font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
-                            >
-                                Resend
-                            </button>
-                        </p>
-                    </form>
+                    </p>
                 </div>
             </div>
-        </main>
+        </div>
     );
 }

@@ -1,5 +1,5 @@
 import React, { useState, type FormEvent } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import InputField from '../../components/InputField';
 import { signIn } from '../../services/auth.service';
 import { useAuth } from '../../contexts/AuthContext';
@@ -64,27 +64,36 @@ const SignInPage = () => {
           {error && <p className='mb-4 text-center text-red-500'>{error}</p>}
           <form onSubmit={handleSubmit}>
             <InputField
-              label='Purdue Email'
-              id='email'
-              type='email'
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder='username@purdue.edu'
-              required
+                label='Purdue Email'
+                id='email'
+                type='email'
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder='username@purdue.edu'
+                required
             />
             <InputField
-              label='Password'
-              id='password'
-              type='password'
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+                label='Password'
+                id='password'
+                type='password'
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
             />
+            <div className="flex justify-center mt-2 mb-4">
+              <Link
+                  to="/otp-request"
+                  className="text-blue-500 hover:underline text-sm"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
 
             <button
-              type='submit'
-              disabled={isLoading}
-              className='font-sourceserif4-18pt-regular border-grayline bg-mainbrown text-maingray mt-4 w-full rounded-lg border py-2 text-lg transition-colors hover:underline disabled:opacity-50'
+                type='submit'
+                disabled={isLoading}
+                className='font-sourceserif4-18pt-regular border-grayline bg-mainbrown text-maingray mt-4 w-full rounded-lg border py-2 text-lg transition-colors hover:underline disabled:opacity-50'
             >
               {isLoading ? 'Signing In...' : 'Sign In'}
             </button>
