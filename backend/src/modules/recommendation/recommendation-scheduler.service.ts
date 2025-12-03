@@ -286,9 +286,25 @@ export class RecommendationSchedulerService {
 
       // Check if B has this preference
       if (isB.has(preferenceId)) {
+        // Base score for having the preference
         totalScore += weightedImportance;
         categories[category] = true;
-        breakdown.push(`    ✓ ${label} (${category}): +${weightedImportance.toFixed(1)} pts [importance=${importanceLevel}, weight=${weight}]`);
+        
+        // Get B's importance level for this same preference
+        const bPreference = userB.profilePreferences.find(p => p.preference.id === preferenceId);
+        const bImportanceLevel = (bPreference as any)?.importance ?? 0;
+        
+        // Apply penalty if importance levels differ significantly
+        // Only penalize if A cares more than B (A=5, B=1 is bad, but A=1, B=5 is fine)
+        if (importanceLevel > bImportanceLevel) {
+          const importanceDiff = importanceLevel - bImportanceLevel;
+          const mismatchPenalty = weightedImportance * (importanceDiff / 5) * 0.3; // 30% max penalty for importance mismatch
+          totalScore -= mismatchPenalty;
+          breakdown.push(`    ✓ ${label} (${category}): +${weightedImportance.toFixed(1)} pts [importance=${importanceLevel}, weight=${weight}]`);
+          breakdown.push(`      ⚠ Importance mismatch: -${mismatchPenalty.toFixed(1)} pts [A wants ${importanceLevel}, B has ${bImportanceLevel}]`);
+        } else {
+          breakdown.push(`    ✓ ${label} (${category}): +${weightedImportance.toFixed(1)} pts [importance=${importanceLevel}, weight=${weight}]`);
+        }
 
         // Collect all matches with their importance for sorting later
         matchesWithImportance.push({ label, importance: importanceLevel });
