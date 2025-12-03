@@ -3,6 +3,7 @@ import nodemailer from 'nodemailer';
 import {OTPRecord} from './interfaces/otp.interface';
 import {User} from './interfaces/otp.interface';
 import { PrismaClient} from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 @Injectable()
 export class OTPService {
     //Store OPT for each user
@@ -66,11 +67,12 @@ export class OTPService {
     /**
      * Update password
      */
-    async updatePassword(email: string, newPassword:string): Promise<Partial<User>> {
-        await this.findUser(email); // ensure it exists
+    async updatePassword(email: string, newPassword: string): Promise<Partial<User>> {
+        await this.findUser(email);
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
         return this.prisma.user.update({
             where: { email },
-            data: {passwordHash: newPassword},
+            data: { passwordHash: hashedPassword },
         });
     }
 }
