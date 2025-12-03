@@ -70,11 +70,17 @@ model User {
   votesCast     UserVote[]      @relation("VotingUser")
   // Votes this user has received
   votesReceived UserVote[]      @relation("VotedUser")
+  // Reactions that user has done
+  messageReactions MessageReaction[]
+  // Pinned messages that user has done
+  pinnedMessages PinnedMessage[]  @relation("PinnedBy")
 
-
-    // Relations for announcements
+  // Relations for announcements
   announcements             Announcement[]             @relation("UserAnnouncements")
   announcementNotifications AnnouncementNotification[] @relation("UserAnnouncementNotifications")
+
+  //Relations for vote in polls
+  pollVotes      UserPollVote[]
     // Followers and Followings
     followers Follow[] @relation("FollowingUser")
     followings Follow[] @relation("FollowerUser")
@@ -91,6 +97,12 @@ model User {
 
   // Relation to UserSettings
   settings      UserSettings?
+  // Recommendation relations
+  recommendationsReceived  RecommendationScore[] @relation("RecommendationsReceived")
+  recommendationsGiven     RecommendationScore[] @relation("RecommendationsGiven")
+  
+  interactionsGiven        RecommendationInteraction[] @relation("InteractionsGiven")
+  interactionsReceived     RecommendationInteraction[] @relation("InteractionsReceived")
 }
 
 model FavoriteMatch {

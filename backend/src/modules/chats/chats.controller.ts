@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, HttpCode, Logger, Query } from '@nestjs/common';
 import { ChatsService } from './chats.service';
 import { GroupChatsService } from './group-chats.service';
+import { BadRequestException } from '@nestjs/common';
 import {
   SendMessageDto,
   EditMessageDto,
@@ -22,12 +23,16 @@ import {
   InvitationResponseDto,
   SearchUsersResponseDto,
   MessageApprovalDto,
+  PollInGroupDto,
+  PollOptionDto,
+    MessageReactionDto,
+    PinnedMessageDto,
 } from './dto';
 import { BlockUserDto,
   UnblockUserDto,
   BlockedUserResultDto,
   SearchUnblockedUserResultDto } from './dto/block.dto';
-
+import { ReactionType } from '@prisma/client';
 /**
  * Chat endpoints
  */
@@ -314,6 +319,120 @@ export class ChatsController {
   async checkBlocked(@Query('user1') user1: string, @Query('user2') user2: string): Promise<{ blocked: boolean }> {
     const blocked = await this.chatsService.isBlockedBetween(user1, user2);
     return { blocked };
+  }
+  //Related to poll
+  /*
+   * Create new poll in the current chat
+   */
+  @Post(':chatId/polls')
+  async createPoll(
+      @Param('chatId') chatId: string,
+      @Body('question') question: string,
+      @Body('options') options: string[]
+  ): Promise<PollInGroupDto> {
+    return this.groupChatsService.createPoll(chatId, question, options);
+  }
+  /*
+   * Get all poll from current chat (include options)
+   */
+  @Get(':chatId/:userId/polls')
+  async getAllPolls(@Param('chatId') chatId: string, @Param('userId') userId: string): Promise<PollInGroupDto[]> {
+    return this.groupChatsService.getPolls(chatId, userId);
+  }
+  /*
+   * Add more options to current poll
+   */
+  @Post('poll/:pollId/add-option')
+  async addOption(
+      @Param('pollId') pollId: string,
+      @Body() body: { text: string }
+  ) : Promise<PollOptionDto> {
+    return this.groupChatsService.addOption(pollId, body.text);
+  }
+  /*
+   * Update vote/unvote
+   */
+  @Post('poll/:pollId/:userId/submit-poll')
+  async submitOption(
+      @Param('pollId') pollId: string,
+      @Param('userId') userId: string,
+      @Body() body: { options: { id: string; selected: boolean }[] }
+  )  {
+    return this.groupChatsService.submitVotes(userId, pollId, body.options);
+  }
+
+  /*
+   * Message Reactions
+   */
+  // Add or update reaction
+  @Post('messages/:messageId/:userId/reactions')
+  @HttpCode(200)
+  async addReaction(
+      @Param('messageId') messageId: string,
+      @Param('userId') userId: string,
+      @Body() body: {reaction: string }
+  ): Promise<MessageReactionDto> {
+    const reactionEnum = ReactionType[body.reaction.toUpperCase() as keyof typeof ReactionType];
+    if (!reactionEnum) {
+      throw new BadRequestException('Invalid reaction type');
+    }
+    return this.chatsService.addReaction(messageId, userId, reactionEnum);
+  }
+  // Remove reaction
+  @Delete('messages/:messageId/:userId/reactions')
+  @HttpCode(200)
+  async removeReaction(
+      @Param('messageId') messageId: string,
+      @Param('userId') userId: string
+  ): Promise<{ success: boolean }> {
+    await this.chatsService.removeReaction(messageId, userId);
+    return { success: true };
+  }
+  // Get total reactions in a specific msg
+  @Get('messages/:messageId/reactions/count')
+  @HttpCode(200)
+  async getReactionCount(@Param('messageId') messageId: string): Promise<{ count: number }> {
+    const count = await this.chatsService.getReactionCount(messageId);
+    return { count };
+  }
+  // Get summary all reactions in a specific msg
+  @Get('messages/:messageId/reactions')
+  @HttpCode(200)
+  async getReactions(@Param('messageId') messageId: string): Promise<MessageReactionDto[]> {
+    return this.chatsService.getReactions(messageId);
+  }
+
+  // Pin a message
+  @Post(':chatId/:messageId/:userId/pin')
+  @HttpCode(200)
+  async pinMessage(
+      @Param('chatId') chatId: string,
+      @Param('messageId') messageId: string,
+      @Param('userId') userId: string
+  ): Promise<{ success: boolean }> {
+    const result = await this.chatsService.pinMessage(chatId, messageId, userId);
+    return { success: result };
+  }
+
+  // Pin a message
+  @Delete(':chatId/:messageId/:userId/pin')
+  @HttpCode(200)
+  async unpinMessage(
+      @Param('chatId') chatId: string,
+      @Param('messageId') messageId: string,
+      @Param('userId') userId: string
+  ): Promise<{ success: boolean }> {
+    const result = await this.chatsService.unpinMessage(chatId, messageId, userId);
+    return { success: result };
+  }
+
+  // Get all pinned messages in a chat
+  @Get(':chatId/pinned-messages')
+  @HttpCode(200)
+  async getPinnedMessages(
+      @Param('chatId') chatId: string
+  ): Promise<PinnedMessageDto[]> {
+    return this.chatsService.getPinnedMessages(chatId);
   }
 
 }

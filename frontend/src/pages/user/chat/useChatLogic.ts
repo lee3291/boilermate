@@ -5,13 +5,20 @@ import {
   sendMessage as apiSendMessage,
   editMessage as apiEditMessage,
   deleteMessage as apiDeleteMessage,
-    createNormalChat as apiCreateNormalChat,
+  createNormalChat as apiCreateNormalChat,
   searchUsersForNormalChatCreation as apiSearchUsersForNormalChatCreation,
   getUserIdsCanBlock as apiSearchUsersForBlock,
-    blockUser as apiBlockUser,
-    unblockUser as apiUnblockUser,
+  blockUser as apiBlockUser,
+  unblockUser as apiUnblockUser,
   getBlockedByUserId as apiBlockedByUserId,
   isBlockedBetween as apiIsBlockBetween,
+  addReaction as apiAddReaction,
+  removeReaction as apiRemoveReaction,
+  getReactions as apiGetReactions,
+  getReactionCount as apiGetReactionCount,
+  pinMessage as apiPinMessage,
+  unpinMessage as apiUnpinMessage,
+  getPinnedMessages as apiGetPinnedMessages,
 } from '@/services/chatService';
 import {
   getPresignedUrl as apiGetPresignedUrl,
@@ -27,6 +34,10 @@ import {
   leaveGroupChat as apiLeaveGroupChat,
   searchUsersForGroupCreation as apiSearchUsersForGroupCreation,
   searchUsersForAddingToGroup as apiSearchUsersForAddingToGroup,
+  createPoll as apiCreatePoll,
+  getAllPolls as apiGetAllPolls,
+  addPollOption as apiAddPollOption,
+    submitVotes as apiSubmitVotes,
 } from '@/services/groupChatService';
 import { compressImage } from '@/utils/imageCompression';
 import config from '@/utils/config';
@@ -50,6 +61,18 @@ interface User {
   [key: string]: any;
 }
 
+interface PollOption {
+  id: string;
+  text: string;
+  votes: number;
+}
+
+
+interface Poll {
+  id: string;
+  question: string;
+  options: PollOption[];
+}
 export default function useChatLogic(user: User) {
   const userId = user.id;
   const [conversations, setConversations] = useState<Chat[]>([]); // populate the chat sidebar
@@ -60,6 +83,7 @@ export default function useChatLogic(user: User) {
   const [isUploadingImage, setIsUploadingImage] = useState(false); // track if image is being uploaded
   const [loadingChats, setLoadingChats] = useState(false); // set loading state when fetching all chatIds in side bar
   const [loadingMessages, setLoadingMessages] = useState(false); // set loading state when fetching all the messages in chat window
+  const [polls, setPolls] = useState<Poll[]>([]); //track polls
   const [error, setError] = useState<string | null>(null); // set error state when handling events
 
   // Group chat specific states
@@ -334,7 +358,7 @@ export default function useChatLogic(user: User) {
           imageKey,
         };
 
-        console.log('wtf', payload);
+        //console.log('wtf', payload);
 
         const res: sendMessageResponse = await apiSendMessage(payload);
 
@@ -592,6 +616,210 @@ export default function useChatLogic(user: User) {
     }
   }, [userId]);
 
+  // Create a new poll
+  const handleCreatePoll = useCallback(
+      async (chatId: string, question: string, options: string[]): Promise<boolean> => {
+        if (!userId) {
+          setError('userId required');
+          return false;
+        }
+
+        try {
+          const newPoll: Poll = await apiCreatePoll(chatId, question, options );
+          setPolls((prev) => [...prev, newPoll]); // append new poll
+          return true;
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to create poll');
+          return false;
+        }
+      },
+      [userId]
+  );
+  //Get all polls given chat id
+  const handleGetPolls = useCallback(
+      async (chatId: string, userId: string) => {
+        if (!chatId) return [];
+        if (!userId) return [];
+        try {
+          const res = await apiGetAllPolls(chatId, userId); // call backend service
+          setPolls(res || []);
+          return res;
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to fetch polls');
+          return [];
+        }
+      },
+      []
+  );
+
+  // Add a new option in a specific poll
+  const handleAddOption = useCallback(
+      async (pollId: string, optionText: string) => {
+        if (!pollId || !optionText.trim()) return;
+
+        try {
+          const newOption: PollOption = await apiAddPollOption(pollId, optionText.trim());
+
+          setPolls(prevPolls =>
+              prevPolls.map(poll => {
+                if (poll.id !== pollId) return poll;
+                return { ...poll, options: [...poll.options, newOption] };
+              })
+          );
+
+          return newOption; // return new option to match PollsSidebar's expected type
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to add poll option');
+          return undefined;
+        }
+      },
+      []
+  );
+
+  // Update poll after a user submit
+  // Update poll after a user submits votes
+  const handleSubmitVotes = useCallback(
+      async (pollId: string, options: { id: string; selected: boolean }[]) => {
+        if (!pollId || !userId) return false;
+
+        try {
+          await apiSubmitVotes(pollId, userId, options);
+
+          // Update local poll state
+          setPolls(prevPolls =>
+              prevPolls.map(poll => {
+                if (poll.id !== pollId) return poll;
+
+                // Update each option's local "votedByUser"
+                const updatedOptions = poll.options.map(opt => {
+                  const submitted = options.find(o => o.id === opt.id);
+                  if (!submitted) return opt;
+
+                  return {
+                    ...opt,
+                    votedByUser: submitted.selected,
+                  };
+                });
+
+                return { ...poll, options: updatedOptions };
+              })
+          );
+
+          return true;
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to submit poll votes');
+          return false;
+        }
+      },
+      [userId]
+  );
+  // Pin msg
+  const handlePinMessage = useCallback(
+      async (chatId: string, messageId: string, userId: string): Promise<boolean> => {
+        try {
+          const success = await apiPinMessage(chatId, messageId, userId);
+          if (success) {
+            alert('Pinned message successfully!');
+          } else {
+            alert('Failed to pin message!');
+          }
+          return success;
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to pin message');
+          return false;
+        }
+      },
+      []
+  );
+  // Unpin msg
+  const handleUnpinMessage = useCallback(
+      async (chatId: string, messageId: string, userId: string): Promise<boolean> => {
+        try {
+          const success = await apiUnpinMessage(chatId, messageId, userId);
+          if (success) {
+            alert('Unpinned message successfully!');
+          } else {
+            alert('Failed to unpin message!');
+          }
+          return success;
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to unpin message!');
+          return false;
+        }
+      },
+      []
+  );
+
+
+  // Add or update a reaction
+  const handleAddReaction = useCallback(
+      async (messageId: string, userId: string, reaction: string) => {
+        if (!userId) return null;
+        try {
+          return await apiAddReaction(messageId, userId, reaction);
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to add reaction');
+          return null;
+        }
+      },
+      [userId]
+  );
+
+  // Remove a reaction
+  const handleRemoveReaction = useCallback(
+      async (messageId: string) => {
+        if (!userId) return false;
+        try {
+          await apiRemoveReaction(messageId, userId);
+          return true;
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to remove reaction');
+          return false;
+        }
+      },
+      [userId]
+  );
+
+  // Get all reactions for a message
+  const handleGetReactions = useCallback(
+      async (messageId: string) => {
+        try {
+          return await apiGetReactions(messageId);
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to fetch reactions');
+          return [];
+        }
+      },
+      []
+  );
+
+  // Get total reaction count for a message
+  const handleGetReactionCount = useCallback(
+      async (messageId: string) => {
+        try {
+          return await apiGetReactionCount(messageId);
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to fetch reaction count');
+          return 0;
+        }
+      },
+      []
+  );
+
+  // Get all reactions for a message
+  const handleGetPinnedMessages = useCallback(
+      async (chatId: string) => {
+        try {
+          return await apiGetPinnedMessages(chatId);
+        } catch (err: any) {
+          setError(err?.message ?? 'Failed to fetch pinned messages');
+          return [];
+        }
+      },
+      []
+  );
+
+
   // Add member to group (admin only)
   const handleAddMember = useCallback(async (chatId: string, memberUserId: string) => {
     if (!userId) return;
@@ -707,7 +935,24 @@ export default function useChatLogic(user: User) {
     edit,
     remove,
     blockedBetween,
-      setBlockedBetween,
+    setBlockedBetween,
+
+    //Polls
+    handleCreatePoll,
+    handleGetPolls,
+    handleAddOption,
+    handleSubmitVotes,
+
+    // Pin/Unpin
+    handlePinMessage,
+    handleUnpinMessage,
+    handleGetPinnedMessages,
+
+    //Emojis
+    handleAddReaction,
+    handleRemoveReaction,
+    handleGetReactions,
+    handleGetReactionCount,
 
     // group chat actions
     fetchInvitations,

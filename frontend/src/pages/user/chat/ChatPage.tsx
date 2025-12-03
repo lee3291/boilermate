@@ -55,8 +55,27 @@ export default function ChatPage() {
             selectedFile={logic.selectedFile}
             onFileChange={logic.handleFileChange}
             isUploadingImage={logic.isUploadingImage}
-            blockedBetween={logic.blockedBetween}
+
+            //Polls
+            onCreatePoll={logic.handleCreatePoll}
+            onGetPolls={logic.handleGetPolls}
+            onAddOption={logic.handleAddOption}
+            onSubmitVotes={logic.handleSubmitVotes}
+
+            //Emojis
+            onAddReaction={logic.handleAddReaction}
+            onRemoveReaction={logic.handleRemoveReaction}
+            onGetReactionCount={logic.handleGetReactionCount}
+            onGetReactions={logic.handleGetReactions}
+
+            //Pinned msgs
+            onPinMessage={logic.handlePinMessage}
+            onUnpinMessage={logic.handleUnpinMessage}
+            onGetPinnedMessages={logic.handleGetPinnedMessages}
+
+
             // Group chat props
+            blockedBetween={logic.blockedBetween}
             showGroupMembersSidebar={logic.showGroupMembersSidebar}
             onToggleGroupMembersSidebar={() => logic.setShowGroupMembersSidebar(!logic.showGroupMembersSidebar)}
             onAddMembersClick={() => logic.setShowAddMembersModal(true)}

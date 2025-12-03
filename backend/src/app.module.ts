@@ -21,6 +21,7 @@ import { VerificationModule } from './modules/verification/verification.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { RoommatesModule } from './modules/roommates/roommates.module';
 import { UserSettingsModule } from './modules/user-settings/user-settings.module';
+import { RecommendationModule } from './modules/recommendation/recommendation.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { UserSettingsModule } from './modules/user-settings/user-settings.module
     TasksModule,
     RoommatesModule,
     UserSettingsModule,
+    RecommendationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
