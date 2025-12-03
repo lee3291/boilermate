@@ -20,10 +20,15 @@ export interface MessageWithStatus {
 
 // Participant details for chat members
 export interface Participant {
-  id: string; // userId
-  email: string; // user email
+  id: string; // ChatParticipant id
+  userId: string; // reference to User table
+  email: string; // user email (deprecated - use user.email)
   status: string; // ACCEPTED, PENDING, DECLINED
-  // TODO: Add username, firstName, lastName when available
+  user?: {
+    id: string;
+    email: string;
+    legalName?: string;
+  };
 }
 
 // OLD: DM-only chat interface
