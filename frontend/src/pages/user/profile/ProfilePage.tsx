@@ -37,6 +37,10 @@ import type { NotificationSettings } from './components/SettingsSection';
 import { useState, useEffect } from 'react';
 import DeactivateAccountModal from '@/components/DeactivateAccountModal';
 import { deactivateAccount } from '@/services/account.service';
+import {
+  getNotificationSettings,
+  updateNotificationSettings,
+} from '@/services/user-settings.service';
 import FollowButton from './components/FollowButton';
 
 export default function ProfilePage() {
@@ -70,22 +74,11 @@ export default function ProfilePage() {
         setSettingsLoading(true);
         setSettingsError(null);
         try {
-          // TODO: Replace with actual API call
-          // const data = await getNotificationSettings();
-          // setNotificationSettings(data);
-
-          // Simulate API call
-          setTimeout(() => {
-            setNotificationSettings({
-              email_on_follow_profile_update: true,
-              email_on_follow_new_listing: true,
-              email_on_listing_outdated: true,
-              email_on_listing_27days_old: false,
-            });
-            setSettingsLoading(false);
-          }, 1000);
+          const data = await getNotificationSettings();
+          setNotificationSettings(data);
         } catch (error) {
           setSettingsError('Failed to load settings. Please try again.');
+        } finally {
           setSettingsLoading(false);
         }
       };
@@ -104,8 +97,7 @@ export default function ProfilePage() {
     setNotificationSettings(updatedSettings);
 
     try {
-      // TODO: Replace with actual API call
-      // await updateNotificationSettings(updatedSettings);
+      await updateNotificationSettings(updatedSettings);
     } catch (error) {
       setSettingsError('Failed to save settings. Please try again.');
       // Revert optimistic update on failure
