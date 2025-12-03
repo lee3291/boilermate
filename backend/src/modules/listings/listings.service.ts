@@ -130,14 +130,14 @@ export class ListingsService {
                     : null,
             decidedAt: app.decidedAt
                 ? app.decidedAt.toISOString?.() ??
-                        new Date(app.decidedAt).toISOString()
+                  new Date(app.decidedAt).toISOString()
                 : null,
             createdAt:
                 app.createdAt?.toISOString?.() ??
-                    new Date(app.createdAt).toISOString(),
+                new Date(app.createdAt).toISOString(),
             updatedAt:
                 app.updatedAt?.toISOString?.() ??
-                    new Date(app.updatedAt).toISOString(),
+                new Date(app.updatedAt).toISOString(),
         };
     }
 
@@ -163,7 +163,7 @@ export class ListingsService {
 
         const roommates =
             Number.isInteger((input as any).roommates) &&
-                (input as any).roommates >= 1
+            (input as any).roommates >= 1
                 ? (input as any).roommates
                 : undefined;
 
@@ -225,41 +225,57 @@ export class ListingsService {
             });
 
             if (author) {
+                // --- EMAIL NOTIFICATION (Merged Logic) ---
+                // Fetch followers AND their settings to check preferences.
                 const follows = await this.prisma.follow.findMany({
                     where: { followingId: author.id },
                     include: {
                         follower: {
-                            select: { email: true },
+                            include: {
+                                settings: true, // Fetch settings
+                            },
                         },
                     },
                 });
 
                 if (follows.length > 0) {
-                    const followerEmails = follows.map(
-                        (follow) => follow.follower.email,
-                    );
-                    const authorName = author.legalName || data.user;
-                    const listingUrl = `${
-                        process.env.FRONTEND_URL ?? 'http://localhost:5173'
-                    }/listings/${created.id}`;
-                    const subject = `New Listing from ${authorName}!`;
+                    // Filter followers who have enabled 'email_on_follow_new_listing'
+                    // Default to true if settings or the specific setting is null/undefined
+                    const followerEmails = follows
+                        .filter(
+                            (follow) =>
+                                follow.follower.settings?.email_on_follow_new_listing ?? true,
+                        )
+                        .map((follow) => follow.follower.email);
 
-                    followerEmails.forEach((email) => {
-                        this.mailService.sendTemplatedEmail(
-                            email,
-                            subject,
-                            'new-listing-notification',
-                            {
-                                authorName,
-                                listingTitle: created.title,
-                                listingUrl,
-                            },
+                    if (followerEmails.length > 0) {
+                        const authorName = author.legalName || data.user;
+                        const listingUrl = `${
+                            process.env.FRONTEND_URL ?? 'http://localhost:5173'
+                        }/listings/${created.id}`;
+                        const subject = `New Listing from ${authorName}!`;
+
+                        followerEmails.forEach((email) => {
+                            this.mailService.sendTemplatedEmail(
+                                email,
+                                subject,
+                                'new-listing-notification',
+                                {
+                                    authorName,
+                                    listingTitle: created.title,
+                                    listingUrl,
+                                },
+                            );
+                        });
+
+                        this.logger.log(
+                            `Queued new listing notification for ${followerEmails.length} followers of user ${data.user}.`,
                         );
-                    });
-
-                    this.logger.log(
-                        `Queued new listing notification for ${followerEmails.length} followers of user ${data.user}.`,
-                    );
+                    } else {
+                         this.logger.log(
+                            `No followers of user ${data.user} have new listing notifications enabled.`,
+                        );
+                    }
                 }
             }
         } catch (error: any) {
@@ -424,7 +440,7 @@ export class ListingsService {
                     reportCount: count,
                     createdAt:
                         existing?.createdAt?.toISOString() ??
-                            new Date().toISOString(),
+                        new Date().toISOString(),
                 };
             }
             throw err;
@@ -551,8 +567,8 @@ export class ListingsService {
             .filter(
                 (l) =>
                     l &&
-                        l.status === 'ACTIVE' &&
-                        activeUsernames.has((l as any).user),
+                    l.status === 'ACTIVE' &&
+                    activeUsernames.has((l as any).user),
             )
             .map((l) => this.toListingResponse(l));
 
@@ -887,6 +903,4 @@ export class ListingsService {
             total,
         };
     }
-
 }
-

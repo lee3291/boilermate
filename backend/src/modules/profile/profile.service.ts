@@ -81,14 +81,37 @@ export class ProfileService {
     });
 
     // --- EMAIL NOTIFICATION ---
-    // After a user updates their profile, find their followers and notify them.
+    // After a user updates their profile, find their followers and notify them,
+    // but only if they have opted in to receive these notifications.
     const followers = await this.prisma.follow.findMany({
       where: { followingId: userId },
-      include: { follower: true },
+      include: {
+        follower: {
+          include: {
+            // Include settings to check notification preferences.
+            settings: true,
+          },
+        },
+      },
     });
 
     if (followers.length > 0) {
-      const followerEmails = followers.map((f) => f.follower.email);
+      // Filter followers who have enabled 'email_on_follow_profile_update'.
+      // Default to true if the setting is not explicitly defined.
+      const followerEmails = followers
+        .filter(
+          (f) => f.follower.settings?.email_on_follow_profile_update ?? true,
+        )
+        .map((f) => f.follower.email);
+
+      // If no followers have this notification enabled, we can stop here.
+      if (followerEmails.length === 0) {
+        this.logger.log(
+          `No followers of user ${userId} have profile update notifications enabled.`,
+        );
+        return user;
+      }
+
       const updatedUser = await this.prisma.user.findUnique({
         where: { id: userId },
       });
@@ -102,6 +125,7 @@ export class ProfileService {
         const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:5173';
         const profileUrl = `${frontendUrl}/profile/${userId}`;
 
+        // Send email to the filtered list of followers.
         followerEmails.forEach((email) => {
           this.mailService.sendTemplatedEmail(
             email,
