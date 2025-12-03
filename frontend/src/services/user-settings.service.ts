@@ -1,4 +1,4 @@
-import { NotificationSettings } from '@/pages/user/profile/components/SettingsSection';
+import type { NotificationSettings } from '@/pages/user/profile/components/SettingsSection';
 import api from './api';
 
 /**
