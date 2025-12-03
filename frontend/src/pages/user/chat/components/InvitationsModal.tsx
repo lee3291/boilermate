@@ -1,12 +1,6 @@
 import { X, Check, XCircle, Users } from 'lucide-react';
 import type { Chat } from '@/types/chats/chat';
 
-interface Participant {
-    id: string;
-    email: string;
-    status: string; // ACCEPTED, PENDING, DECLINED
-}
-
 interface Invitation {
     id: string;
     chatId: string;
