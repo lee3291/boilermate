@@ -1,0 +1,8 @@
+model EmailLog {
+  id       String   @id @default(uuid())
+  title    String
+  message  String
+  group    String?
+  toEmail  String?
+  sentAt   DateTime @default(now())
+}

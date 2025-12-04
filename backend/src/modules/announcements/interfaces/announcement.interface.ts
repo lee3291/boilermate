@@ -1,12 +1,11 @@
-export interface AnnouncementDetails {
+
+export interface Announcement {
   id: string;
   title: string;
   message: string;
   createdAt: Date;
   updatedAt: Date;
-  expiresAt?: Date | null;
-  authorId?: string | null; 
+  scheduledAt?: Date | null;
   isActive: boolean;
+  likes: number;
 }
-
-

@@ -12,6 +12,7 @@ import { ChatsModule } from '@modules/chats/chats.module';
 import { UploadsModule } from '@modules/uploads/uploads.module';
 import { BugReportModule } from './modules/bug-report/bug-report.module';
 import { UserReportModule } from './modules/user-report/user-report.module';
+import { EmailModule } from './modules/email/email.module';
 
 import { ReCaptchaModule } from '@modules/reCaptcha/reCaptcha.module';
 import { PreferencesModule } from '@modules/preferences/preferences.module';
@@ -49,6 +50,7 @@ import { RecommendationModule } from './modules/recommendation/recommendation.mo
     RoommatesModule,
     UserSettingsModule,
     RecommendationModule,
+    EmailModule
   ],
   controllers: [AppController],
   providers: [AppService],

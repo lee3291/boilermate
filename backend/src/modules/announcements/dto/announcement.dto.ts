@@ -1,33 +1,15 @@
-import { IsString, IsOptional, IsBoolean } from 'class-validator';
-
-
 export class CreateAnnouncementDto {
- @IsString()
- title: string;
-
-
- @IsString()
- message: string;
-
-
- @IsOptional()
- @IsString()
- authorId?: string;
+title: string;
+message: string;
+scheduledAt?: string;
+isScheduled?: boolean;
 }
 
 
 export class UpdateAnnouncementDto {
- @IsOptional()
- @IsString()
- title?: string;
-
-
- @IsOptional()
- @IsString()
- message?: string;
-
-
- @IsOptional()
- @IsBoolean()
- isActive?: boolean;
+title?: string;
+message?: string;
+scheduledAt?: string;
+isScheduled?: boolean;
+isActive?: boolean;
 }

@@ -1,0 +1,8 @@
+export interface EmailLog {
+  id: string;
+  title: string;
+  message: string;
+  group?: string;
+  toEmail?: string;
+  sentAt: Date;
+}

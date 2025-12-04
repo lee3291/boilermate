@@ -26,10 +26,12 @@ import SavedListings from './pages/user/listings/SavedListings';
 import UserReportsDashboard from './pages/admin/UserReportsDashboard.tsx';
 import BugReportsDashboard from './pages/admin/BugReportDashboard.tsx';
 import ReportBug from './pages/bug-report/ReportBug.tsx';
+import EmailDashboard from './pages/admin/emailDashboard.tsx';
 
 import ReportPage from './pages/report/ReportPage.tsx';
 import ReportTestPage from './pages/report/ReportTestPage.tsx';
 // import ListingsCreateTest from './pages/user/ListingsTest.tsx';
+
 
 import ProtectedRoute from './components/ProtectedRoute';
 // import UserProfilePage from './pages/user/UserProfilePage';
@@ -192,6 +194,10 @@ const router = createBrowserRouter([
       {
         path: "/announcementspage",
         element: <UserAnnouncements />,
+      },
+      {
+        path: "/emaildashboard",
+        element: <EmailDashboard />,
       },
       {
         path: "/dashboard",

@@ -1,111 +1,118 @@
-import {
-  Injectable,
-  NotFoundException,
-  InternalServerErrorException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
-import { PrismaService } from '@core/database/prisma.service';
+import { Injectable } from '@nestjs/common';
+import { Announcement } from './interfaces/announcement.interface';
+import { CreateAnnouncementDto, UpdateAnnouncementDto } from './dto/announcement.dto';
+import { v4 as uuid } from 'uuid';
+
 import { MailService } from '../mail/mail.service';
-import { AnnouncementDetails } from './interfaces';
-import { CreateAnnouncementDto, UpdateAnnouncementDto } from './dto';
 
 @Injectable()
 export class AnnouncementsService {
-  private readonly logger = new Logger(AnnouncementsService.name);
+ 
+private announcements: Announcement[] = [];
+  mailService: any;
+  logger: any;
 
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly mailService: MailService,
-  ) {}
 
- async createAnnouncement(dto: CreateAnnouncementDto): Promise<AnnouncementDetails> {
-  const { title, message, authorId } = dto;
+findAll(): Announcement[] {
+return this.announcements;
+}
 
-  if (!title || !message) {
-    throw new BadRequestException('Title and message are required');
-  }
 
+findById(id: string): Announcement | undefined {
+return this.announcements.find((a) => a.id === id);
+}
+
+
+create(dto: CreateAnnouncementDto): Announcement {
+  const announcement: Announcement = {
+    id: uuid(),
+    title: dto.title.trim(),
+    message: dto.message.trim(),
+    createdAt: new Date(),
+    updatedAt: new Date(), 
+    isActive: true,
+    scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null, 
+    likes: 0,
+  };
+
+  this.announcements.unshift(announcement);
+  return announcement;
+}
+
+
+
+update(id: string, dto: UpdateAnnouncementDto): Announcement | null {
+  const idx = this.announcements.findIndex((a) => a.id === id);
+  if (idx === -1) return null;
+
+  const existing = this.announcements[idx];
+
+  this.announcements[idx] = {
+    ...existing,
+    ...dto,
+    scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
+    updatedAt: new Date(),
+  };
+
+  return this.announcements[idx];
+}
+
+
+
+
+delete(id: string): boolean {
+const prevLen = this.announcements.length;
+this.announcements = this.announcements.filter((a) => a.id !== id);
+return this.announcements.length < prevLen;
+}
+
+
+like(id: string): Announcement | null {
+const announcement = this.findById(id);
+if (!announcement) return null;
+announcement.likes++;
+return announcement;
+}
+
+
+private async sendTopLikedEmail(to: string) {
   try {
-    // 1️⃣ Create the announcement in the database
-    const announcement = await this.prisma.announcement.create({
-      data: { title, message, authorId },
-    });
+    const topAnnouncements = this.announcements
+      .filter(a => a.isActive)
+      .sort((a, b) => b.likes - a.likes)
+      .slice(0, 5);
 
-    // 2️⃣ Fetch all registered users (with email addresses)
-    const users = await this.prisma.user.findMany({
-      where: { email: { not: undefined } },
-      select: { email: true },
-    });
-
-    // 3️⃣ Send announcement emails to all users
-    if (users.length > 0) {
-      const recipientEmails = users.map((u) => u.email);
-
-      // Log to check
-      Logger.log(`Sending announcement to ${recipientEmails.length} users...`);
-
-      await this.mailService.sendBulkEmail(
-        recipientEmails,
-        `📢 New Announcement: ${title}`,
-        message
-      );
-    } else {
-      Logger.warn('No registered users found to send announcement emails.');
+    if (topAnnouncements.length === 0) {
+      this.logger.warn(`No announcements to send.`);
+      return;
     }
 
-    Logger.log(`Created announcement and sent emails to all users`);
-    return announcement;
+    const summary = topAnnouncements
+      .map((a, i) => `${i + 1}. ${a.title} (${a.likes} likes)\n${a.message}`)
+      .join('\n\n');
+
+    await this.mailService.sendEmail(
+      to,
+      'Top 5 Most Liked Announcements',
+      summary,
+    );
+    this.logger.log(`Sent top 5 announcements email to: ${to}`);
   } catch (error) {
-    Logger.error('createAnnouncement error', error);
-    throw new InternalServerErrorException('Failed to create announcement');
+    this.logger.warn(`Failed to email ${to}: ${error.message}`);
   }
 }
 
-  async getAnnouncements(): Promise<AnnouncementDetails[]> {
-    try {
-      return await this.prisma.announcement.findMany({
-        where: { isActive: true },
-        orderBy: { createdAt: 'desc' },
-      });
-    } catch (error) {
-      this.logger.error('getAnnouncements error', error);
-      throw new InternalServerErrorException('Failed to fetch announcements');
-    }
-  }
 
-  async updateAnnouncement(id: string, dto: UpdateAnnouncementDto): Promise<AnnouncementDetails> {
-    try {
-      const existing = await this.prisma.announcement.findUnique({ where: { id } });
-      if (!existing) throw new NotFoundException('Announcement not found');
 
-      return await this.prisma.announcement.update({
-        where: { id },
-        data: {
-          title: dto.title ?? existing.title,
-          message: dto.message ?? existing.message,
-          isActive: dto.isActive ?? existing.isActive,
-          updatedAt: new Date(),
-        },
-      });
-    } catch (error) {
-      this.logger.error('updateAnnouncement error', error);
-      throw new InternalServerErrorException('Failed to update announcement');
-    }
-  }
-
-  async deleteAnnouncement(id: string): Promise<void> {
-    try {
-      const existing = await this.prisma.announcement.findUnique({ where: { id } });
-      if (!existing) throw new NotFoundException('Announcement not found');
-
-      await this.prisma.announcement.update({
-        where: { id },
-        data: { isActive: false },
-      });
-    } catch (error) {
-      this.logger.error('deleteAnnouncement error', error);
-      throw new InternalServerErrorException('Failed to delete announcement');
-    }
+async sendTopLikedToAllUsers(): Promise<void> {
+  const userIds = ['user1', 'bijang', 'admin']; 
+  for (const userId of userIds) {
+    const email = `${userId}@purdue.edu`;
+    await this.sendTopLikedEmail(email);
   }
 }
+
+
+
+}
+
