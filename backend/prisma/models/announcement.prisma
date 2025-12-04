@@ -12,8 +12,15 @@ model Announcement {
   // Optional status fields
   isActive    Boolean      @default(true)
   expiresAt   DateTime?
+  scheduledAt DateTime?
 
   notifications AnnouncementNotification[]
+
+  // Like system
+  likes         Int                  @default(0)
+  likedBy       String[]             @default([]) // optional cache/legacy
+  likesList     AnnouncementLike[]   @relation("AnnouncementLikes")
+
   @@index([createdAt])
 }
 
@@ -29,4 +36,17 @@ model AnnouncementNotification {
   user            User           @relation("UserAnnouncementNotifications", fields: [userId], references: [id])
 
   @@unique([announcementId, userId])
+}
+
+model AnnouncementLike {
+  id              String        @id @default(uuid())
+  userId          String
+  announcementId  String
+  createdAt       DateTime      @default(now())
+
+  user            User          @relation("UserLikes", fields: [userId], references: [id])
+  announcement    Announcement  @relation("AnnouncementLikes", fields: [announcementId], references: [id])
+
+  @@unique([userId, announcementId])
+  @@index([announcementId])
 }
