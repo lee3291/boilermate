@@ -1,35 +1,57 @@
-import { Controller, Get, Post, Put, Delete, Body, Param , UseGuards} from '@nestjs/common';
+import {
+Controller,
+Get,
+Post,
+Body,
+Param,
+Put,
+Delete,
+} from '@nestjs/common';
 import { AnnouncementsService } from './announcements.service';
-import { CreateAnnouncementDto, UpdateAnnouncementDto } from './dto';
-import { AdminGuard } from '@common/guards/admin.guard';
+import { CreateAnnouncementDto, UpdateAnnouncementDto } from './dto/announcement.dto';
+
+
+
 @Controller('announcements')
 export class AnnouncementsController {
-  constructor(private readonly service: AnnouncementsService) {}
+announcementsService: any;
+constructor(private readonly service: AnnouncementsService) {}
 
-  // GET /announcements
-  @Get()
-  getAll() {
-    return this.service.getAnnouncements();
-  }
 
-  // POST /announcements
-  @UseGuards(AdminGuard)
-  @Post()
-  create(@Body() dto: CreateAnnouncementDto) {
-    return this.service.createAnnouncement(dto);
-  }
+@Get()
+getAll() {
+return this.service.findAll();
+}
 
-  // PUT /announcements/:id
-  @UseGuards(AdminGuard)
-  @Put(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateAnnouncementDto) {
-    return this.service.updateAnnouncement(id, dto);
-  }
 
-  // DELETE /announcements/:id
-  @UseGuards(AdminGuard)
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.service.deleteAnnouncement(id);
-  }
+@Post()
+create(@Body() dto: CreateAnnouncementDto) {
+return this.service.create(dto);
+}
+
+
+@Put(':id')
+update(@Param('id') id: string, @Body() dto: UpdateAnnouncementDto) {
+return this.service.update(id, dto);
+}
+
+
+@Delete(':id')
+delete(@Param('id') id: string) {
+return this.service.delete(id);
+}
+
+
+@Post(':id/like')
+like(@Param('id') id: string) {
+return this.service.like(id);
+}
+
+@Post('email/top-liked')
+async sendTopLiked() {
+  return this.service.sendTopLikedToAllUsers();
+}
+
+
+
 }
