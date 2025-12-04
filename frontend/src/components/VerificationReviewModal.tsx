@@ -27,8 +27,8 @@ const VerificationReviewModal = ({
 
     const confirmationMessage =
       status === 'APPROVED'
-        ? 'Are you sure you want to approve this request?'
-        : 'Are you sure you want to decline this request?';
+        ? 'Are you sure you want to approve this request? The user will be notified with an email.'
+        : 'Are you sure you want to decline this request? The user will be notified with an email.';
 
     if (!window.confirm(confirmationMessage)) {
       return;
