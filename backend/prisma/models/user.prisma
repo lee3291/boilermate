@@ -103,6 +103,10 @@ model User {
   
   interactionsGiven        RecommendationInteraction[] @relation("InteractionsGiven")
   interactionsReceived     RecommendationInteraction[] @relation("InteractionsReceived")
+
+  // Relation to announcement Bohyeon
+
+  likedAnnouncements AnnouncementLike[] @relation("UserLikes")
 }
 
 model FavoriteMatch {
