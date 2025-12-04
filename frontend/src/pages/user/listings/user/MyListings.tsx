@@ -334,6 +334,7 @@ export default function MyListings() {
                                     status={toListingStatus(l.status)}
                                     widthClass="w-120"
                                     saveEnabled={false}
+                                    hasDescriptionAlert={!!l.reportedOutdatedAlert}
                                 />
                             ))}
                         </div>

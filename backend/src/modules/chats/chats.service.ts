@@ -463,7 +463,8 @@ export class ChatsService {
       });
 
       return {
-        groupChat: txResult.groupChat as GroupChatDetails,
+        // groupChat: txResult.groupChat as GroupChatDetails,
+        groupChat: txResult.chat as GroupChatDetails,
       };
     } catch (error) {
       Logger.error('createchat error', error);

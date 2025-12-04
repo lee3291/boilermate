@@ -118,7 +118,20 @@ export class GroupChatsService {
               groupIcon: true,
               isGroup: true,
               creatorId: true,
-              //participants: true,
+              participants: {
+                select: {
+                  id: true,
+                  userId: true,
+                  status: true,
+                  user: {
+                    select: {
+                      id: true,
+                      email: true,
+                      legalName: true,
+                    },
+                  },
+                },
+              },
             },
           },
         },

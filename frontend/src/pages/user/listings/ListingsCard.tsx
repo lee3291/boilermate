@@ -27,6 +27,7 @@ type ListingsCardProps = {
     widthClass?: string;
     widthStyle?: string;
     saveEnabled?: boolean;
+    hasDescriptionAlert?: boolean;
 };
 
 export default function ListingsCard({
@@ -43,6 +44,7 @@ export default function ListingsCard({
     widthClass = "w-140",
     widthStyle,
     saveEnabled = true,
+    hasDescriptionAlert,
 }: ListingsCardProps) {
     const [clicked, setClicked] = useState<boolean | null>(null);
     const [saving, setSaving] = useState(false);
@@ -163,6 +165,7 @@ export default function ListingsCard({
         return endDate < today;
     }, [moveInEnd]);
 
+    // Existing move-in date alert → ARCHIVED
     useEffect(() => {
         if (!isOwner) return;
         if (!moveInEnd) return;
@@ -234,10 +237,9 @@ export default function ListingsCard({
     const [flagCount, setFlagCount] = useState<number | null>(null);
     const [applySaving, setApplySaving] = useState(false);
 
-    // NEW: track whether this viewer has already applied to this listing
     const [hasApplied, setHasApplied] = useState<boolean | null>(null);
 
-    // Load report state
+    // Load report state (description outdated alerts)
     useEffect(() => {
         if (!viewerUsername || !id) {
             setFlagged(false);
@@ -278,7 +280,16 @@ export default function ListingsCard({
         };
     }, [viewerUsername, id]);
 
-    // NEW: check if the viewer has already applied to this listing
+    // automatically PAUSE (INACTIVE) the listing in the DB.
+    // useEffect(() => {
+    //     if (!isOwner) return;
+    //     if (flagCount == null || flagCount <= 0) return;
+    //     if (listingStatus === 'INACTIVE' || listingStatus === 'ARCHIVED') return;
+    //
+    //     // Set status to PAUSED / INACTIVE
+    //     void updateStatus('INACTIVE');
+    // }, [isOwner, flagCount, listingStatus]);
+
     useEffect(() => {
         if (!viewerUsername || !id || isOwner) {
             setHasApplied(false);
@@ -378,6 +389,10 @@ export default function ListingsCard({
             return;
         }
         if (applySaving) return;
+        if (listingStatus !== 'ACTIVE') {
+            alert("This listing is not currently accepting applications.");
+            return;
+        }
         if (hasApplied) {
             alert("You have already applied to this listing. Your existing application is still active.");
             return;
@@ -477,7 +492,8 @@ export default function ListingsCard({
 
     const style = widthStyle ? { width: widthStyle } : undefined;
 
-    const applyDisabled = applySaving || !!hasApplied;
+    const applyDisabled =
+        applySaving || !!hasApplied || listingStatus !== 'ACTIVE';
 
     return (
         <div>
