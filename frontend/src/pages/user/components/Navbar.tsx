@@ -11,6 +11,7 @@ export default function Navbar() {
     { label: 'Listings', href: '/listings' },
     { label: 'Roommates', href: '/roommates' },
     { label: 'Messages', href: '/messages' },
+    { label: 'Announcements', href: '/announcementspage' },
   ];
 
   const { user: authUser, logout } = useAuth();
