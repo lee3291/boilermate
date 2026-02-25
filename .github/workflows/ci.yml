@@ -38,7 +38,6 @@ jobs:
         working-directory: ./backend
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DIRECT_URL: ${{ secrets.DIRECT_URL }}
 
       # - Clear the npm cache between backend and frontend installs.
       #   This is a failsafe to prevent cache poisoning between the two projects.
